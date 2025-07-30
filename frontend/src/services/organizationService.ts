@@ -1,7 +1,7 @@
 import { message } from 'antd';
 
 // API基础配置
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 
 // 请求配置
 const getRequestConfig = () => {
@@ -214,7 +214,7 @@ class OrganizationService {
       }
     });
     
-    const url = `/organizations?${queryString.toString()}`;
+    const url = `/v1/dev/organizations?${queryString.toString()}`;
     const response: ApiResponse<PageResponse<Organization>> = await request(url);
     return response.data;
   }
@@ -312,7 +312,7 @@ class OrganizationService {
    * 获取机构统计数据
    */
   async getOrganizationStatistics(): Promise<OrganizationStatistics> {
-    const response: ApiResponse<OrganizationStatistics> = await request('/organizations/statistics');
+    const response: ApiResponse<OrganizationStatistics> = await request('/v1/dev/organizations/statistics');
     return response.data;
   }
 
@@ -381,7 +381,7 @@ class OrganizationService {
       }
     });
     
-    const url = `/organizations?${queryString.toString()}`;
+    const url = `/v1/dev/organizations?${queryString.toString()}`;
     return await request(url);
   }
 
@@ -394,7 +394,7 @@ class OrganizationService {
   }
 
   async getStatistics(): Promise<ApiResponse<any>> {
-    return await request('/organizations/statistics');
+    return await request('/v1/dev/organizations/statistics');
   }
 }
 

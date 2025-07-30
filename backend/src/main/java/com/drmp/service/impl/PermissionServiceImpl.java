@@ -94,9 +94,46 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PermissionListResponse> getPermissionsByGroup(String groupName) {
-        List<Permission> permissions = permissionRepository.findByGroupNameOrderBySortOrderAscCreatedAtDesc(groupName);
+    public List<Map<String, Object>> getPermissionTree() {
+        List<Map<String, Object>> tree = new ArrayList<>();
+        // TODO: Implement permission tree logic
+        return tree;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PermissionListResponse> getPermissionsByRoleId(Long roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new BusinessException("角色不存在"));
+        return role.getPermissions().stream()
+                .map(this::convertToListResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PermissionListResponse> getPermissionsByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+        Set<Permission> permissions = new HashSet<>();
+        user.getRoles().forEach(role -> permissions.addAll(role.getPermissions()));
         return permissions.stream()
+                .map(this::convertToListResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PermissionListResponse> getPermissionsNotInRole(Long roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new BusinessException("角色不存在"));
+        Set<Long> rolePermissionIds = role.getPermissions().stream()
+                .map(Permission::getId)
+                .collect(Collectors.toSet());
+        
+        List<Permission> allPermissions = permissionRepository.findAll();
+        return allPermissions.stream()
+                .filter(permission -> !rolePermissionIds.contains(permission.getId()))
                 .map(this::convertToListResponse)
                 .collect(Collectors.toList());
     }

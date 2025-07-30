@@ -45,4 +45,14 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     long countByType(OrganizationType type);
 
     Page<Organization> findByTypeAndMembershipStatus(OrganizationType type, String membershipStatus, Pageable pageable);
+
+    /**
+     * 查找所有机构并预加载集合字段
+     */
+    @Query("SELECT DISTINCT o FROM Organization o " +
+           "LEFT JOIN FETCH o.serviceRegions " +
+           "LEFT JOIN FETCH o.businessScopes " +
+           "LEFT JOIN FETCH o.disposalTypes " +
+           "LEFT JOIN FETCH o.settlementMethods")
+    List<Organization> findAllWithCollections();
 }

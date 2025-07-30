@@ -54,7 +54,7 @@ public interface OrganizationAuditLogRepository extends JpaRepository<Organizati
     /**
      * 统计今日新增的审核日志数量
      */
-    @Query("SELECT COUNT(log) FROM OrganizationAuditLog log WHERE log.operationType = :operationType AND DATE(log.operationTime) = CURRENT_DATE")
+    @Query("SELECT COUNT(log) FROM OrganizationAuditLog log WHERE log.operationType = :operationType AND CAST(log.operationTime AS date) = CURRENT_DATE")
     long countTodayLogsByOperationType(@Param("operationType") String operationType);
 
     /**

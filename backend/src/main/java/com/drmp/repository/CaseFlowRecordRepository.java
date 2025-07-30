@@ -87,9 +87,9 @@ public interface CaseFlowRecordRepository extends JpaRepository<CaseFlowRecord, 
     /**
      * 按日期统计流转记录数量
      */
-    @Query("SELECT DATE(cfr.eventTime), COUNT(cfr) FROM CaseFlowRecord cfr " +
+    @Query("SELECT CAST(cfr.eventTime AS date), COUNT(cfr) FROM CaseFlowRecord cfr " +
            "WHERE cfr.eventTime BETWEEN :startTime AND :endTime " +
-           "GROUP BY DATE(cfr.eventTime) ORDER BY DATE(cfr.eventTime)")
+           "GROUP BY CAST(cfr.eventTime AS date) ORDER BY CAST(cfr.eventTime AS date)")
     List<Object[]> countByDateGroupedByEventTimeBetween(@Param("startTime") LocalDateTime startTime,
                                                       @Param("endTime") LocalDateTime endTime);
     

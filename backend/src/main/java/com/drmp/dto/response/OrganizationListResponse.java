@@ -5,6 +5,7 @@ import com.drmp.entity.enums.OrganizationType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * Organization List Response DTO
@@ -30,6 +31,10 @@ public class OrganizationListResponse {
     private Integer monthlyCaseCapacity;
     private Integer currentLoadPercentage;
     private String registrationType;
+    private Set<String> serviceRegions;
+    private Set<String> businessScopes;
+    private Set<String> disposalTypes;
+    private Set<String> settlementMethods;
     private LocalDateTime createdAt;
     private LocalDateTime approvalAt;
     private String approvalBy;

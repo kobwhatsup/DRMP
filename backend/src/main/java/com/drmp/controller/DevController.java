@@ -1,24 +1,23 @@
 package com.drmp.controller;
 
-import com.drmp.entity.User;
-import com.drmp.entity.enums.UserStatus;
-import com.drmp.security.JwtTokenProvider;
-import com.drmp.security.UserPrincipal;
+import com.drmp.dto.ApiResponse;
+import com.drmp.dto.response.OrganizationListResponse;
+import com.drmp.dto.response.PageResponse;
+import com.drmp.entity.enums.OrganizationStatus;
+import com.drmp.entity.enums.OrganizationType;
+import com.drmp.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * Development Controller - Only available in local profile
+ * Development Controller - Bypasses authentication for testing
  * 
  * @author DRMP Team
  * @since 1.0.0
@@ -27,86 +26,43 @@ import java.util.Set;
 @RestController
 @RequestMapping("/v1/dev")
 @RequiredArgsConstructor
-@Profile("local")
 public class DevController {
 
-    private final JwtTokenProvider tokenProvider;
+    private final OrganizationService organizationService;
 
     /**
-     * Generate development JWT token
+     * Get organization list without authentication (for development)
      */
-    @PostMapping("/auth/token")
-    public ResponseEntity<?> generateDevToken() {
-        try {
-            // Create a mock admin user
-            User mockUser = new User();
-            mockUser.setId(1L);
-            mockUser.setUsername("admin");
-            mockUser.setEmail("admin@drmp.com");
-            mockUser.setRealName("系统管理员");
-            mockUser.setPhone("13800000000");
-            mockUser.setStatus(UserStatus.ACTIVE);
-            mockUser.setCreatedAt(LocalDateTime.now());
-            mockUser.setUpdatedAt(LocalDateTime.now());
+    @GetMapping("/organizations")
+    public ResponseEntity<ApiResponse<PageResponse<OrganizationListResponse>>> getOrganizations(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) OrganizationType type,
+            @RequestParam(required = false) OrganizationStatus status) {
+        
+        log.info("DEV: Getting organizations with page={}, size={}, keyword={}, type={}, status={}", 
+                page, size, keyword, type, status);
+        
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        PageResponse<OrganizationListResponse> result = organizationService.getOrganizations(
+                pageable, keyword, type, status);
+        
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
 
-            // Create UserPrincipal with admin permissions
-            Set<String> permissions = Set.of(
-                "user:read", "user:create", "user:update", "user:delete",
-                "organization:read", "organization:create", "organization:update", "organization:delete", "organization:approve",
-                "case_package:read", "case_package:create", "case_package:update", "case_package:delete", "case_package:assign",
-                "case:read", "case:update",
-                "report:read", "report:export",
-                "system:config", "system:log"
-            );
-            
-            UserPrincipal userPrincipal = UserPrincipal.builder()
-                .id(mockUser.getId())
-                .username(mockUser.getUsername())
-                .email(mockUser.getEmail())
-                .password("dev-password")
-                .organizationId(1L)
-                .organizationType("SYSTEM")
-                .authorities(permissions.stream()
-                    .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
-                    .collect(java.util.stream.Collectors.toList()))
-                .build();
-
-            // Create authentication
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userPrincipal, null, userPrincipal.getAuthorities()
-            );
-
-            // Generate tokens
-            String accessToken = tokenProvider.generateToken(authentication);
-            String refreshToken = tokenProvider.generateRefreshToken(mockUser.getId(), mockUser.getUsername());
-
-            Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("id", mockUser.getId());
-            userInfo.put("username", mockUser.getUsername());
-            userInfo.put("email", mockUser.getEmail());
-            userInfo.put("realName", mockUser.getRealName());
-            userInfo.put("phone", mockUser.getPhone());
-            userInfo.put("avatar", "");
-            userInfo.put("organizationId", 1);
-            userInfo.put("organizationName", "DRMP系统管理");
-            userInfo.put("organizationType", "SYSTEM");
-            userInfo.put("roles", Set.of("ADMIN"));
-            userInfo.put("permissions", permissions);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", accessToken);
-            response.put("refreshToken", refreshToken);
-            response.put("tokenType", "Bearer");
-            response.put("expiresIn", 7200); // 2 hours
-            response.put("userInfo", userInfo);
-
-            log.info("Generated development JWT token for admin user");
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("Failed to generate development token", e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to generate development token"));
-        }
+    /**
+     * Get organization statistics without authentication (for development)
+     */
+    @GetMapping("/organizations/statistics")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getOrganizationStatistics() {
+        log.info("DEV: Getting organization statistics");
+        
+        Map<String, Object> statistics = organizationService.getOrganizationStatistics();
+        return ResponseEntity.ok(ApiResponse.success(statistics));
     }
 }

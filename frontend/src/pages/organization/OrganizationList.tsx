@@ -416,8 +416,8 @@ const OrganizationList: React.FC = () => {
           </div>
           <div>
             <MailOutlined style={{ marginRight: 4, color: '#666' }} />
-            <Tooltip title={record.email}>
-              {record.email.length > 20 ? `${record.email.substring(0, 20)}...` : record.email}
+            <Tooltip title={record.email || ''}>
+              {record.email && record.email.length > 20 ? `${record.email.substring(0, 20)}...` : (record.email || '')}
             </Tooltip>
           </div>
         </div>
@@ -455,15 +455,21 @@ const OrganizationList: React.FC = () => {
       width: 120,
       render: (regions: string[]) => (
         <div>
-          {regions.slice(0, 2).map(region => (
-            <Tag key={region} color="blue" style={{ marginBottom: 2, fontSize: 11 }}>
-              {region}
-            </Tag>
-          ))}
-          {regions.length > 2 && (
-            <Tooltip title={regions.slice(2).join(', ')}>
-              <Tag color="default" style={{ fontSize: 11 }}>+{regions.length - 2}</Tag>
-            </Tooltip>
+          {regions && regions.length > 0 ? (
+            <>
+              {regions.slice(0, 2).map(region => (
+                <Tag key={region} color="blue" style={{ marginBottom: 2, fontSize: 11 }}>
+                  {region}
+                </Tag>
+              ))}
+              {regions.length > 2 && (
+                <Tooltip title={regions.slice(2).join(', ')}>
+                  <Tag color="default" style={{ fontSize: 11 }}>+{regions.length - 2}</Tag>
+                </Tooltip>
+              )}
+            </>
+          ) : (
+            <Tag color="default" style={{ fontSize: 11 }}>暂无</Tag>
           )}
         </div>
       ),

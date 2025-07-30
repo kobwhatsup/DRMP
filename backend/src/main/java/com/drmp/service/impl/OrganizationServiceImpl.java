@@ -54,14 +54,35 @@ public class OrganizationServiceImpl implements OrganizationService {
     public PageResponse<OrganizationListResponse> getOrganizations(
             Pageable pageable, String keyword, OrganizationType type, OrganizationStatus status) {
         
-        Specification<Organization> spec = buildSpecification(keyword, type, status);
-        Page<Organization> page = organizationRepository.findAll(spec, pageable);
+        // 为了简化，暂时使用预加载的方法获取所有数据，然后在应用层过滤和分页
+        List<Organization> allOrganizations = organizationRepository.findAllWithCollections();
         
-        List<OrganizationListResponse> content = page.getContent().stream()
+        // 应用过滤条件
+        List<Organization> filteredOrganizations = allOrganizations.stream()
+                .filter(org -> keyword == null || keyword.isEmpty() || 
+                        org.getOrgName().toLowerCase().contains(keyword.toLowerCase()) ||
+                        org.getOrgCode().toLowerCase().contains(keyword.toLowerCase()))
+                .filter(org -> type == null || org.getType().equals(type))
+                .filter(org -> status == null || org.getStatus().equals(status))
+                .collect(Collectors.toList());
+        
+        // 应用排序
+        if (pageable.getSort().isSorted()) {
+            // 简单按创建时间排序
+            filteredOrganizations.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+        }
+        
+        // 应用分页
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filteredOrganizations.size());
+        List<Organization> pagedOrganizations = start < filteredOrganizations.size() ? 
+                filteredOrganizations.subList(start, end) : new ArrayList<>();
+        
+        List<OrganizationListResponse> content = pagedOrganizations.stream()
                 .map(this::convertToListResponse)
                 .collect(Collectors.toList());
         
-        return PageResponse.of(content, page.getNumber(), page.getSize(), page.getTotalElements());
+        return PageResponse.of(content, pageable.getPageNumber(), pageable.getPageSize(), filteredOrganizations.size());
     }
 
     @Override
@@ -350,6 +371,13 @@ public class OrganizationServiceImpl implements OrganizationService {
         BeanUtils.copyProperties(organization, response);
         response.setTypeName(organization.getType().getName());
         response.setStatusName(organization.getStatus().getName());
+        
+        // 集合字段现在应该已经预加载了
+        response.setServiceRegions(organization.getServiceRegions() != null ? organization.getServiceRegions() : new HashSet<>());
+        response.setBusinessScopes(organization.getBusinessScopes() != null ? organization.getBusinessScopes() : new HashSet<>());
+        response.setDisposalTypes(organization.getDisposalTypes() != null ? organization.getDisposalTypes() : new HashSet<>());
+        response.setSettlementMethods(organization.getSettlementMethods() != null ? organization.getSettlementMethods() : new HashSet<>());
+        
         return response;
     }
 
