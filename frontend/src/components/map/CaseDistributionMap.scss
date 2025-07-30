@@ -1,0 +1,322 @@
+.case-distribution-map {
+  .map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    .map-controls {
+      display: flex;
+      gap: 8px;
+    }
+  }
+
+  .map-settings {
+    display: flex;
+    align-items: center;
+  }
+
+  .map-container {
+    position: relative;
+    background: #f8f9fa;
+    
+    .map-control-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      min-width: 180px;
+      z-index: 1000;
+
+      .control-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        span {
+          color: #333;
+          font-weight: 500;
+        }
+      }
+    }
+
+    .statistics-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      z-index: 1000;
+
+      .ant-statistic {
+        text-align: center;
+
+        .ant-statistic-title {
+          font-size: 13px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+
+        .ant-statistic-content {
+          .ant-statistic-content-value {
+            font-weight: 600;
+          }
+        }
+      }
+
+      .top-regions {
+        .title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 12px;
+          text-align: center;
+        }
+
+        .region-item {
+          display: flex;
+          align-items: center;
+          padding: 4px 0;
+          font-size: 12px;
+
+          .rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            margin-right: 8px;
+
+            &.rank-1 { background: #ff4d4f; }
+            &.rank-2 { background: #fa8c16; }
+            &.rank-3 { background: #fadb14; }
+            &.rank-4 { background: #52c41a; }
+            &.rank-5 { background: #1890ff; }
+          }
+
+          .name {
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+          }
+
+          .value {
+            color: #1890ff;
+            font-weight: 600;
+            margin-right: 4px;
+          }
+
+          .percentage {
+            color: #666;
+            font-size: 11px;
+          }
+        }
+      }
+    }
+  }
+
+  // 响应式设计
+  @media (max-width: 1200px) {
+    .map-container {
+      .statistics-panel {
+        .ant-row {
+          .ant-col {
+            margin-bottom: 16px;
+          }
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .map-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+
+      .map-controls {
+        align-self: flex-end;
+      }
+    }
+
+    .map-settings {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .map-container {
+      .map-control-panel {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        padding: 12px;
+        min-width: auto;
+
+        .control-item {
+          font-size: 13px;
+          margin-bottom: 8px;
+        }
+      }
+
+      .statistics-panel {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        padding: 16px;
+
+        .ant-row {
+          .ant-col {
+            span: 12;
+            margin-bottom: 12px;
+          }
+        }
+
+        .ant-statistic {
+          .ant-statistic-title {
+            font-size: 12px;
+          }
+
+          .ant-statistic-content {
+            .ant-statistic-content-value {
+              font-size: 14px;
+            }
+          }
+        }
+
+        .top-regions {
+          .title {
+            font-size: 13px;
+          }
+
+          .region-item {
+            font-size: 11px;
+
+            .rank {
+              width: 16px;
+              height: 16px;
+              font-size: 9px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 全屏模式样式
+  &:fullscreen {
+    .map-container {
+      width: 100vw;
+      height: 100vh;
+
+      .map-control-panel {
+        top: 30px;
+        left: 30px;
+      }
+
+      .statistics-panel {
+        bottom: 30px;
+        left: 30px;
+        right: 30px;
+      }
+    }
+  }
+
+  // 加载状态
+  .ant-spin-nested-loading {
+    .ant-spin-container {
+      transition: opacity 0.3s ease;
+    }
+
+    .ant-spin-blur {
+      opacity: 0.5;
+    }
+  }
+
+  // 动画效果
+  .map-control-panel,
+  .statistics-panel {
+    animation: slideInUp 0.6s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // 图表工具栏样式覆盖
+  :global {
+    .echarts-tooltip {
+      background: rgba(0, 0, 0, 0.8) !important;
+      border: none !important;
+      border-radius: 8px !important;
+      padding: 12px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .echarts-tooltip-content {
+      color: white !important;
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+    }
+  }
+}
+
+// 暗色主题支持
+[data-theme='dark'] {
+  .case-distribution-map {
+    .map-container {
+      background: #141414;
+
+      .map-control-panel,
+      .statistics-panel {
+        background: rgba(20, 20, 20, 0.95);
+        border-color: rgba(255, 255, 255, 0.1);
+
+        .control-item span,
+        .title {
+          color: #fff;
+        }
+
+        .ant-statistic-title {
+          color: #ccc;
+        }
+
+        .region-item {
+          .name {
+            color: #fff;
+          }
+
+          .percentage {
+            color: #999;
+          }
+        }
+      }
+    }
+  }
+}

@@ -10,7 +10,8 @@ import Dashboard from '@/pages/Dashboard';
 
 // Organization pages lazy loading
 const OrganizationList = lazy(() => import('@/pages/organization/OrganizationList'));
-const OrganizationDetailPage = lazy(() => import('@/pages/organization/OrganizationDetailPage'));
+const OrganizationDetailPage = lazy(() => import('@/pages/organization/OrganizationDetail'));
+const OrganizationForm = lazy(() => import('@/pages/organization/OrganizationForm'));
 const OrganizationApplications = lazy(() => import('@/pages/organization/OrganizationApplications'));
 const OrganizationApproval = lazy(() => import('@/pages/organization/OrganizationApproval'));
 const OrganizationPermissions = lazy(() => import('@/pages/organization/OrganizationPermissions'));
@@ -161,7 +162,9 @@ const App: React.FC = () => {
                       
                       {/* Organization Routes */}
                       <Route path="/organizations" element={<OrganizationList />} />
+                      <Route path="/organizations/create" element={<OrganizationForm mode="create" />} />
                       <Route path="/organizations/:id" element={<OrganizationDetailPage />} />
+                      <Route path="/organizations/:id/edit" element={<OrganizationForm mode="edit" />} />
                       <Route path="/organizations/applications" element={<OrganizationApplications />} />
                       <Route path="/organizations/approval" element={<OrganizationApproval />} />
                       <Route path="/organizations/permissions" element={<OrganizationPermissions />} />

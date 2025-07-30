@@ -95,6 +95,18 @@ export interface Organization {
   bankName?: string;
 }
 
+// 机构详情接口（继承基本接口）
+export interface OrganizationDetail extends Organization {
+  approvalByName?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  paymentDate?: string;
+  membershipStartDate?: string;
+  membershipEndDate?: string;
+  membershipStatus?: string;
+  businessLicense?: string;
+}
+
 // 分页响应接口
 export interface PageResponse<T> {
   content: T[];
@@ -188,6 +200,13 @@ export interface OrganizationApprovalRequest {
   membershipFee?: number;
 }
 
+// 会员费支付请求接口
+export interface MembershipPaymentRequest {
+  paymentMethod: string;
+  paymentReference: string;
+  remark?: string;
+}
+
 // 统计数据接口
 export interface OrganizationStatistics {
   totalCount: number;
@@ -222,8 +241,8 @@ class OrganizationService {
   /**
    * 获取机构详情
    */
-  async getOrganizationDetail(id: number): Promise<Organization> {
-    const response: ApiResponse<Organization> = await request(`/organizations/${id}`);
+  async getOrganizationDetail(id: number): Promise<OrganizationDetail> {
+    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}`);
     return response.data;
   }
 
@@ -264,8 +283,8 @@ class OrganizationService {
   /**
    * 审核通过机构
    */
-  async approveOrganization(id: number, data: OrganizationApprovalRequest): Promise<Organization> {
-    const response: ApiResponse<Organization> = await request(`/organizations/${id}/approve`, {
+  async approveOrganization(id: number, data: OrganizationApprovalRequest): Promise<OrganizationDetail> {
+    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -276,8 +295,8 @@ class OrganizationService {
   /**
    * 审核拒绝机构
    */
-  async rejectOrganization(id: number, data: OrganizationApprovalRequest): Promise<Organization> {
-    const response: ApiResponse<Organization> = await request(`/organizations/${id}/reject`, {
+  async rejectOrganization(id: number, data: OrganizationApprovalRequest): Promise<OrganizationDetail> {
+    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/reject`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -288,9 +307,9 @@ class OrganizationService {
   /**
    * 停用机构
    */
-  async suspendOrganization(id: number, reason?: string): Promise<Organization> {
+  async suspendOrganization(id: number, reason?: string): Promise<OrganizationDetail> {
     const queryString = reason ? `?reason=${encodeURIComponent(reason)}` : '';
-    const response: ApiResponse<Organization> = await request(`/organizations/${id}/suspend${queryString}`, {
+    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/suspend${queryString}`, {
       method: 'POST',
     });
     message.success('机构已停用');
@@ -300,11 +319,23 @@ class OrganizationService {
   /**
    * 激活机构
    */
-  async activateOrganization(id: number): Promise<Organization> {
-    const response: ApiResponse<Organization> = await request(`/organizations/${id}/activate`, {
+  async activateOrganization(id: number): Promise<OrganizationDetail> {
+    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/activate`, {
       method: 'POST',
     });
     message.success('机构已激活');
+    return response.data;
+  }
+
+  /**
+   * 更新会员费支付信息
+   */
+  async updateMembershipPayment(id: number, data: MembershipPaymentRequest): Promise<OrganizationDetail> {
+    const response: ApiResponse<OrganizationDetail> = await request(`/organizations/${id}/membership-payment`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    message.success('会员费支付信息已更新');
     return response.data;
   }
 
