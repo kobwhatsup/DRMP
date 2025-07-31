@@ -101,10 +101,13 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({ mode }) => {
     { value: 'CONSUMER_FINANCE', label: '消费金融公司', category: 'SOURCE' },
     { value: 'ONLINE_LOAN', label: '网络贷款公司', category: 'SOURCE' },
     { value: 'MICRO_LOAN', label: '小额贷款公司', category: 'SOURCE' },
+    { value: 'ASSIST_LOAN', label: '助贷公司', category: 'SOURCE' },
     { value: 'AMC', label: '资产管理公司', category: 'SOURCE' },
+    { value: 'OTHER', label: '其他', category: 'SOURCE' },
     // 处置机构
     { value: 'MEDIATION_CENTER', label: '调解中心', category: 'DISPOSAL' },
     { value: 'LAW_FIRM', label: '律师事务所', category: 'DISPOSAL' },
+    { value: 'DISPOSAL_COMPANY', label: '处置公司', category: 'DISPOSAL' },
     { value: 'OTHER', label: '其他', category: 'DISPOSAL' },
   ];
 
@@ -133,7 +136,7 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({ mode }) => {
   ];
 
   const renderBasicInfo = () => (
-    <Card title="基本信息" size="small">
+    <Card title="基本信息">
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
@@ -246,7 +249,7 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({ mode }) => {
   );
 
   const renderContactInfo = () => (
-    <Card title="联系信息" size="small">
+    <Card title="联系信息">
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
@@ -285,7 +288,7 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({ mode }) => {
   );
 
   const renderBusinessInfo = () => (
-    <Card title="业务信息" size="small">
+    <Card title="业务信息">
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
@@ -342,7 +345,7 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({ mode }) => {
       <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}>
         {({ getFieldValue }) => {
           const orgType = getFieldValue('type');
-          const isDisposalOrg = orgType && ['MEDIATION_CENTER', 'LAW_FIRM', 'OTHER'].includes(orgType);
+          const isDisposalOrg = orgType && ['MEDIATION_CENTER', 'LAW_FIRM', 'DISPOSAL_COMPANY', 'OTHER'].includes(orgType) && organizationTypes.find(t => t.value === orgType)?.category === 'DISPOSAL';
           
           return isDisposalOrg ? (
             <>
@@ -389,7 +392,7 @@ const OrganizationForm: React.FC<OrganizationFormProps> = ({ mode }) => {
   );
 
   const renderBankInfo = () => (
-    <Card title="银行信息" size="small">
+    <Card title="银行信息">
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item

@@ -1,22 +1,17 @@
-import React, { useState } from 'react';
-import { Layout as AntdLayout, Menu, Button, Dropdown, Avatar, Typography, Space } from 'antd';
+import authService from '@/services/authService';
+import { useAuthStore } from '@/store/authStore';
 import {
+  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  DashboardOutlined,
-  TeamOutlined,
-  FileTextOutlined,
-  BarChartOutlined,
-  UserOutlined,
-  LogoutOutlined,
   SettingOutlined,
-  BranchesOutlined,
-  ContainerOutlined,
-  // ClusterOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
-import authService from '@/services/authService';
+import { Layout as AntdLayout, Avatar, Button, Dropdown, Space, Typography } from 'antd';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import BreadcrumbNav from './BreadcrumbNav';
+import SideMenu from './SideMenu';
 
 const { Header, Sider, Content } = AntdLayout;
 const { Text } = Typography;
@@ -28,8 +23,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { userInfo, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const handleLogout = async () => {
     try {
@@ -41,72 +35,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       navigate('/login');
     }
   };
-
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '工作台',
-    },
-    {
-      key: '/organizations',
-      icon: <TeamOutlined />,
-      label: '机构管理',
-      children: [
-        {
-          key: '/organizations',
-          label: '机构列表',
-        },
-        {
-          key: '/organizations/applications',
-          label: '入驻申请',
-        },
-        {
-          key: '/organizations/approval',
-          label: '审核中心',
-        },
-        {
-          key: '/organizations/permissions',
-          label: '权限配置',
-        },
-        {
-          key: '/organizations/statistics',
-          label: '机构统计',
-        },
-      ],
-    },
-    {
-      key: '/case-packages',
-      icon: <FileTextOutlined />,
-      label: '案件包管理',
-    },
-    {
-      key: '/cases',
-      icon: <FileTextOutlined />,
-      label: '案件管理',
-    },
-    {
-      key: '/assignment',
-      icon: <BranchesOutlined />,
-      label: '智能分案',
-      children: [
-        {
-          key: '/assignment/config',
-          label: '分案配置',
-        },
-      ],
-    },
-    {
-      key: '/contracts',
-      icon: <ContainerOutlined />,
-      label: '合同管理',
-    },
-    {
-      key: '/reports',
-      icon: <BarChartOutlined />,
-      label: '数据报表',
-    },
-  ];
 
   const userMenuItems = [
     {
@@ -130,9 +58,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
   ];
 
-  const handleMenuClick = ({ key }: { key: string }) => {
-    navigate(key);
-  };
+  // 获取用户类型
+  const userType = user?.type || 'admin';
 
   return (
     <AntdLayout className="main-layout" style={{ minHeight: '100vh' }}>
@@ -149,18 +76,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         >
           <Text strong style={{ color: 'white', fontSize: collapsed ? 16 : 18 }}>
-            {collapsed ? 'DRMP' : 'DRMP平台'}
+            {collapsed ? 'DRMP' : '全国分散诉调平台'}
           </Text>
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={handleMenuClick}
+
+        {/* 使用新的动态菜单组件 */}
+        <SideMenu
+          userType={userType as 'admin' | 'source_org' | 'disposal_org'}
+          collapsed={collapsed}
         />
       </Sider>
-      
+
       <AntdLayout>
         <Header style={{ padding: 0, background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Button
@@ -169,9 +95,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             onClick={() => setCollapsed(!collapsed)}
             style={{ fontSize: 16, width: 64, height: 64 }}
           />
-          
+
           <Space style={{ marginRight: 24 }}>
-            <Text type="secondary">{userInfo?.organizationName}</Text>
+            <Text type="secondary">{user?.organizationName}</Text>
             <Dropdown
               menu={{
                 items: userMenuItems,
@@ -180,18 +106,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar
-                  src={userInfo?.avatar}
+                  src={user?.avatar}
                   icon={<UserOutlined />}
-                  size="small"
+
                 />
-                <Text>{userInfo?.realName || userInfo?.username}</Text>
+                <Text>{user?.name || user?.username}</Text>
               </Space>
             </Dropdown>
           </Space>
         </Header>
-        
-        <Content style={{ margin: 24, padding: 24, background: '#fff', borderRadius: 8 }}>
-          {children}
+
+        <Content style={{ margin: '0 24px' }}>
+          {/* 面包屑导航 */}
+          <BreadcrumbNav />
+
+          <div style={{ padding: 24, background: '#fff', borderRadius: 8, minHeight: 'calc(100vh - 200px)' }}>
+            {children}
+          </div>
         </Content>
       </AntdLayout>
     </AntdLayout>

@@ -161,18 +161,18 @@ const OrganizationApplications: React.FC = () => {
       key: 'action',
       width: 180,
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             icon={<EyeOutlined />}
-            size="small"
+           
           >
             查看
           </Button>
           <Button
             type="link"
             icon={<CheckOutlined />}
-            size="small"
+           
             onClick={() => handleApproval(record, 'approve')}
           >
             通过
@@ -181,7 +181,7 @@ const OrganizationApplications: React.FC = () => {
             type="link"
             danger
             icon={<CloseOutlined />}
-            size="small"
+           
             onClick={() => handleApproval(record, 'reject')}
           >
             拒绝
@@ -205,7 +205,7 @@ const OrganizationApplications: React.FC = () => {
       {/* 统计信息 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={6}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="待审核申请"
               value={statistics.pending}
@@ -215,7 +215,7 @@ const OrganizationApplications: React.FC = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="总机构数"
               value={statistics.total}

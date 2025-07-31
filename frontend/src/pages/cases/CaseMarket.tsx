@@ -155,7 +155,7 @@ const CaseMarket: React.FC = () => {
             <strong style={{ marginLeft: 4 }}>{record.packageName}</strong>
             <Button
               type="link"
-              size="small"
+             
               icon={favorites.has(record.id) ? <HeartFilled style={{ color: '#ff4d4f' }} /> : <HeartOutlined />}
               onClick={() => toggleFavorite(record.id)}
               style={{ marginLeft: 8 }}
@@ -244,10 +244,10 @@ const CaseMarket: React.FC = () => {
       width: 150,
       fixed: 'right' as const,
       render: (record: CasePackage) => (
-        <Space direction="vertical" size="small">
+        <Space direction="vertical">
           <Button 
             type="primary" 
-            size="small" 
+            
             icon={<SendOutlined />}
             onClick={() => handleApply(record)}
             style={{ width: '100%' }}
@@ -255,7 +255,7 @@ const CaseMarket: React.FC = () => {
             申请承接
           </Button>
           <Button 
-            size="small" 
+            
             icon={<EyeOutlined />}
             onClick={() => {
               // TODO: 查看详情
@@ -345,7 +345,7 @@ const CaseMarket: React.FC = () => {
       >
         {/* 高级筛选面板 */}
         {filterVisible && (
-          <Card size="small" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
+          <Card style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
             <Form layout="inline">
               <Form.Item label="金额范围">
                 <Input.Group compact>

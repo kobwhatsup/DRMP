@@ -228,7 +228,7 @@ const ContractList: React.FC = () => {
       key: 'contractNumber',
       width: 150,
       render: (text: string) => (
-        <Button type="link" size="small">{text}</Button>
+        <Button type="link">{text}</Button>
       )
     },
     {
@@ -286,10 +286,10 @@ const ContractList: React.FC = () => {
       key: 'signatureProgress',
       width: 120,
       render: (progress: number, record: Contract) => (
-        <Space direction="vertical" size="small">
+        <Space direction="vertical">
           <Progress 
             percent={progress} 
-            size="small" 
+            
             status={record.isFullySigned ? 'success' : 'active'}
           />
           <Text style={{ fontSize: 12 }}>
@@ -315,7 +315,7 @@ const ContractList: React.FC = () => {
       key: 'expiryDate',
       width: 120,
       render: (date: string, record: Contract) => (
-        <Space direction="vertical" size="small">
+        <Space direction="vertical">
           <Text style={{ fontSize: 12 }}>
             {date ? dayjs(date).format('YYYY-MM-DD') : '-'}
           </Text>
@@ -336,7 +336,7 @@ const ContractList: React.FC = () => {
         <Space>
           <Tooltip title="查看详情">
             <Button
-              size="small"
+             
               icon={<EyeOutlined />}
               onClick={() => handleViewContract(record)}
             />
@@ -344,7 +344,7 @@ const ContractList: React.FC = () => {
           
           <Tooltip title="编辑">
             <Button
-              size="small"
+             
               icon={<EditOutlined />}
               onClick={() => handleEditContract(record)}
               disabled={['TERMINATED', 'EXPIRED', 'CANCELLED'].includes(record.status)}
@@ -385,7 +385,7 @@ const ContractList: React.FC = () => {
               </Menu>
             }
           >
-            <Button size="small">
+            <Button>
               更多 <DownOutlined />
             </Button>
           </Dropdown>

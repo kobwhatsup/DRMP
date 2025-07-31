@@ -251,7 +251,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ casePackageId, caseId }) =>
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Text strong>{event.eventTitle}</Text>
                 <Tag color={severityConfig[event.severity].color}>
@@ -293,7 +293,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ casePackageId, caseId }) =>
           
           <Button
             type="text"
-            size="small"
+           
             icon={<EyeOutlined />}
             onClick={() => handleEventClick(event)}
           >
@@ -345,7 +345,7 @@ const CaseTimeline: React.FC<CaseTimelineProps> = ({ casePackageId, caseId }) =>
               title="处置进度" 
               value={completionRate} 
               suffix="%" 
-              formatter={(value) => <Progress percent={Number(value)} size="small" />}
+              formatter={(value) => <Progress percent={Number(value)} />}
             />
           </Card>
         </Col>

@@ -275,7 +275,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
         <div>
           <Progress 
             percent={utilization} 
-            size="small"
+           
             status={utilization > 95 ? 'exception' : utilization > 80 ? 'active' : 'normal'}
             format={(percent) => `${percent}%`}
           />
@@ -344,12 +344,12 @@ const DisposalOrgCapacityManagement: React.FC = () => {
       width: 100,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           <Tooltip title="查看详情">
-            <Button size="small" icon={<EyeOutlined />} />
+            <Button icon={<EyeOutlined />} />
           </Tooltip>
           <Tooltip title="调整产能">
-            <Button size="small" icon={<SettingOutlined />} />
+            <Button icon={<SettingOutlined />} />
           </Tooltip>
         </Space>
       ),
@@ -397,10 +397,10 @@ const DisposalOrgCapacityManagement: React.FC = () => {
               placeholder="利用率筛选"
             >
               <Option value="all">全部利用率</Option>
-              <Option value="overloaded">超负荷 (>95%)</Option>
+              <Option value="overloaded">超负荷 (&gt;95%)</Option>
               <Option value="high">高负载 (80-95%)</Option>
               <Option value="normal">正常 (60-80%)</Option>
-              <Option value="low">低负载 (<60%)</Option>
+              <Option value="low">低负载 (&lt;60%)</Option>
             </Select>
           </Col>
           <Col span={12}>
@@ -418,7 +418,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                 自动刷新: 
                 <Button 
                   type="link" 
-                  size="small"
+                 
                   onClick={() => setAutoRefresh(!autoRefresh)}
                   style={{ padding: '0 4px' }}
                 >
@@ -434,7 +434,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
           {capacityData && (
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="机构总数"
                     value={capacityData.summary.totalOrgs}
@@ -444,7 +444,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                 </Card>
               </Col>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="活跃机构"
                     value={capacityData.summary.activeOrgs}
@@ -454,7 +454,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                 </Card>
               </Col>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="总处理能力"
                     value={capacityData.summary.totalCapacity}
@@ -464,7 +464,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                 </Card>
               </Col>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="已用产能"
                     value={capacityData.summary.usedCapacity}
@@ -474,7 +474,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                 </Card>
               </Col>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="超负荷机构"
                     value={capacityData.summary.overloadedOrgs}
@@ -484,7 +484,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                 </Card>
               </Col>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="服务空白点"
                     value={capacityData.summary.serviceGaps}
@@ -511,12 +511,12 @@ const DisposalOrgCapacityManagement: React.FC = () => {
             <TabPane tab="产能概览" key="overview">
               <Row gutter={16}>
                 <Col span={8}>
-                  <Card title="平均产能利用率" size="small">
+                  <Card title="平均产能利用率">
                     <Gauge {...utilizationGaugeConfig} />
                   </Card>
                 </Col>
                 <Col span={16}>
-                  <Card title="产能利用率趋势" size="small">
+                  <Card title="产能利用率趋势">
                     <Line {...capacityTrendConfig} />
                   </Card>
                 </Col>
@@ -524,7 +524,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
               
               <Row gutter={16} style={{ marginTop: 16 }}>
                 <Col span={24}>
-                  <Card title="产能分布统计" size="small">
+                  <Card title="产能分布统计">
                     <Column
                       data={capacityData?.capacityDistribution || []}
                       xField="utilizationRange"
@@ -545,13 +545,13 @@ const DisposalOrgCapacityManagement: React.FC = () => {
             </TabPane>
 
             <TabPane tab="机构明细" key="detail">
-              <Card title="机构产能详情" size="small">
+              <Card title="机构产能详情">
                 <Table
                   columns={orgColumns}
                   dataSource={capacityData?.orgCapacityList || []}
                   rowKey="orgId"
                   scroll={{ x: 1200 }}
-                  size="small"
+                 
                   pagination={{
                     pageSize: 10,
                     showSizeChanger: true,
@@ -563,7 +563,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
             </TabPane>
 
             <TabPane tab="区域分析" key="region">
-              <Card title="区域产能分析" size="small">
+              <Card title="区域产能分析">
                 <Table
                   columns={[
                     { title: '地区', dataIndex: 'region', key: 'region' },
@@ -587,7 +587,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                       render: (utilization: number) => (
                         <Progress 
                           percent={utilization} 
-                          size="small"
+                         
                           format={(percent) => `${percent}%`}
                         />
                       )
@@ -612,7 +612,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
                   dataSource={capacityData?.regionCapacity || []}
                   rowKey="region"
                   pagination={false}
-                  size="small"
+                 
                 />
               </Card>
             </TabPane>

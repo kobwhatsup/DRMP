@@ -6,7 +6,7 @@ import {
 import {
   BarChartOutlined, PieChartOutlined, LineChartOutlined,
   DownloadOutlined, ReloadOutlined, InfoCircleOutlined,
-  TrendingUpOutlined, TrendingDownOutlined, DollarOutlined
+  RiseOutlined, FallOutlined, DollarOutlined
 } from '@ant-design/icons';
 import CaseDistributionMap from '@/components/map/CaseDistributionMap';
 import { Column, Pie, Line } from '@ant-design/plots';
@@ -272,7 +272,7 @@ const SourceOrgCaseStats: React.FC = () => {
       width: 100,
       render: (rate: number) => (
         <span style={{ color: rate >= 0 ? '#52c41a' : '#ff4d4f' }}>
-          {rate >= 0 ? <TrendingUpOutlined /> : <TrendingDownOutlined />}
+          {rate >= 0 ? <RiseOutlined /> : <FallOutlined />}
           {Math.abs(rate)}%
         </span>
       ),
@@ -337,7 +337,7 @@ const SourceOrgCaseStats: React.FC = () => {
           {statsData && (
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={5}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="案件总数"
                     value={statsData.summary.totalCases}
@@ -348,7 +348,7 @@ const SourceOrgCaseStats: React.FC = () => {
                 </Card>
               </Col>
               <Col span={5}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="案件总金额"
                     value={statsData.summary.totalAmount}
@@ -358,7 +358,7 @@ const SourceOrgCaseStats: React.FC = () => {
                 </Card>
               </Col>
               <Col span={5}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="平均案件金额"
                     value={statsData.summary.avgAmount}
@@ -369,19 +369,19 @@ const SourceOrgCaseStats: React.FC = () => {
                 </Card>
               </Col>
               <Col span={5}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="月度增长率"
                     value={statsData.summary.monthGrowth}
                     precision={1}
                     suffix="%"
                     valueStyle={{ color: statsData.summary.monthGrowth >= 0 ? '#52c41a' : '#ff4d4f' }}
-                    prefix={statsData.summary.monthGrowth >= 0 ? <TrendingUpOutlined /> : <TrendingDownOutlined />}
+                    prefix={statsData.summary.monthGrowth >= 0 ? <RiseOutlined /> : <FallOutlined />}
                   />
                 </Card>
               </Col>
               <Col span={4}>
-                <Card size="small">
+                <Card>
                   <Statistic
                     title="活跃机构数"
                     value={statsData.summary.activeOrgs}
@@ -408,7 +408,7 @@ const SourceOrgCaseStats: React.FC = () => {
             <TabPane tab="趋势分析" key="trend">
               <Row gutter={16}>
                 <Col span={24}>
-                  <Card title="案件发布趋势" size="small">
+                  <Card title="案件发布趋势">
                     <Line {...trendConfig} />
                   </Card>
                 </Col>
@@ -418,12 +418,12 @@ const SourceOrgCaseStats: React.FC = () => {
             <TabPane tab="类型分布" key="type">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Card title="案件类型分布（柱状图）" size="small">
+                  <Card title="案件类型分布（柱状图）">
                     <Column {...typeDistributionConfig} />
                   </Card>
                 </Col>
                 <Col span={12}>
-                  <Card title="案件类型占比（饼图）" size="small">
+                  <Card title="案件类型占比（饼图）">
                     <Pie {...pieConfig} />
                   </Card>
                 </Col>
@@ -431,13 +431,13 @@ const SourceOrgCaseStats: React.FC = () => {
             </TabPane>
 
             <TabPane tab="机构排行" key="ranking">
-              <Card title="案源机构排行榜" size="small">
+              <Card title="案源机构排行榜">
                 <Table
                   columns={orgColumns}
                   dataSource={statsData?.orgRanking || []}
                   rowKey="orgId"
                   pagination={false}
-                  size="small"
+                 
                 />
               </Card>
             </TabPane>
@@ -445,7 +445,7 @@ const SourceOrgCaseStats: React.FC = () => {
             <TabPane tab="区域对比" key="region">
               <Row gutter={16}>
                 <Col span={24}>
-                  <Card title="区域案件分布对比" size="small">
+                  <Card title="区域案件分布对比">
                     <Table
                       columns={[
                         { title: '地区', dataIndex: 'region', key: 'region' },
@@ -467,7 +467,7 @@ const SourceOrgCaseStats: React.FC = () => {
                       dataSource={statsData?.regionDistribution || []}
                       rowKey="region"
                       pagination={false}
-                      size="small"
+                     
                     />
                   </Card>
                 </Col>
@@ -477,7 +477,7 @@ const SourceOrgCaseStats: React.FC = () => {
         </Spin>
       </Card>
 
-      <style jsx>{`
+      <style>{`
         .rank-badge {
           display: inline-flex;
           align-items: center;

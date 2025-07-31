@@ -147,7 +147,7 @@ const Dashboard: React.FC = () => {
               columns={columns}
               dataSource={recentCases}
               pagination={false}
-              size="small"
+             
             />
           </Card>
         </Col>

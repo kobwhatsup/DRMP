@@ -213,6 +213,134 @@ code {
   margin-top: 8px;
 }
 
+/* 去除所有点击动画效果，但保留必要的下拉菜单功能 */
+*:not(.ant-select-dropdown):not(.ant-dropdown):not(.ant-tooltip):not(.ant-popover):not(.ant-modal):not(.ant-drawer) {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 去除Ant Design默认动画效果，但保留下拉组件必要功能 */
+.ant-btn,
+.ant-card,
+.ant-menu-item,
+.ant-menu-submenu,
+.ant-table-row,
+.ant-list-item,
+.ant-collapse-item,
+.ant-tabs-tab,
+.ant-pagination-item,
+.ant-switch,
+.ant-checkbox-wrapper,
+.ant-radio-wrapper,
+.ant-input,
+.ant-form-item,
+.ant-statistic,
+.ant-space-item {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* 保留下拉组件的必要CSS动画 */
+.ant-select-dropdown,
+.ant-dropdown,
+.ant-tooltip,
+.ant-popover,
+.ant-modal,
+.ant-drawer {
+  /* 允许这些组件保留必要的显示/隐藏动画 */
+}
+
+/* 去除hover效果，但保留下拉菜单项的hover */
+.ant-btn:hover,
+.ant-btn:focus,
+.ant-btn:active,
+.ant-card:hover,
+.ant-menu-item:hover,
+.ant-menu-submenu:hover,
+.ant-table-row:hover,
+.ant-table-tbody > tr:hover > td,
+.ant-list-item:hover,
+.ant-collapse-item:hover,
+.ant-tabs-tab:hover,
+.ant-pagination-item:hover {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  box-shadow: inherit !important;
+}
+
+/* 保留下拉菜单项的hover效果 */
+.ant-select-item:hover,
+.ant-dropdown-menu-item:hover {
+  /* 允许下拉菜单项保留hover效果以便用户操作 */
+}
+
+/* 去除focus效果，但保留select的focus */
+.ant-btn:focus,
+.ant-input:focus {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  box-shadow: inherit !important;
+}
+
+/* 保留select的focus效果 */
+.ant-select-selector:focus {
+  /* 允许select保留focus效果以便正常操作 */
+}
+
+/* 去除active效果 */
+.ant-btn:active,
+.ant-card:active,
+.ant-menu-item:active {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  box-shadow: inherit !important;
+}
+
+/* 去除表格hover效果 */
+.ant-table-tbody > tr:hover > td {
+  background-color: inherit !important;
+  transition: none !important;
+}
+
+/* 去除按钮点击效果 */
+.ant-btn-primary:active,
+.ant-btn-default:active,
+.ant-btn-dashed:active,
+.ant-btn-link:active,
+.ant-btn-text:active {
+  transform: none !important;
+  box-shadow: inherit !important;
+}
+
+/* 去除卡片hover效果 */
+.ant-card:hover {
+  box-shadow: inherit !important;
+  transform: none !important;
+}
+
+/* 去除菜单项hover效果 */
+.ant-menu-item:hover,
+.ant-menu-submenu-title:hover {
+  background-color: inherit !important;
+}
+
+/* 去除统计卡片动画 */
+.ant-statistic {
+  transition: none !important;
+}
+
+/* 去除自定义组件动画 */
+.region-item:hover {
+  background: inherit !important;
+  transform: none !important;
+  padding-left: inherit !important;
+  padding-right: inherit !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .login-form {

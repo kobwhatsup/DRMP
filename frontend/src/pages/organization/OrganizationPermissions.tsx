@@ -255,11 +255,11 @@ const OrganizationPermissions: React.FC = () => {
       key: 'action',
       width: 120,
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             icon={<SettingOutlined />}
-            size="small"
+           
             onClick={() => handleConfigurePermissions(record)}
           >
             配置权限
@@ -328,11 +328,11 @@ const OrganizationPermissions: React.FC = () => {
       key: 'action',
       width: 120,
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             icon={<SettingOutlined />}
-            size="small"
+           
           >
             配置权限
           </Button>

@@ -301,7 +301,7 @@ const OrganizationDetailPage: React.FC = () => {
           <TabPane tab="业务信息" key="business">
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Card title="处理能力" size="small">
+                <Card title="处理能力">
                   <Statistic title="团队规模" value={organization.teamSize} suffix="人" />
                   <Statistic 
                     title="月处理能力" 
@@ -318,7 +318,7 @@ const OrganizationDetailPage: React.FC = () => {
                 </Card>
               </Col>
               <Col span={12}>
-                <Card title="服务区域" size="small">
+                <Card title="服务区域">
                   {organization.serviceRegions && organization.serviceRegions.length > 0 ? (
                     <Space wrap>
                       {organization.serviceRegions.map(region => (
@@ -329,7 +329,7 @@ const OrganizationDetailPage: React.FC = () => {
                     <span style={{ color: '#999' }}>暂无服务区域</span>
                   )}
                 </Card>
-                <Card title="业务范围" size="small" style={{ marginTop: 16 }}>
+                <Card title="业务范围" style={{ marginTop: 16 }}>
                   {organization.businessScopes && organization.businessScopes.length > 0 ? (
                     <Space wrap>
                       {organization.businessScopes.map(scope => (
@@ -346,7 +346,7 @@ const OrganizationDetailPage: React.FC = () => {
             {organization.type.includes('DISPOSAL') && (
               <>
                 <Divider />
-                <Card title="处置信息" size="small">
+                <Card title="处置信息">
                   <Row gutter={16}>
                     <Col span={12}>
                       <h4>处置类型</h4>

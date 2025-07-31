@@ -259,7 +259,7 @@ const CasePackageList: React.FC = () => {
         return (
           <Progress 
             percent={percent} 
-            size="small" 
+            
             format={() => `${percent.toFixed(1)}%`}
             strokeColor={percent > 70 ? '#52c41a' : percent > 40 ? '#faad14' : '#ff4d4f'}
           />
@@ -389,17 +389,17 @@ const CasePackageList: React.FC = () => {
         );
 
         return (
-          <Space size="small">
+          <Space>
             <Tooltip title="查看详情">
               <Button 
                 type="link" 
-                size="small" 
+                
                 icon={<EyeOutlined />}
                 onClick={() => console.log('View:', record.id)}
               />
             </Tooltip>
             <Dropdown menu={{ items: actionItems }} trigger={['click']}>
-              <Button type="link" size="small" icon={<MoreOutlined />} />
+              <Button type="link" icon={<MoreOutlined />} />
             </Dropdown>
           </Space>
         );

@@ -5,12 +5,12 @@ export interface UserInfo {
   id: number;
   username: string;
   email: string;
-  realName: string;
+  name: string; // 用户真实姓名
   phone: string;
   avatar: string;
   organizationId: number;
   organizationName: string;
-  organizationType: string;
+  type: 'admin' | 'source_org' | 'disposal_org'; // 用户类型，用于确定菜单和路由
   roles: string[];
   permissions: string[];
 }
@@ -19,10 +19,10 @@ interface AuthState {
   isAuthenticated: boolean;
   accessToken: string | null;
   refreshToken: string | null;
-  userInfo: UserInfo | null;
+  user: UserInfo | null; // 重命名为user，更简洁
   login: (accessToken: string, refreshToken: string, userInfo: UserInfo) => void;
   logout: () => void;
-  updateUserInfo: (userInfo: UserInfo) => void;
+  updateUser: (userInfo: UserInfo) => void;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
 }
@@ -33,14 +33,14 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       accessToken: null,
       refreshToken: null,
-      userInfo: null,
+      user: null,
 
       login: (accessToken: string, refreshToken: string, userInfo: UserInfo) => {
         set({
           isAuthenticated: true,
           accessToken,
           refreshToken,
-          userInfo,
+          user: userInfo,
         });
       },
 
@@ -49,22 +49,22 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           accessToken: null,
           refreshToken: null,
-          userInfo: null,
+          user: null,
         });
       },
 
-      updateUserInfo: (userInfo: UserInfo) => {
-        set({ userInfo });
+      updateUser: (userInfo: UserInfo) => {
+        set({ user: userInfo });
       },
 
       hasPermission: (permission: string) => {
-        const { userInfo } = get();
-        return userInfo?.permissions?.includes(permission) || false;
+        const { user } = get();
+        return user?.permissions?.includes(permission) || false;
       },
 
       hasRole: (role: string) => {
-        const { userInfo } = get();
-        return userInfo?.roles?.includes(role) || false;
+        const { user } = get();
+        return user?.roles?.includes(role) || false;
       },
     }),
     {
@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
-        userInfo: state.userInfo,
+        user: state.user,
       }),
     }
   )

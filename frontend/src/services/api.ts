@@ -58,12 +58,12 @@ class ApiService {
               }>('/v1/auth/refresh', { refreshToken });
 
               // Update tokens
-              const { login, userInfo } = useAuthStore.getState();
-              if (userInfo) {
+              const { login, user } = useAuthStore.getState();
+              if (user) {
                 login(
                   refreshResponse.accessToken,
                   refreshResponse.refreshToken,
-                  userInfo
+                  user
                 );
               }
 

@@ -184,14 +184,14 @@ const AssignmentConfig: React.FC = () => {
       render: (record: AssignmentStrategy) => (
         <Space>
           <Button
-            size="small"
+           
             icon={<EditOutlined />}
             onClick={() => handleEditStrategy(record)}
           >
             配置
           </Button>
           <Button
-            size="small"
+           
             type={record.enabled ? 'default' : 'primary'}
             onClick={() => handleToggleStrategy(record)}
           >
@@ -247,21 +247,21 @@ const AssignmentConfig: React.FC = () => {
       render: (record: AssignmentRule) => (
         <Space>
           <Button
-            size="small"
+           
             icon={<EditOutlined />}
             onClick={() => handleEditRule(record)}
           >
             编辑
           </Button>
           <Button
-            size="small"
+           
             icon={<PlayCircleOutlined />}
             onClick={() => handleTestRule(record)}
           >
             测试
           </Button>
           <Button
-            size="small"
+           
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDeleteRule(record.id)}

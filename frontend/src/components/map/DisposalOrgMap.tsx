@@ -495,7 +495,7 @@ const DisposalOrgMap: React.FC<DisposalOrgMapProps> = ({
         />
       </div>
 
-      <Button size="small" onClick={clearFilters}>清除筛选</Button>
+      <Button onClick={clearFilters}>清除筛选</Button>
     </div>
   );
 
@@ -507,13 +507,13 @@ const DisposalOrgMap: React.FC<DisposalOrgMapProps> = ({
             <span>全国处置机构分布图</span>
             <div className="map-controls">
               <Popover content={filterContent} title="筛选条件" trigger="click">
-                <Button icon={<FilterOutlined />} size="small">
+                <Button icon={<FilterOutlined />}>
                   筛选 {Object.values(filters).some(f => Array.isArray(f) ? f.length > 0 : f !== filters.utilizationRange || (f[0] !== 0 || f[1] !== 100)) && 
                     <Badge dot />}
                 </Button>
               </Popover>
-              <Button icon={<ReloadOutlined />} size="small" onClick={loadData} loading={loading} />
-              <Button icon={<DownloadOutlined />} size="small" onClick={() => {}} />
+              <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading} />
+              <Button icon={<DownloadOutlined />} onClick={() => {}} />
             </div>
           </div>
         }
@@ -522,7 +522,7 @@ const DisposalOrgMap: React.FC<DisposalOrgMapProps> = ({
             <Select
               value={viewMode}
               onChange={setViewMode}
-              size="small"
+             
               style={{ width: 120, marginRight: 8 }}
             >
               <Option value="distribution">机构分布</Option>
@@ -555,7 +555,7 @@ const DisposalOrgMap: React.FC<DisposalOrgMapProps> = ({
                   <Switch 
                     checked={showServiceRadius} 
                     onChange={setShowServiceRadius}
-                    size="small"
+                   
                   />
                 </div>
                 <div className="control-item">
@@ -563,7 +563,7 @@ const DisposalOrgMap: React.FC<DisposalOrgMapProps> = ({
                   <Switch 
                     checked={showServiceGaps} 
                     onChange={setShowServiceGaps}
-                    size="small"
+                   
                   />
                 </div>
               </div>
@@ -652,13 +652,13 @@ const DisposalOrgMap: React.FC<DisposalOrgMapProps> = ({
             {selectedOrg && (
               <div className="org-detail-panel">
                 <Card 
-                  size="small" 
+                  
                   title={selectedOrg.orgName}
-                  extra={<Button size="small" onClick={() => setSelectedOrg(null)}>×</Button>}
+                  extra={<Button onClick={() => setSelectedOrg(null)}>×</Button>}
                 >
-                  <Space direction="vertical" size="small">
-                    <Tag color={orgTypeConfig[selectedOrg.type].color}>
-                      {orgTypeConfig[selectedOrg.type].name}
+                  <Space direction="vertical">
+                    <Tag color={orgTypeConfig[selectedOrg.type as keyof typeof orgTypeConfig]?.color || '#8c8c8c'}>
+                      {orgTypeConfig[selectedOrg.type as keyof typeof orgTypeConfig]?.name || selectedOrg.type}
                     </Tag>
                     <div>团队规模：{selectedOrg.teamSize}人</div>
                     <div>月处理能力：{selectedOrg.monthlyCapacity}件</div>

@@ -331,23 +331,23 @@
     }
   }
 
-  // 动画效果
-  .map-control-panel,
-  .statistics-panel,
-  .org-detail-panel {
-    animation: slideInUp 0.6s ease-out;
-  }
+  // 动画效果已禁用
+  // .map-control-panel,
+  // .statistics-panel,
+  // .org-detail-panel {
+  //   animation: slideInUp 0.6s ease-out;
+  // }
 
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  // @keyframes slideInUp {
+  //   from {
+  //     opacity: 0;
+  //     transform: translateY(20px);
+  //   }
+  //   to {
+  //     opacity: 1;
+  //     transform: translateY(0);
+  //   }
+  // }
 
   // 筛选按钮badge样式
   .ant-btn {
@@ -459,10 +459,10 @@
   }
 }
 
-// 加载状态优化
+// 加载状态优化 - 动画已禁用
 .ant-spin-nested-loading {
   .ant-spin-container {
-    transition: all 0.3s ease;
+    // transition: all 0.3s ease;
   }
 
   .ant-spin-blur {
@@ -471,12 +471,12 @@
   }
 }
 
-// 卡片hover效果
-.ant-card {
-  transition: all 0.3s ease;
+// 卡片hover效果已禁用
+// .ant-card {
+//   transition: all 0.3s ease;
 
-  &:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-    transform: translateY(-2px);
-  }
-}
+//   &:hover {
+//     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+//     transform: translateY(-2px);
+//   }
+// }

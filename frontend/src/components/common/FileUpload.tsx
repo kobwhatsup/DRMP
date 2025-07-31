@@ -396,7 +396,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             actions={[
               <Button
                 type="link"
-                size="small"
+               
                 icon={<EyeOutlined />}
                 onClick={() => handlePreview(file)}
               >
@@ -404,7 +404,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
               </Button>,
               <Button
                 type="link"
-                size="small"
+               
                 icon={<DownloadOutlined />}
                 onClick={() => handleDownload(file)}
               >
@@ -412,7 +412,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
               </Button>,
               <Button
                 type="link"
-                size="small"
+               
                 icon={<DeleteOutlined />}
                 danger
                 onClick={() => {
@@ -449,7 +449,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     {file.size ? formatFileSize(file.size) : '未知大小'}
                   </Text>
                   {file.status === 'uploading' && file.percent !== undefined && (
-                    <Progress percent={file.percent} size="small" />
+                    <Progress percent={file.percent} />
                   )}
                   {file.status === 'error' && file.error && (
                     <Text type="danger">{file.error}</Text>

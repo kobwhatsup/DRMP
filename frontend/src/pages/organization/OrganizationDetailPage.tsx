@@ -454,7 +454,7 @@ const OrganizationDetailPage: React.FC = () => {
               <Descriptions.Item label="当前负载">
                 <Progress 
                   percent={organization.currentLoadPercentage} 
-                  size="small"
+                 
                   status={organization.currentLoadPercentage > 80 ? 'exception' : 'active'}
                 />
               </Descriptions.Item>

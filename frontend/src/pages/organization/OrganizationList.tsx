@@ -441,7 +441,7 @@ const OrganizationList: React.FC = () => {
             <span style={{ fontSize: 12, color: '#666' }}>当前负载</span>
             <Progress 
               percent={record.currentLoadPercentage} 
-              size="small" 
+              
               status={record.currentLoadPercentage > 80 ? 'exception' : 'active'}
             />
           </div>
@@ -509,12 +509,12 @@ const OrganizationList: React.FC = () => {
       width: 120,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           <Tooltip title="查看详情">
             <Button 
               type="link" 
               icon={<EyeOutlined />} 
-              size="small"
+             
               onClick={() => handleView(record)}
             />
           </Tooltip>
@@ -522,7 +522,7 @@ const OrganizationList: React.FC = () => {
             <Button 
               type="link" 
               icon={<EditOutlined />} 
-              size="small"
+             
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
@@ -540,7 +540,7 @@ const OrganizationList: React.FC = () => {
             }}
             trigger={['click']}
           >
-            <Button type="link" icon={<MoreOutlined />} size="small" />
+            <Button type="link" icon={<MoreOutlined />} />
           </Dropdown>
         </Space>
       ),
@@ -552,7 +552,7 @@ const OrganizationList: React.FC = () => {
       {/* 统计卡片区域 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={4}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="总机构数"
               value={stats.total}
@@ -562,7 +562,7 @@ const OrganizationList: React.FC = () => {
           </Card>
         </Col>
         <Col span={4}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="案源机构"
               value={stats.source}
@@ -572,7 +572,7 @@ const OrganizationList: React.FC = () => {
           </Card>
         </Col>
         <Col span={4}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="处置机构"
               value={stats.disposal}
@@ -582,7 +582,7 @@ const OrganizationList: React.FC = () => {
           </Card>
         </Col>
         <Col span={4}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="正常运行"
               value={stats.active}
@@ -591,7 +591,7 @@ const OrganizationList: React.FC = () => {
           </Card>
         </Col>
         <Col span={4}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="待审核"
               value={stats.pending}
@@ -600,7 +600,7 @@ const OrganizationList: React.FC = () => {
           </Card>
         </Col>
         <Col span={4}>
-          <Card size="small">
+          <Card>
             <Statistic
               title="已停用"
               value={stats.suspended}

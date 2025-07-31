@@ -165,7 +165,7 @@ const OrganizationStatistics: React.FC = () => {
       render: (percentage) => (
         <Progress 
           percent={percentage} 
-          size="small" 
+          
           format={(percent) => `${percent}%`}
         />
       ),
@@ -275,7 +275,7 @@ const OrganizationStatistics: React.FC = () => {
         {/* Trend Summary */}
         <Row gutter={16} style={{ marginBottom: 24 }}>
           <Col span={12}>
-            <Card title="趋势分析" size="small">
+            <Card title="趋势分析">
               <Row gutter={16}>
                 <Col span={12}>
                   <Statistic
@@ -307,7 +307,7 @@ const OrganizationStatistics: React.FC = () => {
             </Card>
           </Col>
           <Col span={12}>
-            <Card title="类型分布" size="small">
+            <Card title="类型分布">
               <Row gutter={16}>
                 {typeStats.slice(0, 4).map((item, index) => (
                   <Col span={12} key={item.type} style={{ marginBottom: 16 }}>
@@ -332,13 +332,13 @@ const OrganizationStatistics: React.FC = () => {
         {/* Detailed Table */}
         <Row gutter={16}>
           <Col span={24}>
-            <Card title="机构类型分布明细" size="small">
+            <Card title="机构类型分布明细">
               <Table
                 columns={typeColumns}
                 dataSource={typeStats}
                 rowKey="type"
                 pagination={false}
-                size="small"
+               
               />
             </Card>
           </Col>

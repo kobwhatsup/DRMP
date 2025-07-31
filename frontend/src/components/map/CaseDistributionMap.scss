@@ -16,9 +16,17 @@
     align-items: center;
   }
 
+  .map-and-stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
   .map-container {
     position: relative;
     background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
     
     .map-control-panel {
       position: absolute;
@@ -51,85 +59,91 @@
       }
     }
 
-    .statistics-panel {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      z-index: 1000;
+  }
 
-      .ant-statistic {
-        text-align: center;
+  // 新的统计面板样式 - 在地图下方
+  .statistics-panel-bottom {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e8e8e8;
+    margin-top: 0;
 
-        .ant-statistic-title {
-          font-size: 13px;
-          color: #666;
-          margin-bottom: 4px;
-        }
+    .ant-statistic {
+      text-align: center;
 
-        .ant-statistic-content {
-          .ant-statistic-content-value {
-            font-weight: 600;
-          }
-        }
+      .ant-statistic-title {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 6px;
+        font-weight: 500;
       }
 
-      .top-regions {
-        .title {
-          font-size: 14px;
+      .ant-statistic-content {
+        .ant-statistic-content-value {
           font-weight: 600;
-          color: #333;
-          margin-bottom: 12px;
-          text-align: center;
+        }
+      }
+    }
+
+    .top-regions {
+      .title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+
+      .region-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 13px;
+        // transition: all 0.2s ease;
+
+        // &:hover {
+        //   background: rgba(24, 144, 255, 0.05);
+        //   border-radius: 6px;
+        //   padding-left: 8px;
+        //   padding-right: 8px;
+        // }
+
+        .rank {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          font-size: 11px;
+          font-weight: bold;
+          color: white;
+          margin-right: 10px;
+
+          &.rank-1 { background: linear-gradient(135deg, #ff4d4f, #ff7875); }
+          &.rank-2 { background: linear-gradient(135deg, #fa8c16, #ffa940); }
+          &.rank-3 { background: linear-gradient(135deg, #fadb14, #fff566); }
+          &.rank-4 { background: linear-gradient(135deg, #52c41a, #73d13d); }
+          &.rank-5 { background: linear-gradient(135deg, #1890ff, #40a9ff); }
         }
 
-        .region-item {
-          display: flex;
-          align-items: center;
-          padding: 4px 0;
+        .name {
+          flex: 1;
+          color: #333;
+          font-weight: 500;
+        }
+
+        .value {
+          color: #1890ff;
+          font-weight: 600;
+          margin-right: 6px;
+        }
+
+        .percentage {
+          color: #666;
           font-size: 12px;
-
-          .rank {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 10px;
-            font-weight: bold;
-            color: white;
-            margin-right: 8px;
-
-            &.rank-1 { background: #ff4d4f; }
-            &.rank-2 { background: #fa8c16; }
-            &.rank-3 { background: #fadb14; }
-            &.rank-4 { background: #52c41a; }
-            &.rank-5 { background: #1890ff; }
-          }
-
-          .name {
-            flex: 1;
-            color: #333;
-            font-weight: 500;
-          }
-
-          .value {
-            color: #1890ff;
-            font-weight: 600;
-            margin-right: 4px;
-          }
-
-          .percentage {
-            color: #666;
-            font-size: 11px;
-          }
         }
       }
     }
@@ -137,12 +151,10 @@
 
   // 响应式设计
   @media (max-width: 1200px) {
-    .map-container {
-      .statistics-panel {
-        .ant-row {
-          .ant-col {
-            margin-bottom: 16px;
-          }
+    .statistics-panel-bottom {
+      .ant-row {
+        .ant-col {
+          margin-bottom: 16px;
         }
       }
     }
@@ -178,47 +190,46 @@
         }
       }
 
-      .statistics-panel {
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        padding: 16px;
+    .statistics-panel-bottom {
+      padding: 16px;
+      margin-top: 16px;
 
-        .ant-row {
-          .ant-col {
-            span: 12;
-            margin-bottom: 12px;
-          }
+      .ant-row {
+        .ant-col {
+          span: 12;
+          margin-bottom: 12px;
+        }
+      }
+
+      .ant-statistic {
+        .ant-statistic-title {
+          font-size: 12px;
         }
 
-        .ant-statistic {
-          .ant-statistic-title {
-            font-size: 12px;
-          }
-
-          .ant-statistic-content {
-            .ant-statistic-content-value {
-              font-size: 14px;
-            }
-          }
-        }
-
-        .top-regions {
-          .title {
-            font-size: 13px;
-          }
-
-          .region-item {
-            font-size: 11px;
-
-            .rank {
-              width: 16px;
-              height: 16px;
-              font-size: 9px;
-            }
+        .ant-statistic-content {
+          .ant-statistic-content-value {
+            font-size: 14px;
           }
         }
       }
+
+      .top-regions {
+        .title {
+          font-size: 13px;
+        }
+
+        .region-item {
+          font-size: 11px;
+          padding: 4px 0;
+
+          .rank {
+            width: 16px;
+            height: 16px;
+            font-size: 9px;
+          }
+        }
+      }
+    }
     }
   }
 
@@ -233,18 +244,18 @@
         left: 30px;
       }
 
-      .statistics-panel {
-        bottom: 30px;
-        left: 30px;
-        right: 30px;
-      }
+    }
+
+    .statistics-panel-bottom {
+      margin-top: 20px;
+      padding: 24px;
     }
   }
 
-  // 加载状态
+  // 加载状态 - 动画已禁用
   .ant-spin-nested-loading {
     .ant-spin-container {
-      transition: opacity 0.3s ease;
+      // transition: opacity 0.3s ease;
     }
 
     .ant-spin-blur {
@@ -252,22 +263,22 @@
     }
   }
 
-  // 动画效果
-  .map-control-panel,
-  .statistics-panel {
-    animation: slideInUp 0.6s ease-out;
-  }
+  // 动画效果已禁用
+  // .map-control-panel,
+  // .statistics-panel-bottom {
+  //   animation: slideInUp 0.6s ease-out;
+  // }
 
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  // @keyframes slideInUp {
+  //   from {
+  //     opacity: 0;
+  //     transform: translateY(20px);
+  //   }
+  //   to {
+  //     opacity: 1;
+  //     transform: translateY(0);
+  //   }
+  // }
 
   // 图表工具栏样式覆盖
   :global {
@@ -292,29 +303,29 @@
   .case-distribution-map {
     .map-container {
       background: #141414;
+    }
 
-      .map-control-panel,
-      .statistics-panel {
-        background: rgba(20, 20, 20, 0.95);
-        border-color: rgba(255, 255, 255, 0.1);
+    .map-control-panel,
+    .statistics-panel-bottom {
+      background: rgba(20, 20, 20, 0.95);
+      border-color: rgba(255, 255, 255, 0.1);
 
-        .control-item span,
-        .title {
+      .control-item span,
+      .title {
+        color: #fff;
+      }
+
+      .ant-statistic-title {
+        color: #ccc;
+      }
+
+      .region-item {
+        .name {
           color: #fff;
         }
 
-        .ant-statistic-title {
-          color: #ccc;
-        }
-
-        .region-item {
-          .name {
-            color: #fff;
-          }
-
-          .percentage {
-            color: #999;
-          }
+        .percentage {
+          color: #999;
         }
       }
     }

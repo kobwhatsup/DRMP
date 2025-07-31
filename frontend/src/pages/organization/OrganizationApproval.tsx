@@ -340,11 +340,11 @@ const OrganizationApproval: React.FC = () => {
       fixed: 'right',
       width: 200,
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             icon={<EyeOutlined />}
-            size="small"
+           
             onClick={() => navigate(`/organizations/${record.id}`)}
           >
             查看
@@ -354,7 +354,7 @@ const OrganizationApproval: React.FC = () => {
               <Button
                 type="link"
                 icon={<CheckCircleOutlined />}
-                size="small"
+               
                 style={{ color: '#52c41a' }}
                 onClick={() => handleApproval(record, 'approve')}
               >
@@ -363,7 +363,7 @@ const OrganizationApproval: React.FC = () => {
               <Button
                 type="link"
                 icon={<CloseCircleOutlined />}
-                size="small"
+               
                 danger
                 onClick={() => handleApproval(record, 'reject')}
               >
@@ -375,7 +375,7 @@ const OrganizationApproval: React.FC = () => {
             <Button
               type="link"
               icon={<HistoryOutlined />}
-              size="small"
+             
               onClick={() => navigate(`/organizations/${record.id}`)}
             >
               查看原因
@@ -484,7 +484,7 @@ const OrganizationApproval: React.FC = () => {
         </Row>
 
         {/* Enhanced Filters */}
-        <Card size="small" style={{ marginBottom: 16 }}>
+        <Card style={{ marginBottom: 16 }}>
           <Row gutter={16} align="middle">
             <Col span={6}>
               <RangePicker 
