@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/case-flow")
+@RequestMapping("/v1/case-flow")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "案件流转管理", description = "案件流转记录相关API")

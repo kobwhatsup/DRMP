@@ -18,7 +18,7 @@ import java.util.List;
 
 // @Api(tags = "系统管理 - 权限管理")
 @RestController
-@RequestMapping("/api/system/permissions")
+@RequestMapping("/v1/system/permissions")
 @RequiredArgsConstructor
 public class SysPermissionController {
     

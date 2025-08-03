@@ -28,7 +28,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/smart-assignment")
+@RequestMapping("/v1/smart-assignment")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "智能分案管理", description = "智能分案相关API")

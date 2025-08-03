@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/case-packages")
+@RequestMapping("/v1/case-packages")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "案件包管理", description = "案件包相关API")

@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/system/users")
+@RequestMapping("/v1/system/users")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "系统用户管理", description = "系统用户的增删改查、权限管理等功能")

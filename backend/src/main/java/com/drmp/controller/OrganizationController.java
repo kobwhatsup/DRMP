@@ -3,7 +3,7 @@ package com.drmp.controller;
 import com.drmp.dto.request.OrganizationApprovalRequest;
 import com.drmp.dto.request.OrganizationCreateRequest;
 import com.drmp.dto.request.OrganizationUpdateRequest;
-import com.drmp.dto.ApiResponse;
+import com.drmp.dto.response.ApiResponse;
 import com.drmp.dto.response.OrganizationDetailResponse;
 import com.drmp.dto.response.OrganizationListResponse;
 import com.drmp.dto.response.PageResponse;
@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/organizations")
+@RequestMapping("/v1/organizations")
 @RequiredArgsConstructor
 public class OrganizationController {
 

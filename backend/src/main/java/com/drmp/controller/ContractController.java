@@ -34,7 +34,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/contracts")
+@RequestMapping("/v1/contracts")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "合同管理", description = "合同和协议管理相关API")

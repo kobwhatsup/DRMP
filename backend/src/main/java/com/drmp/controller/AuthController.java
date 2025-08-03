@@ -1,6 +1,6 @@
 package com.drmp.controller;
 
-import com.drmp.dto.ApiResponse;
+import com.drmp.dto.response.ApiResponse;
 import com.drmp.dto.LoginRequest;
 import com.drmp.dto.LoginResponse;
 import com.drmp.service.AuthService;
@@ -40,7 +40,7 @@ public class AuthController {
         LoginResponse response = authService.login(request, clientIp);
         
         log.info("User login successful: {}", request.getUsername());
-        return ResponseEntity.ok(ApiResponse.success("登录成功", response));
+        return ResponseEntity.ok(ApiResponse.success(response, "登录成功"));
     }
 
     @PostMapping("/refresh")
@@ -50,7 +50,7 @@ public class AuthController {
         
         LoginResponse response = authService.refreshToken(request.getRefreshToken());
         
-        return ResponseEntity.ok(ApiResponse.success("令牌刷新成功", response));
+        return ResponseEntity.ok(ApiResponse.success(response, "令牌刷新成功"));
     }
 
     @PostMapping("/logout")
@@ -63,7 +63,7 @@ public class AuthController {
             authService.logout(token);
         }
         
-        return ResponseEntity.ok(ApiResponse.success("登出成功", null));
+        return ResponseEntity.ok(ApiResponse.successWithMessage("登出成功"));
     }
 
     private String getClientIpAddress(HttpServletRequest request) {

@@ -28,7 +28,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/case-market")
+@RequestMapping("/v1/case-market")
 @RequiredArgsConstructor
 @Tag(name = "案件市场", description = "案件市场相关API，供处置机构查看和申请案件包")
 public class CaseMarketController {

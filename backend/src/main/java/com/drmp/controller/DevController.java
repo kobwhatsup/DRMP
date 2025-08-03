@@ -1,6 +1,6 @@
 package com.drmp.controller;
 
-import com.drmp.dto.ApiResponse;
+import com.drmp.dto.response.ApiResponse;
 import com.drmp.dto.request.OrganizationApprovalRequest;
 import com.drmp.dto.response.OrganizationDetailResponse;
 import com.drmp.dto.response.OrganizationListResponse;
