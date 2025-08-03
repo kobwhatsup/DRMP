@@ -13,8 +13,8 @@ import {
   DragOutlined, EyeOutlined, ShareAltOutlined, LinkOutlined,
   TagsOutlined, FilterOutlined, SearchOutlined, HistoryOutlined
 } from '@ant-design/icons';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+// Drag and drop functionality temporarily disabled
+// TODO: Implement drag and drop with a compatible library
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -138,23 +138,18 @@ const DraggableCard: React.FC<{
   onCardClick: (card: BoardCard) => void;
   onQuickAction: (cardId: string, action: string) => void;
 }> = ({ card, onCardClick, onQuickAction }) => {
-  const [{ isDragging }, drag] = useDrag({
-    type: 'card',
-    item: { id: card.id, status: card.status },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging()
-    })
-  });
+  // Drag and drop temporarily disabled
+  const isDragging = false;
+  const drag = null;
 
   const isOverdue = card.dueDate && dayjs(card.dueDate).isBefore(dayjs());
   const daysUntilDue = card.dueDate ? dayjs(card.dueDate).diff(dayjs(), 'day') : null;
 
   return (
     <div
-      ref={drag as any}
       style={{
         opacity: isDragging ? 0.5 : 1,
-        cursor: 'move',
+        cursor: 'pointer',
         marginBottom: 8
       }}
     >
@@ -299,23 +294,14 @@ const BoardColumn: React.FC<{
   onQuickAction: (cardId: string, action: string) => void;
   onAddCard: (column: BoardColumnType) => void;
 }> = ({ column, cards, onCardMove, onCardClick, onQuickAction, onAddCard }) => {
-  const [{ isOver }, drop] = useDrop({
-    accept: 'card',
-    drop: (item: { id: string; status: BoardColumnType }) => {
-      if (item.status !== column) {
-        onCardMove(item.id, column);
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver()
-    })
-  });
+  // Drop functionality temporarily disabled
+  const isOver = false;
+  const drop = null;
 
   const columnConfig = boardColumns[column];
 
   return (
     <div
-      ref={drop as any}
       style={{
         backgroundColor: isOver ? '#e6f7ff' : '#fafafa',
         borderRadius: 8,
@@ -670,7 +656,6 @@ const CaseCollaborationBoard: React.FC = () => {
     : cards;
 
   return (
-    <DndProvider backend={HTML5Backend}>
       <div className="case-collaboration-board">
         {/* 页面头部 */}
         <Card style={{ marginBottom: 16 }}>
@@ -1081,7 +1066,6 @@ const CaseCollaborationBoard: React.FC = () => {
           </Form>
         </Modal>
       </div>
-    </DndProvider>
   );
 };
 
