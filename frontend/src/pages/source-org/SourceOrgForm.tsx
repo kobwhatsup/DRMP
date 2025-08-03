@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Card, Form, Input, Select, Button, Space, Row, Col, Steps, 
-  Upload, message, Divider, DatePicker, InputNumber, Switch, Tag
+  Card, Form, Input, Select, Button, Space, Row, Col,
+  Upload, message, Divider, DatePicker, InputNumber, Typography
 } from 'antd';
 import {
-  ArrowLeftOutlined, SaveOutlined, CheckCircleOutlined,
-  UploadOutlined, BankOutlined, UserOutlined, ContactsOutlined,
-  SettingOutlined, ApiOutlined
+  ArrowLeftOutlined, SaveOutlined,
+  UploadOutlined, BankOutlined, ContactsOutlined,
+  SettingOutlined, FileTextOutlined
 } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 
 const { Option } = Select;
 const { TextArea } = Input;
-const { Step } = Steps;
+const { Title } = Typography;
 
 interface SourceOrgFormData {
   // 基本信息
@@ -42,13 +42,6 @@ interface SourceOrgFormData {
   businessScopes: string[];
   caseTypes: string[];
   
-  // API配置
-  apiEnabled: boolean;
-  apiVersion: string;
-  apiUrl: string;
-  apiKey: string;
-  webhookUrl: string;
-  
   // 合作信息
   cooperationMode: string;
   feeStructure: {
@@ -73,7 +66,6 @@ const SourceOrgForm: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<SourceOrgFormData>>({});
 
   const isEdit = !!id && id !== 'create';
@@ -81,8 +73,19 @@ const SourceOrgForm: React.FC = () => {
   useEffect(() => {
     if (isEdit) {
       loadOrgData();
+    } else {
+      // 新增时自动生成机构代码
+      generateOrgCode();
     }
   }, [id, isEdit]);
+
+  const generateOrgCode = () => {
+    // 生成机构代码：ORG + 时间戳 + 随机数
+    const timestamp = Date.now().toString().slice(-8);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const orgCode = `ORG${timestamp}${random}`;
+    form.setFieldsValue({ orgCode });
+  };
 
   const loadOrgData = async () => {
     setLoading(true);
@@ -110,12 +113,6 @@ const SourceOrgForm: React.FC = () => {
         serviceRegions: ['北京', '上海', '广东', '江苏'],
         businessScopes: ['个人消费贷', '信用卡', '汽车贷款'],
         caseTypes: ['贷款逾期', '信用卡透支', '违约金'],
-        
-        apiEnabled: true,
-        apiVersion: 'v2.1',
-        apiUrl: 'https://api.icbc.com/drmp',
-        apiKey: 'icbc_api_key_12345',
-        webhookUrl: 'https://api.icbc.com/drmp/webhook',
         
         cooperationMode: 'COMMISSION',
         feeStructure: {
@@ -162,36 +159,6 @@ const SourceOrgForm: React.FC = () => {
     }
   };
 
-  const handleNext = async () => {
-    try {
-      // 验证当前步骤的表单字段
-      const fieldsToValidate = getStepFields(currentStep);
-      await form.validateFields(fieldsToValidate);
-      
-      setCurrentStep(currentStep + 1);
-    } catch (error) {
-      message.error('请填写完整的表单信息');
-    }
-  };
-
-  const handlePrev = () => {
-    setCurrentStep(currentStep - 1);
-  };
-
-  const getStepFields = (step: number): string[] => {
-    switch (step) {
-      case 0:
-        return ['orgCode', 'orgName', 'orgType', 'legalRepresentative', 'registeredCapital'];
-      case 1:
-        return ['contactPerson', 'contactPhone', 'email'];
-      case 2:
-        return ['serviceRegions', 'businessScopes'];
-      case 3:
-        return [];
-      default:
-        return [];
-    }
-  };
 
   const uploadProps: UploadProps = {
     name: 'file',
@@ -219,385 +186,6 @@ const SourceOrgForm: React.FC = () => {
     },
   };
 
-  const steps = [
-    {
-      title: '基本信息',
-      icon: <BankOutlined />,
-      content: (
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              label="机构代码"
-              name="orgCode"
-              rules={[{ required: true, message: '请输入机构代码' }]}
-            >
-              <Input placeholder="请输入机构代码" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="机构名称"
-              name="orgName"
-              rules={[{ required: true, message: '请输入机构名称' }]}
-            >
-              <Input placeholder="请输入机构名称" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="机构类型"
-              name="orgType"
-              rules={[{ required: true, message: '请选择机构类型' }]}
-            >
-              <Select placeholder="请选择机构类型">
-                <Option value="BANK">银行</Option>
-                <Option value="CONSUMER_FINANCE">消费金融公司</Option>
-                <Option value="ONLINE_LOAN">网络贷款公司</Option>
-                <Option value="MICRO_LOAN">小额贷款公司</Option>
-                <Option value="ASSIST_LOAN">助贷公司</Option>
-                <Option value="AMC">资产管理公司</Option>
-                <Option value="OTHER">其他</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="法定代表人"
-              name="legalRepresentative"
-              rules={[{ required: true, message: '请输入法定代表人' }]}
-            >
-              <Input placeholder="请输入法定代表人" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="注册资本(万元)"
-              name="registeredCapital"
-              rules={[{ required: true, message: '请输入注册资本' }]}
-            >
-              <InputNumber 
-                style={{ width: '100%' }} 
-                placeholder="请输入注册资本"
-                min={0}
-                precision={2}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="成立日期"
-              name="registrationDate"
-              rules={[{ required: true, message: '请选择成立日期' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="营业执照号"
-              name="businessLicense"
-              rules={[{ required: true, message: '请输入营业执照号' }]}
-            >
-              <Input placeholder="请输入营业执照号" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="注册地址"
-              name="address"
-              rules={[{ required: true, message: '请输入注册地址' }]}
-            >
-              <Input placeholder="请输入注册地址" />
-            </Form.Item>
-          </Col>
-          <Col span={24}>
-            <Form.Item
-              label="机构简介"
-              name="description"
-            >
-              <TextArea rows={4} placeholder="请输入机构简介" />
-            </Form.Item>
-          </Col>
-        </Row>
-      )
-    },
-    {
-      title: '联系信息',
-      icon: <ContactsOutlined />,
-      content: (
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              label="联系人"
-              name="contactPerson"
-              rules={[{ required: true, message: '请输入联系人' }]}
-            >
-              <Input placeholder="请输入联系人" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="联系电话"
-              name="contactPhone"
-              rules={[
-                { required: true, message: '请输入联系电话' },
-                { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码' }
-              ]}
-            >
-              <Input placeholder="请输入联系电话" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="邮箱地址"
-              name="email"
-              rules={[
-                { required: true, message: '请输入邮箱地址' },
-                { type: 'email', message: '请输入正确的邮箱地址' }
-              ]}
-            >
-              <Input placeholder="请输入邮箱地址" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="业务经理"
-              name="businessManager"
-              rules={[{ required: true, message: '请输入业务经理' }]}
-            >
-              <Input placeholder="请输入业务经理" />
-            </Form.Item>
-          </Col>
-          
-          <Divider>银行信息</Divider>
-          
-          <Col span={12}>
-            <Form.Item
-              label="开户行"
-              name="bankName"
-              rules={[{ required: true, message: '请输入开户行' }]}
-            >
-              <Input placeholder="请输入开户行" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="银行账号"
-              name="bankAccount"
-              rules={[{ required: true, message: '请输入银行账号' }]}
-            >
-              <Input placeholder="请输入银行账号" />
-            </Form.Item>
-          </Col>
-        </Row>
-      )
-    },
-    {
-      title: '业务配置',
-      icon: <SettingOutlined />,
-      content: (
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              label="服务区域"
-              name="serviceRegions"
-              rules={[{ required: true, message: '请选择服务区域' }]}
-            >
-              <Select 
-                mode="multiple" 
-                placeholder="请选择服务区域"
-                showSearch
-                optionFilterProp="children"
-              >
-                <Option value="北京">北京</Option>
-                <Option value="上海">上海</Option>
-                <Option value="广东">广东</Option>
-                <Option value="江苏">江苏</Option>
-                <Option value="浙江">浙江</Option>
-                <Option value="山东">山东</Option>
-                <Option value="河南">河南</Option>
-                <Option value="四川">四川</Option>
-                <Option value="湖北">湖北</Option>
-                <Option value="湖南">湖南</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="业务范围"
-              name="businessScopes"
-              rules={[{ required: true, message: '请选择业务范围' }]}
-            >
-              <Select mode="multiple" placeholder="请选择业务范围">
-                <Option value="个人消费贷">个人消费贷</Option>
-                <Option value="信用卡">信用卡</Option>
-                <Option value="汽车贷款">汽车贷款</Option>
-                <Option value="房屋贷款">房屋贷款</Option>
-                <Option value="经营贷款">经营贷款</Option>
-                <Option value="其他贷款">其他贷款</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="案件类型"
-              name="caseTypes"
-              rules={[{ required: true, message: '请选择案件类型' }]}
-            >
-              <Select mode="multiple" placeholder="请选择案件类型">
-                <Option value="贷款逾期">贷款逾期</Option>
-                <Option value="信用卡透支">信用卡透支</Option>
-                <Option value="违约金">违约金</Option>
-                <Option value="利息逾期">利息逾期</Option>
-                <Option value="担保代偿">担保代偿</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="合作模式"
-              name="cooperationMode"
-              rules={[{ required: true, message: '请选择合作模式' }]}
-            >
-              <Select placeholder="请选择合作模式">
-                <Option value="COMMISSION">佣金模式</Option>
-                <Option value="FIXED_FEE">固定费用</Option>
-                <Option value="MIXED">混合模式</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-          
-          <Divider>费率结构</Divider>
-          
-          <Col span={24}>
-            <Form.Item
-              label="基础费率(%)"
-              name={['feeStructure', 'baseRate']}
-              rules={[{ required: true, message: '请输入基础费率' }]}
-            >
-              <InputNumber 
-                style={{ width: '100%' }} 
-                placeholder="请输入基础费率"
-                min={0}
-                max={100}
-                precision={2}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      )
-    },
-    {
-      title: 'API配置',
-      icon: <ApiOutlined />,
-      content: (
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              label="启用API对接"
-              name="apiEnabled"
-              valuePropName="checked"
-            >
-              <Switch />
-            </Form.Item>
-          </Col>
-          
-          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.apiEnabled !== curr.apiEnabled}>
-            {({ getFieldValue }) => {
-              const apiEnabled = getFieldValue('apiEnabled');
-              return apiEnabled ? (
-                <>
-                  <Col span={12}>
-                    <Form.Item
-                      label="API版本"
-                      name="apiVersion"
-                      rules={[{ required: true, message: '请选择API版本' }]}
-                    >
-                      <Select placeholder="请选择API版本">
-                        <Option value="v1.5">v1.5</Option>
-                        <Option value="v2.0">v2.0</Option>
-                        <Option value="v2.1">v2.1</Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      label="API地址"
-                      name="apiUrl"
-                      rules={[
-                        { required: true, message: '请输入API地址' },
-                        { type: 'url', message: '请输入正确的URL地址' }
-                      ]}
-                    >
-                      <Input placeholder="https://api.example.com/drmp" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      label="API密钥"
-                      name="apiKey"
-                      rules={[{ required: true, message: '请输入API密钥' }]}
-                    >
-                      <Input.Password placeholder="请输入API密钥" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item
-                      label="回调地址"
-                      name="webhookUrl"
-                      rules={[{ type: 'url', message: '请输入正确的URL地址' }]}
-                    >
-                      <Input placeholder="https://api.example.com/webhook" />
-                    </Form.Item>
-                  </Col>
-                </>
-              ) : null;
-            }}
-          </Form.Item>
-        </Row>
-      )
-    },
-    {
-      title: '资质文件',
-      icon: <UploadOutlined />,
-      content: (
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              label="营业执照"
-              name="businessLicenseFile"
-              rules={[{ required: true, message: '请上传营业执照' }]}
-            >
-              <Upload {...uploadProps} fileList={formData.businessLicenseFile}>
-                <Button icon={<UploadOutlined />}>点击上传营业执照</Button>
-              </Upload>
-            </Form.Item>
-          </Col>
-          <Col span={24}>
-            <Form.Item
-              label="组织机构代码证"
-              name="organizationCodeFile"
-            >
-              <Upload {...uploadProps} fileList={formData.organizationCodeFile}>
-                <Button icon={<UploadOutlined />}>点击上传组织机构代码证</Button>
-              </Upload>
-            </Form.Item>
-          </Col>
-          <Col span={24}>
-            <Form.Item
-              label="授权委托书"
-              name="authorizationLetterFile"
-              rules={[{ required: true, message: '请上传授权委托书' }]}
-            >
-              <Upload {...uploadProps} fileList={formData.authorizationLetterFile}>
-                <Button icon={<UploadOutlined />}>点击上传授权委托书</Button>
-              </Upload>
-            </Form.Item>
-          </Col>
-        </Row>
-      )
-    }
-  ];
 
   return (
     <div className="source-org-form">
@@ -616,57 +204,338 @@ const SourceOrgForm: React.FC = () => {
       </Card>
 
       <Card loading={loading}>
-        <Steps current={currentStep} style={{ marginBottom: 32 }}>
-          {steps.map((step, index) => (
-            <Step 
-              key={index} 
-              title={step.title} 
-              icon={step.icon}
-              status={currentStep === index ? 'process' : currentStep > index ? 'finish' : 'wait'}
-            />
-          ))}
-        </Steps>
-
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
           initialValues={{
-            apiEnabled: false,
             cooperationMode: 'COMMISSION',
             feeStructure: {
               baseRate: 3.5
             }
           }}
         >
-          <div style={{ minHeight: 400 }}>
-            {steps[currentStep].content}
+          {/* 基本信息 */}
+          <div style={{ marginBottom: 32 }}>
+            <Title level={4} style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+              <BankOutlined style={{ marginRight: 8 }} />
+              基本信息
+            </Title>
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="机构代码"
+                  name="orgCode"
+                  tooltip="系统自动生成，无需手动输入"
+                >
+                  <Input placeholder="系统自动生成" disabled />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="机构名称"
+                  name="orgName"
+                  rules={[{ required: true, message: '请输入机构名称' }]}
+                >
+                  <Input placeholder="请输入机构名称" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="机构类型"
+                  name="orgType"
+                >
+                  <Select placeholder="请选择机构类型">
+                    <Option value="BANK">银行</Option>
+                    <Option value="CONSUMER_FINANCE">消费金融公司</Option>
+                    <Option value="ONLINE_LOAN">网络贷款公司</Option>
+                    <Option value="MICRO_LOAN">小额贷款公司</Option>
+                    <Option value="ASSIST_LOAN">助贷公司</Option>
+                    <Option value="AMC">资产管理公司</Option>
+                    <Option value="OTHER">其他</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="法定代表人"
+                  name="legalRepresentative"
+                >
+                  <Input placeholder="请输入法定代表人" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="注册资本(万元)"
+                  name="registeredCapital"
+                >
+                  <InputNumber 
+                    style={{ width: '100%' }} 
+                    placeholder="请输入注册资本"
+                    min={0}
+                    precision={2}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="成立日期"
+                  name="registrationDate"
+                >
+                  <DatePicker style={{ width: '100%' }} placeholder="请选择成立日期" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="营业执照号"
+                  name="businessLicense"
+                >
+                  <Input placeholder="请输入营业执照号" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="注册地址"
+                  name="address"
+                >
+                  <Input placeholder="请输入注册地址" />
+                </Form.Item>
+              </Col>
+              <Col span={24}>
+                <Form.Item
+                  label="机构简介"
+                  name="description"
+                >
+                  <TextArea rows={4} placeholder="请输入机构简介" />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          <Divider />
+
+          {/* 联系信息 */}
+          <div style={{ marginBottom: 32 }}>
+            <Title level={4} style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+              <ContactsOutlined style={{ marginRight: 8 }} />
+              联系信息
+            </Title>
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="联系人"
+                  name="contactPerson"
+                >
+                  <Input placeholder="请输入联系人" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="联系电话"
+                  name="contactPhone"
+                  rules={[
+                    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码' }
+                  ]}
+                >
+                  <Input placeholder="请输入联系电话" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="邮箱地址"
+                  name="email"
+                  rules={[
+                    { type: 'email', message: '请输入正确的邮箱地址' }
+                  ]}
+                >
+                  <Input placeholder="请输入邮箱地址" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="业务经理"
+                  name="businessManager"
+                >
+                  <Input placeholder="请输入业务经理" />
+                </Form.Item>
+              </Col>
+              
+              <Col span={24}>
+                <Title level={5} style={{ marginTop: 16, marginBottom: 16 }}>银行信息</Title>
+              </Col>
+              
+              <Col span={12}>
+                <Form.Item
+                  label="开户行"
+                  name="bankName"
+                >
+                  <Input placeholder="请输入开户行" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="银行账号"
+                  name="bankAccount"
+                >
+                  <Input placeholder="请输入银行账号" />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          <Divider />
+
+          {/* 业务配置 */}
+          <div style={{ marginBottom: 32 }}>
+            <Title level={4} style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+              <SettingOutlined style={{ marginRight: 8 }} />
+              业务配置
+            </Title>
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="服务区域"
+                  name="serviceRegions"
+                >
+                  <Select 
+                    mode="multiple" 
+                    placeholder="请选择服务区域"
+                    showSearch
+                    optionFilterProp="children"
+                  >
+                    <Option value="北京">北京</Option>
+                    <Option value="上海">上海</Option>
+                    <Option value="广东">广东</Option>
+                    <Option value="江苏">江苏</Option>
+                    <Option value="浙江">浙江</Option>
+                    <Option value="山东">山东</Option>
+                    <Option value="河南">河南</Option>
+                    <Option value="四川">四川</Option>
+                    <Option value="湖北">湖北</Option>
+                    <Option value="湖南">湖南</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="业务范围"
+                  name="businessScopes"
+                >
+                  <Select mode="multiple" placeholder="请选择业务范围">
+                    <Option value="个人消费贷">个人消费贷</Option>
+                    <Option value="信用卡">信用卡</Option>
+                    <Option value="汽车贷款">汽车贷款</Option>
+                    <Option value="房屋贷款">房屋贷款</Option>
+                    <Option value="经营贷款">经营贷款</Option>
+                    <Option value="其他贷款">其他贷款</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="案件类型"
+                  name="caseTypes"
+                >
+                  <Select mode="multiple" placeholder="请选择案件类型">
+                    <Option value="贷款逾期">贷款逾期</Option>
+                    <Option value="信用卡透支">信用卡透支</Option>
+                    <Option value="违约金">违约金</Option>
+                    <Option value="利息逾期">利息逾期</Option>
+                    <Option value="担保代偿">担保代偿</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="合作模式"
+                  name="cooperationMode"
+                >
+                  <Select placeholder="请选择合作模式">
+                    <Option value="COMMISSION">佣金模式</Option>
+                    <Option value="FIXED_FEE">固定费用</Option>
+                    <Option value="MIXED">混合模式</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              
+              <Col span={24}>
+                <Title level={5} style={{ marginTop: 16, marginBottom: 16 }}>费率结构</Title>
+              </Col>
+              
+              <Col span={12}>
+                <Form.Item
+                  label="基础费率(%)"
+                  name={['feeStructure', 'baseRate']}
+                >
+                  <InputNumber 
+                    style={{ width: '100%' }} 
+                    placeholder="请输入基础费率"
+                    min={0}
+                    max={100}
+                    precision={2}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          <Divider />
+
+          {/* 资质文件 */}
+          <div style={{ marginBottom: 32 }}>
+            <Title level={4} style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+              <FileTextOutlined style={{ marginRight: 8 }} />
+              资质文件
+            </Title>
+            <Row gutter={24}>
+              <Col span={24}>
+                <Form.Item
+                  label="营业执照"
+                  name="businessLicenseFile"
+                >
+                  <Upload {...uploadProps} fileList={formData.businessLicenseFile}>
+                    <Button icon={<UploadOutlined />}>点击上传营业执照</Button>
+                  </Upload>
+                </Form.Item>
+              </Col>
+              <Col span={24}>
+                <Form.Item
+                  label="组织机构代码证"
+                  name="organizationCodeFile"
+                >
+                  <Upload {...uploadProps} fileList={formData.organizationCodeFile}>
+                    <Button icon={<UploadOutlined />}>点击上传组织机构代码证</Button>
+                  </Upload>
+                </Form.Item>
+              </Col>
+              <Col span={24}>
+                <Form.Item
+                  label="授权委托书"
+                  name="authorizationLetterFile"
+                >
+                  <Upload {...uploadProps} fileList={formData.authorizationLetterFile}>
+                    <Button icon={<UploadOutlined />}>点击上传授权委托书</Button>
+                  </Upload>
+                </Form.Item>
+              </Col>
+            </Row>
           </div>
 
           <Divider />
 
           <div style={{ textAlign: 'right' }}>
             <Space>
-              {currentStep > 0 && (
-                <Button onClick={handlePrev}>
-                  上一步
-                </Button>
-              )}
-              {currentStep < steps.length - 1 && (
-                <Button type="primary" onClick={handleNext}>
-                  下一步
-                </Button>
-              )}
-              {currentStep === steps.length - 1 && (
-                <Button 
-                  type="primary" 
-                  icon={<SaveOutlined />}
-                  loading={submitting}
-                  onClick={handleSubmit}
-                >
-                  {isEdit ? '更新机构' : '创建机构'}
-                </Button>
-              )}
+              <Button onClick={() => navigate('/source-orgs')}>
+                取消
+              </Button>
+              <Button 
+                type="primary" 
+                icon={<SaveOutlined />}
+                loading={submitting}
+                htmlType="submit"
+              >
+                {isEdit ? '更新机构' : '创建机构'}
+              </Button>
             </Space>
           </div>
         </Form>

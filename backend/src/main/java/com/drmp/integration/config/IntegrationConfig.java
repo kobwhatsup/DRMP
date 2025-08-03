@@ -1,5 +1,9 @@
 package com.drmp.integration.config;
 
+import com.drmp.integration.CircuitBreakerManager;
+import com.drmp.integration.ExternalSystemHealthChecker;
+import com.drmp.integration.ExternalSystemMetrics;
+import com.drmp.integration.WebhookSecurityValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,8 +73,7 @@ public class IntegrationConfig {
 
     @Bean
     public CircuitBreakerManager circuitBreakerManager() {
-        return new CircuitBreakerManager(circuitBreakerFailureThreshold, 
-                                       Duration.ofSeconds(circuitBreakerTimeoutSeconds));
+        return new CircuitBreakerManager();
     }
 
     @Bean
