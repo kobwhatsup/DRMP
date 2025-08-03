@@ -4,8 +4,10 @@ import api from '@/utils/api';
 export interface CasePackage {
   id: number;
   packageName: string;
+  packageCode: string;
   sourceOrgId: number;
   sourceOrgName: string;
+  description?: string;
   totalCases: number;
   totalAmount: number;
   avgAmount: number;
@@ -16,7 +18,7 @@ export interface CasePackage {
   disposalMethods: string[];
   assignmentStrategy: string;
   assignmentConfig: any;
-  status: 'DRAFT' | 'PUBLISHED' | 'ASSIGNING' | 'ASSIGNED' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'PENDING_ASSIGNMENT' | 'PUBLISHED' | 'ASSIGNED' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
   publishTime: string;
   assignmentDeadline: string;
   assignedCases: number;
@@ -158,14 +160,12 @@ export interface CreateCasePackageParams {
 export interface CasePackageQueryParams {
   page?: number;
   size?: number;
-  packageName?: string;
-  sourceOrgId?: number;
+  keyword?: string;
   status?: string;
-  assignmentStrategy?: string;
-  publishTimeStart?: string;
-  publishTimeEnd?: string;
+  sourceOrgId?: number;
+  disposalOrgId?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface CaseQueryParams {
@@ -193,44 +193,106 @@ export interface CaseQueryParams {
 export const casePackageService = {
   // 获取案件包列表
   getCasePackages: (params: CasePackageQueryParams = {}) =>
-    api.get<{ items: CasePackage[]; total: number }>('/case-packages', { params }),
+    api.get<{ content: CasePackage[]; totalElements: number; totalPages: number; size: number; number: number }>('/api/case-packages', { params }),
 
   // 获取案件包详情
   getCasePackage: (id: number) =>
-    api.get<CasePackage>(`/case-packages/${id}`),
+    api.get<CasePackage>(`/api/case-packages/${id}`),
 
   // 创建案件包
   createCasePackage: (data: CreateCasePackageParams) =>
-    api.post<CasePackage>('/case-packages', data),
+    api.post<CasePackage>('/api/case-packages', data),
 
   // 更新案件包
   updateCasePackage: (id: number, data: Partial<CasePackage>) =>
-    api.put<CasePackage>(`/case-packages/${id}`, data),
+    api.put<CasePackage>(`/api/case-packages/${id}`, data),
 
   // 发布案件包
   publishCasePackage: (id: number) =>
-    api.post<CasePackage>(`/case-packages/${id}/publish`),
+    api.post<CasePackage>(`/api/case-packages/${id}/publish`),
 
-  // 取消案件包
-  cancelCasePackage: (id: number, reason?: string) =>
-    api.post<CasePackage>(`/case-packages/${id}/cancel`, { reason }),
+  // 撤回案件包
+  withdrawCasePackage: (id: number) =>
+    api.post<CasePackage>(`/api/case-packages/${id}/withdraw`),
 
   // 删除案件包
   deleteCasePackage: (id: number) =>
-    api.delete(`/case-packages/${id}`),
+    api.delete(`/api/case-packages/${id}`),
+
+  // 分配案件包
+  assignCasePackage: (id: number, disposalOrgId: number) =>
+    api.post<CasePackage>(`/api/case-packages/${id}/assign?disposalOrgId=${disposalOrgId}`),
+
+  // 接受案件包
+  acceptCasePackage: (id: number) =>
+    api.post<CasePackage>(`/api/case-packages/${id}/accept`),
+
+  // 拒绝案件包
+  rejectCasePackage: (id: number, reason: string) =>
+    api.post<CasePackage>(`/api/case-packages/${id}/reject?reason=${encodeURIComponent(reason)}`),
+
+  // 完成案件包
+  completeCasePackage: (id: number) =>
+    api.post<CasePackage>(`/api/case-packages/${id}/complete`),
+
+  // 批量导入案件
+  batchImportCases: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/api/case-packages/${id}/import-cases`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 
   // 获取案件包统计
-  getCasePackageStats: (id: number) =>
+  getCasePackageStatistics: (organizationId?: number) =>
     api.get<{
-      totalCases: number;
-      assignedCases: number;
-      processingCases: number;
-      completedCases: number;
+      totalPackages: number;
+      draftPackages: number;
+      publishedPackages: number;
+      processingPackages: number;
+      completedPackages: number;
       totalAmount: number;
       recoveredAmount: number;
-      recoveryRate: number;
-      avgProcessingDays: number;
-    }>(`/case-packages/${id}/stats`),
+      avgRecoveryRate: number;
+    }>('/api/case-packages/statistics', { params: { organizationId } }),
+
+  // 获取案件市场列表
+  getMarketCasePackages: (params: {
+    minAmount?: number;
+    maxAmount?: number;
+    minOverdueDays?: number;
+    maxOverdueDays?: number;
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortDir?: string;
+  } = {}) =>
+    api.get<{ content: CasePackage[]; totalElements: number; totalPages: number; size: number; number: number }>('/api/case-packages/market', { params }),
+
+  // 申请案件包
+  applyCasePackage: (id: number, proposal: string) =>
+    api.post<string>(`/api/case-packages/${id}/apply?proposal=${encodeURIComponent(proposal)}`),
+
+  // 获取机构案件包历史
+  getOrganizationCasePackageHistory: (organizationId: number, status?: string, page?: number, size?: number, sortBy?: string, sortDir?: string) =>
+    api.get<{ content: CasePackage[]; totalElements: number; totalPages: number; size: number; number: number }>(`/api/case-packages/organization/${organizationId}/history`, { 
+      params: { status, page, size, sortBy, sortDir } 
+    }),
+
+  // 智能分案
+  smartAssignCasePackage: (id: number) =>
+    api.post<string[]>(`/api/case-packages/${id}/smart-assign`),
+
+  // 批量操作案件包
+  batchOperateCasePackages: (ids: number[], action: string) =>
+    api.post<{
+      success: boolean;
+      totalCount: number;
+      successCount: number;
+      failedCount: number;
+      errors: string[];
+    }>('/api/case-packages/batch-operation', null, { params: { ids: ids.join(','), action } }),
 
   // 批量导入案件验证
   validateCaseImport: (data: CaseImportData[]) =>
@@ -245,7 +307,7 @@ export const casePackageService = {
         totalAmount: number;
         avgAmount: number;
       };
-    }>('/case-packages/validate-import', { cases: data })
+    }>('/api/case-packages/validate-import', { cases: data })
 };
 
 // 案件服务

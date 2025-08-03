@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { casePackageService, type CasePackage, type CasePackageQueryParams } from '@/services/caseService';
 
-const { Search } = Input;
+const { Search, TextArea } = Input;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
@@ -32,7 +32,7 @@ const CasePackageList: React.FC = () => {
     page: 0,
     size: 20,
     sortBy: 'createdAt',
-    sortOrder: 'desc'
+    sortDir: 'desc'
   });
 
   // 统计数据
@@ -51,8 +51,8 @@ const CasePackageList: React.FC = () => {
   const getStatusColor = (status: string): string => {
     const colorMap: Record<string, string> = {
       DRAFT: 'default',
+      PENDING_ASSIGNMENT: 'orange',
       PUBLISHED: 'blue',
-      ASSIGNING: 'orange',
       ASSIGNED: 'purple',
       PROCESSING: 'processing',
       COMPLETED: 'success',
@@ -65,8 +65,8 @@ const CasePackageList: React.FC = () => {
   const getStatusText = (status: string): string => {
     const textMap: Record<string, string> = {
       DRAFT: '草稿',
+      PENDING_ASSIGNMENT: '待分案',
       PUBLISHED: '已发布',
-      ASSIGNING: '分案中',
       ASSIGNED: '已分配',
       PROCESSING: '处置中',
       COMPLETED: '已完成',
@@ -80,18 +80,15 @@ const CasePackageList: React.FC = () => {
     setLoading(true);
     try {
       const mergedParams = { ...queryParams, ...params };
-      // 模拟API响应数据，因为实际API还未实现
-      const mockResponse = {
-        items: [] as CasePackage[],
-        total: 0
-      };
+      const response = await casePackageService.getCasePackages(mergedParams);
       
-      setDataSource(mockResponse.items);
-      setTotal(mockResponse.total);
+      setDataSource(response.data.content);
+      setTotal(response.data.totalElements);
       setQueryParams(mergedParams);
 
-      // 计算统计数据
-      calculateStatistics(mockResponse.items);
+      // 加载统计数据
+      const statsResponse = await casePackageService.getCasePackageStatistics();
+      setStatistics(statsResponse.data);
     } catch (error) {
       message.error('加载数据失败');
       console.error(error);
@@ -131,17 +128,66 @@ const CasePackageList: React.FC = () => {
     }
   };
 
-  const handleCancel = async (id: number) => {
+  const handleWithdraw = async (id: number) => {
     Modal.confirm({
-      title: '确认取消',
-      content: '取消后案件包将无法继续处理，确定要取消吗？',
+      title: '确认撤回',
+      content: '撤回后案件包将从市场移除，确定要撤回吗？',
       onOk: async () => {
         try {
-          await casePackageService.cancelCasePackage(id, '用户手动取消');
-          message.success('取消成功');
+          await casePackageService.withdrawCasePackage(id);
+          message.success('撤回成功');
           loadData();
         } catch (error) {
-          message.error('取消失败');
+          message.error('撤回失败');
+        }
+      }
+    });
+  };
+
+  const handleAccept = async (id: number) => {
+    Modal.confirm({
+      title: '确认接受',
+      content: '确定要接受这个案件包的分配吗？',
+      onOk: async () => {
+        try {
+          await casePackageService.acceptCasePackage(id);
+          message.success('接受成功');
+          loadData();
+        } catch (error) {
+          message.error('接受失败');
+        }
+      }
+    });
+  };
+
+  const handleReject = async (id: number) => {
+    let reasonInput = '';
+    
+    Modal.confirm({
+      title: '拒绝案件包',
+      content: (
+        <div>
+          <p>请输入拒绝原因：</p>
+          <Input.TextArea 
+            placeholder="请输入拒绝原因"
+            onChange={(e) => reasonInput = e.target.value}
+            rows={3}
+          />
+        </div>
+      ),
+      okText: '确定',
+      cancelText: '取消',
+      onOk: async () => {
+        if (!reasonInput.trim()) {
+          message.error('请输入拒绝原因');
+          return;
+        }
+        try {
+          await casePackageService.rejectCasePackage(id, reasonInput);
+          message.success('拒绝成功');
+          loadData();
+        } catch (error) {
+          message.error('拒绝失败');
         }
       }
     });
@@ -177,11 +223,15 @@ const CasePackageList: React.FC = () => {
       content: `确定要删除选中的 ${selectedRowKeys.length} 个案件包吗？`,
       onOk: async () => {
         try {
-          // 这里应该调用批量删除接口
-          for (const id of selectedRowKeys) {
-            await casePackageService.deleteCasePackage(Number(id));
+          const ids = selectedRowKeys.map(key => Number(key));
+          const result = await casePackageService.batchOperateCasePackages(ids, 'delete');
+          
+          if (result.data.success) {
+            message.success(`批量删除成功，成功删除 ${result.data.successCount} 个案件包`);
+          } else {
+            message.warning(`部分删除失败，成功 ${result.data.successCount} 个，失败 ${result.data.failedCount} 个`);
           }
-          message.success('批量删除成功');
+          
           setSelectedRowKeys([]);
           loadData();
         } catch (error) {
@@ -202,10 +252,15 @@ const CasePackageList: React.FC = () => {
       content: `确定要发布选中的 ${selectedRowKeys.length} 个案件包吗？`,
       onOk: async () => {
         try {
-          for (const id of selectedRowKeys) {
-            await casePackageService.publishCasePackage(Number(id));
+          const ids = selectedRowKeys.map(key => Number(key));
+          const result = await casePackageService.batchOperateCasePackages(ids, 'publish');
+          
+          if (result.data.success) {
+            message.success(`批量发布成功，成功发布 ${result.data.successCount} 个案件包`);
+          } else {
+            message.warning(`部分发布失败，成功 ${result.data.successCount} 个，失败 ${result.data.failedCount} 个`);
           }
-          message.success('批量发布成功');
+          
           setSelectedRowKeys([]);
           loadData();
         } catch (error) {
@@ -217,7 +272,7 @@ const CasePackageList: React.FC = () => {
 
   // 搜索处理
   const handleSearch = (value: string) => {
-    loadData({ packageName: value, page: 0 });
+    loadData({ keyword: value, page: 0 });
   };
 
   // 筛选处理
@@ -236,6 +291,9 @@ const CasePackageList: React.FC = () => {
         <div>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
             {record.packageName}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: 2 }}>
+            编号: {record.packageCode}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
             创建时间: {dayjs(record.createdAt).format('YYYY-MM-DD')}
@@ -258,8 +316,8 @@ const CasePackageList: React.FC = () => {
       ),
       filters: [
         { text: '草稿', value: 'DRAFT' },
+        { text: '待分案', value: 'PENDING_ASSIGNMENT' },
         { text: '已发布', value: 'PUBLISHED' },
-        { text: '分案中', value: 'ASSIGNING' },
         { text: '已分配', value: 'ASSIGNED' },
         { text: '处置中', value: 'PROCESSING' },
         { text: '已完成', value: 'COMPLETED' },
@@ -394,7 +452,7 @@ const CasePackageList: React.FC = () => {
               onClick: () => handleDelete(record.id)
             }
           );
-        } else if (record.status === 'PUBLISHED') {
+        } else if (record.status === 'PUBLISHED' || record.status === 'PENDING_ASSIGNMENT') {
           actionItems.push(
             {
               key: 'assign',
@@ -403,10 +461,25 @@ const CasePackageList: React.FC = () => {
               onClick: () => navigate(`/assignment?packageId=${record.id}`)
             },
             {
-              key: 'cancel',
+              key: 'withdraw',
               icon: <UndoOutlined />,
-              label: '取消',
-              onClick: () => handleCancel(record.id)
+              label: '撤回',
+              onClick: () => handleWithdraw(record.id)
+            }
+          );
+        } else if (record.status === 'ASSIGNED') {
+          actionItems.push(
+            {
+              key: 'accept',
+              icon: <CheckOutlined />,
+              label: '接受',
+              onClick: () => handleAccept(record.id)
+            },
+            {
+              key: 'reject',
+              icon: <CloseOutlined />,
+              label: '拒绝',
+              onClick: () => handleReject(record.id)
             }
           );
         }
@@ -561,8 +634,8 @@ const CasePackageList: React.FC = () => {
               onChange={(value) => handleFilter('status', value)}
             >
               <Option value="DRAFT">草稿</Option>
+              <Option value="PENDING_ASSIGNMENT">待分案</Option>
               <Option value="PUBLISHED">已发布</Option>
-              <Option value="ASSIGNING">分案中</Option>
               <Option value="ASSIGNED">已分配</Option>
               <Option value="PROCESSING">处置中</Option>
               <Option value="COMPLETED">已完成</Option>
@@ -648,7 +721,7 @@ const CasePackageList: React.FC = () => {
             showQuickJumper: true,
             showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
             onChange: (page, size) => {
-              loadData({ page: page - 1, size });
+              loadData({ page: page - 1, size, sortBy: queryParams.sortBy, sortDir: queryParams.sortDir });
             }
           }}
           rowSelection={{

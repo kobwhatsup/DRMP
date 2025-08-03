@@ -20,50 +20,38 @@ const DevAutoLogin: React.FC = () => {
     const performDevLogin = async () => {
       if (isDevelopment && SKIP_LOGIN_IN_DEV) {
         try {
-          // 总是重新获取新的token，确保有效性
-          const API_VERSION = process.env.REACT_APP_USE_DEV_API === 'true' ? '/v1/dev' : '';
-          const response = await fetch(`http://localhost:8080/api${API_VERSION}/auth/token`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            
-            // 使用有效的JWT token登录
-            login(data.accessToken, data.refreshToken, data.userInfo);
-            
-            console.log('🚀 开发模式: 已使用有效JWT token自动登录为系统管理员');
-          } else {
-            console.error('获取开发环境JWT token失败:', response.statusText);
-            
-            // 如果开发接口失败，回退到模拟token（可能会导致API调用失败）
-            const mockUserInfo = {
-              id: 1,
-              username: 'admin',
-              email: 'admin@drmp.com',
-              name: '系统管理员',
-              phone: '13800000000',
-              avatar: '',
-              organizationId: 1,
-              organizationName: 'DRMP系统管理',
-              type: 'admin' as 'admin' | 'source_org' | 'disposal_org',
-              roles: ['ADMIN'],
-              permissions: [
-                'user:read', 'user:create', 'user:update', 'user:delete',
-                'organization:read', 'organization:create', 'organization:update', 'organization:delete', 'organization:approve',
-                'case_package:read', 'case_package:create', 'case_package:update', 'case_package:delete', 'case_package:assign',
-                'case:read', 'case:update',
-                'report:read', 'report:export',
-                'system:config', 'system:log'
-              ]
-            };
-            
-            login('dev-access-token', 'dev-refresh-token', mockUserInfo);
-            console.log('⚠️ 开发模式: 使用模拟token登录（API调用可能失败）');
-          }
+          // 直接使用模拟用户信息，不调用后端API
+          const mockUserInfo = {
+            id: 1,
+            username: 'admin',
+            email: 'admin@drmp.com',
+            name: '系统管理员',
+            phone: '13800000000',
+            avatar: '',
+            organizationId: 1,
+            organizationName: 'DRMP系统管理',
+            type: 'admin' as 'admin' | 'source_org' | 'disposal_org',
+            roles: ['ADMIN', 'CASE_MANAGER', 'CASE_VIEWER'],
+            permissions: [
+              'user:read', 'user:create', 'user:update', 'user:delete',
+              'organization:read', 'organization:create', 'organization:update', 'organization:delete', 'organization:approve',
+              'case_package:read', 'case_package:create', 'case_package:update', 'case_package:delete', 'case_package:assign',
+              'case:read', 'case:update',
+              'report:read', 'report:export',
+              'system:config', 'system:log'
+            ]
+          };
+          
+          // 生成一个简单的mock JWT token
+          const mockToken = btoa(JSON.stringify({
+            sub: mockUserInfo.username,
+            userId: mockUserInfo.id,
+            exp: Date.now() + 24 * 60 * 60 * 1000, // 24小时后过期
+            iat: Date.now()
+          }));
+          
+          login(`mock.${mockToken}.signature`, 'dev-refresh-token', mockUserInfo);
+          console.log('🚀 开发模式: 使用模拟token自动登录为系统管理员');
         } catch (error) {
           console.error('开发环境自动登录失败:', error);
         }

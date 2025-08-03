@@ -37,8 +37,8 @@ import DocumentReview from '@/pages/audit-center/DocumentReview';
 import RiskAssessment from '@/pages/audit-center/RiskAssessment';
 
 // 案件管理
-import CasePackageList from '@/pages/case/CasePackageList';
-import CasePackageDetail from '@/pages/case/CasePackageDetail';
+import CasePackageList from '@/pages/case-packages/CasePackageList';
+import CasePackageDetail from '@/pages/case-packages/CasePackageDetail';
 import CaseList from '@/pages/case/CaseList';
 import CaseTimeline from '@/pages/case/CaseTimeline';
 import CaseMarket from '@/pages/cases/CaseMarket';
@@ -75,6 +75,16 @@ import ContractList from '@/pages/contract/ContractList';
 
 // 报表分析
 import ReportDashboard from '@/pages/report/ReportDashboard';
+import SourceOrgDashboardWrapper from '@/pages/reports/SourceOrgDashboardWrapper';
+import DisposalOrgDashboardWrapper from '@/pages/reports/DisposalOrgDashboardWrapper';
+import PlatformOperationDashboard from '@/pages/reports/PlatformOperationDashboard';
+
+// 系统管理
+import UserManagement from '@/pages/system/UserManagement';
+import RoleManagement from '@/pages/system/RoleManagement';
+import SystemSettings from '@/pages/system/SystemSettings';
+import MenuManagement from '@/pages/system/MenuManagement';
+import PermissionManagement from '@/pages/system/PermissionManagement';
 
 // 地图组件
 import CaseDistributionMap from '@/components/map/CaseDistributionMap';
@@ -290,7 +300,39 @@ export const mainRoutes: RouteObject[] = [
   // 报表分析路由
   {
     path: '/reports',
-    element: <ReportDashboard />,
+    children: [
+      {
+        index: true,
+        element: <ReportDashboard />,
+      },
+      {
+        path: 'source-org/:orgId',
+        element: <SourceOrgDashboardWrapper />,
+      },
+      {
+        path: 'disposal-org/:orgId',
+        element: <DisposalOrgDashboardWrapper />,
+      },
+      {
+        path: 'platform',
+        element: <PlatformOperationDashboard />,
+      },
+    ],
+  },
+  
+  // 按键管理路由
+  {
+    path: '/access-keys',
+    children: [
+      {
+        index: true,
+        element: React.createElement(React.lazy(() => import('@/pages/access-keys/AccessKeyList'))),
+      },
+      {
+        path: 'stats',
+        element: React.createElement(React.lazy(() => import('@/pages/access-keys/KeyUsageStats'))),
+      },
+    ],
   },
   
   // 统一的机构管理路由
@@ -339,6 +381,33 @@ export const mainRoutes: RouteObject[] = [
       {
         path: 'membership',
         element: <MembershipPayment />,
+      },
+    ],
+  },
+  
+  // 系统管理路由
+  {
+    path: '/system',
+    children: [
+      {
+        path: 'users',
+        element: <UserManagement />,
+      },
+      {
+        path: 'roles',
+        element: <RoleManagement />,
+      },
+      {
+        path: 'menus',
+        element: <MenuManagement />,
+      },
+      {
+        path: 'permissions',
+        element: <PermissionManagement />,
+      },
+      {
+        path: 'settings',
+        element: <SystemSettings />,
       },
     ],
   },
@@ -445,7 +514,16 @@ export const sourceOrgRoutes: RouteObject[] = [
   // 数据报表
   {
     path: '/reports',
-    element: <ReportDashboard />,
+    children: [
+      {
+        index: true,
+        element: <ReportDashboard />,
+      },
+      {
+        path: 'dashboard',
+        element: <SourceOrgDashboardWrapper />,
+      },
+    ],
   },
 ];
 
@@ -574,6 +652,21 @@ export const disposalOrgRoutes: RouteObject[] = [
       {
         path: 'reports',
         element: <ReportDashboard />,
+      },
+    ],
+  },
+  
+  // 数据报表
+  {
+    path: '/reports',
+    children: [
+      {
+        index: true,
+        element: <ReportDashboard />,
+      },
+      {
+        path: 'dashboard',
+        element: <DisposalOrgDashboardWrapper />,
       },
     ],
   },

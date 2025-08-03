@@ -1,0 +1,179 @@
+package com.drmp.controller;
+
+import com.drmp.common.ApiResponse;
+import com.drmp.dto.AccessKeyCreateDTO;
+import com.drmp.dto.AccessKeyResponseDTO;
+import com.drmp.dto.AccessKeyUpdateDTO;
+import com.drmp.dto.KeyUsageStatsDTO;
+import com.drmp.service.AccessKeyService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.List;
+
+/**
+ * 访问密钥管理控制器
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/v1/access-keys")
+@RequiredArgsConstructor
+@Validated
+@Tag(name = "访问密钥管理", description = "访问密钥相关接口")
+public class AccessKeyController {
+
+    private final AccessKeyService accessKeyService;
+
+    @PostMapping
+    @Operation(summary = "创建访问密钥", description = "创建新的访问密钥")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<AccessKeyResponseDTO> createAccessKey(@Valid @RequestBody AccessKeyCreateDTO createDTO) {
+        AccessKeyResponseDTO responseDTO = accessKeyService.createAccessKey(createDTO);
+        return ApiResponse.success(responseDTO);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "更新访问密钥", description = "更新指定访问密钥的信息")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<AccessKeyResponseDTO> updateAccessKey(
+            @Parameter(description = "密钥ID") @PathVariable Long id,
+            @Valid @RequestBody AccessKeyUpdateDTO updateDTO) {
+        AccessKeyResponseDTO responseDTO = accessKeyService.updateAccessKey(id, updateDTO);
+        return ApiResponse.success(responseDTO);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "获取访问密钥详情", description = "根据ID获取访问密钥详细信息")
+    @PreAuthorize("hasAuthority('KEY_VIEW')")
+    public ApiResponse<AccessKeyResponseDTO> getAccessKey(@Parameter(description = "密钥ID") @PathVariable Long id) {
+        AccessKeyResponseDTO responseDTO = accessKeyService.getAccessKeyById(id);
+        return ApiResponse.success(responseDTO);
+    }
+
+    @GetMapping
+    @Operation(summary = "分页查询访问密钥", description = "按条件分页查询访问密钥列表")
+    @PreAuthorize("hasAuthority('KEY_VIEW')")
+    public ApiResponse<Page<AccessKeyResponseDTO>> getAccessKeys(
+            @Parameter(description = "所有者类型") @RequestParam(required = false) String ownerType,
+            @Parameter(description = "所有者ID") @RequestParam(required = false) Long ownerId,
+            @Parameter(description = "密钥状态") @RequestParam(required = false) String status,
+            @Parameter(description = "密钥类型编码") @RequestParam(required = false) String keyTypeCode,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        
+        Page<AccessKeyResponseDTO> result = accessKeyService.getAccessKeys(ownerType, ownerId, status, keyTypeCode, pageable);
+        return ApiResponse.success(result);
+    }
+
+    @PostMapping("/{id}/revoke")
+    @Operation(summary = "吊销访问密钥", description = "吊销指定的访问密钥")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<Void> revokeAccessKey(
+            @Parameter(description = "密钥ID") @PathVariable Long id,
+            @Parameter(description = "吊销原因") @RequestParam String reason) {
+        accessKeyService.revokeAccessKey(id, reason);
+        return ApiResponse.success();
+    }
+
+    @PostMapping("/{id}/suspend")
+    @Operation(summary = "暂停访问密钥", description = "暂停指定的访问密钥")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<Void> suspendAccessKey(
+            @Parameter(description = "密钥ID") @PathVariable Long id,
+            @Parameter(description = "暂停原因") @RequestParam String reason) {
+        accessKeyService.suspendAccessKey(id, reason);
+        return ApiResponse.success();
+    }
+
+    @PostMapping("/{id}/activate")
+    @Operation(summary = "激活访问密钥", description = "激活指定的访问密钥")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<Void> activateAccessKey(@Parameter(description = "密钥ID") @PathVariable Long id) {
+        accessKeyService.activateAccessKey(id);
+        return ApiResponse.success();
+    }
+
+    @PostMapping("/{id}/regenerate")
+    @Operation(summary = "重新生成密钥秘钥", description = "重新生成指定访问密钥的秘钥")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<String> regenerateKeySecret(
+            @Parameter(description = "密钥ID") @PathVariable Long id,
+            @Parameter(description = "重新生成原因") @RequestParam String reason) {
+        String newSecret = accessKeyService.regenerateKeySecret(id, reason);
+        return ApiResponse.success(newSecret);
+    }
+
+    @GetMapping("/{keyId}/usage-stats")
+    @Operation(summary = "获取密钥使用统计", description = "获取指定密钥的使用统计信息")
+    @PreAuthorize("hasAuthority('KEY_VIEW')")
+    public ApiResponse<KeyUsageStatsDTO> getKeyUsageStats(
+            @Parameter(description = "密钥KeyID") @PathVariable String keyId,
+            @Parameter(description = "开始日期") @RequestParam(required = false) String startDate,
+            @Parameter(description = "结束日期") @RequestParam(required = false) String endDate) {
+        KeyUsageStatsDTO stats = accessKeyService.getKeyUsageStats(keyId, startDate, endDate);
+        return ApiResponse.success(stats);
+    }
+
+    @GetMapping("/expiring")
+    @Operation(summary = "获取即将过期的密钥", description = "获取即将在指定天数内过期的密钥列表")
+    @PreAuthorize("hasAuthority('KEY_VIEW')")
+    public ApiResponse<List<AccessKeyResponseDTO>> getExpiringKeys(
+            @Parameter(description = "天数", example = "30") @RequestParam(defaultValue = "30") int days) {
+        List<AccessKeyResponseDTO> expiringKeys = accessKeyService.getExpiringKeys(days);
+        return ApiResponse.success(expiringKeys);
+    }
+
+    @PostMapping("/cleanup-expired")
+    @Operation(summary = "清理过期密钥", description = "自动清理所有已过期的密钥")
+    @PreAuthorize("hasAuthority('KEY_MANAGE')")
+    public ApiResponse<Void> cleanupExpiredKeys() {
+        accessKeyService.cleanupExpiredKeys();
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "导出访问密钥列表", description = "导出访问密钥列表为Excel或CSV文件")
+    @PreAuthorize("hasAuthority('KEY_EXPORT')")
+    public ResponseEntity<byte[]> exportAccessKeys(
+            @Parameter(description = "所有者类型") @RequestParam(required = false) String ownerType,
+            @Parameter(description = "所有者ID") @RequestParam(required = false) Long ownerId,
+            @Parameter(description = "导出格式", example = "excel") @RequestParam(defaultValue = "excel") String format) {
+        
+        byte[] data = accessKeyService.exportAccessKeys(ownerType, ownerId, format);
+        
+        String filename = "access_keys." + ("excel".equals(format) ? "xlsx" : "csv");
+        String contentType = "excel".equals(format) ? 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : 
+            "text/csv";
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(data);
+    }
+
+    @PostMapping("/validate")
+    @Operation(summary = "验证访问密钥", description = "验证访问密钥的有效性（仅供内部API使用）")
+    public ApiResponse<Boolean> validateAccessKey(
+            @Parameter(description = "密钥ID") @RequestParam String keyId,
+            @Parameter(description = "密钥秘钥") @RequestParam String keySecret,
+            @Parameter(description = "客户端IP") @RequestParam String clientIp,
+            @Parameter(description = "访问端点") @RequestParam String endpoint) {
+        
+        boolean isValid = accessKeyService.validateAccessKey(keyId, keySecret, clientIp, endpoint);
+        return ApiResponse.success(isValid);
+    }
+}

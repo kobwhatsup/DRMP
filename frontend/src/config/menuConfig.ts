@@ -247,6 +247,26 @@ export const mainMenuConfig: MenuItem[] = [
     icon: BarChartOutlined,
   },
   {
+    key: 'access-keys',
+    path: '',
+    name: '按键管理',
+    icon: SafetyCertificateOutlined,
+    children: [
+      {
+        key: 'access-keys-list',
+        path: '/access-keys',
+        name: '访问密钥',
+        icon: SafetyCertificateOutlined,
+      },
+      {
+        key: 'access-keys-stats',
+        path: '/access-keys/stats',
+        name: '使用统计',
+        icon: BarChartOutlined,
+      },
+    ],
+  },
+  {
     key: 'system',
     path: '/system',
     name: '系统管理',

@@ -1,0 +1,205 @@
+package com.drmp.controller;
+
+import com.drmp.dto.request.DashboardQueryRequest;
+import com.drmp.dto.response.ApiResponse;
+import com.drmp.dto.response.DashboardResponse;
+import com.drmp.service.ReportAnalysisService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 报表分析控制器
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/reports")
+@RequiredArgsConstructor
+@Validated
+@Tag(name = "报表分析", description = "报表分析相关API")
+public class ReportAnalysisController {
+
+    private final ReportAnalysisService reportAnalysisService;
+
+    @Operation(summary = "获取案源方业绩看板", description = "案源机构查看业绩看板数据")
+    @GetMapping("/source-dashboard/{organizationId}")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER')")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getSourceOrgDashboard(
+            @PathVariable Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        DashboardResponse dashboard = reportAnalysisService.getSourceOrgDashboard(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(dashboard));
+    }
+
+    @Operation(summary = "获取处置方效能看板", description = "处置机构查看效能看板数据")
+    @GetMapping("/disposal-dashboard/{organizationId}")
+    @PreAuthorize("hasRole('DISPOSAL_VIEWER') or hasRole('DISPOSAL_MANAGER')")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getDisposalOrgDashboard(
+            @PathVariable Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        DashboardResponse dashboard = reportAnalysisService.getDisposalOrgDashboard(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(dashboard));
+    }
+
+    @Operation(summary = "获取平台运营看板", description = "平台管理员查看运营看板数据")
+    @GetMapping("/platform-dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getPlatformOperationDashboard(
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        DashboardResponse dashboard = reportAnalysisService.getPlatformOperationDashboard(request);
+        return ResponseEntity.ok(ApiResponse.success(dashboard));
+    }
+
+    @Operation(summary = "获取处置机构业绩对比", description = "案源机构对比合作处置机构的业绩")
+    @GetMapping("/disposal-comparison/{sourceOrgId}")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.RankingData>>> getDisposalOrgPerformanceComparison(
+            @PathVariable Long sourceOrgId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.RankingData> comparison = 
+            reportAnalysisService.getDisposalOrgPerformanceComparison(sourceOrgId, request);
+        return ResponseEntity.ok(ApiResponse.success(comparison));
+    }
+
+    @Operation(summary = "获取员工业绩排行", description = "处置机构查看内部员工业绩排行")
+    @GetMapping("/staff-ranking/{disposalOrgId}")
+    @PreAuthorize("hasRole('DISPOSAL_VIEWER') or hasRole('DISPOSAL_MANAGER')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.RankingData>>> getStaffPerformanceRanking(
+            @PathVariable Long disposalOrgId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.RankingData> ranking = 
+            reportAnalysisService.getStaffPerformanceRanking(disposalOrgId, request);
+        return ResponseEntity.ok(ApiResponse.success(ranking));
+    }
+
+    @Operation(summary = "获取案件类型分析", description = "分析不同案件类型的处置效果")
+    @GetMapping("/case-type-analysis")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER') or hasRole('DISPOSAL_VIEWER')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.DistributionData>>> getCaseTypeAnalysis(
+            @Parameter(description = "机构ID，为空时查看全平台数据") @RequestParam(required = false) Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.DistributionData> analysis = 
+            reportAnalysisService.getCaseTypeAnalysis(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(analysis));
+    }
+
+    @Operation(summary = "获取地域分析", description = "分析不同地域的案件分布和处置效果")
+    @GetMapping("/regional-analysis")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER') or hasRole('DISPOSAL_VIEWER')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.DistributionData>>> getRegionalAnalysis(
+            @Parameter(description = "机构ID，为空时查看全平台数据") @RequestParam(required = false) Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.DistributionData> analysis = 
+            reportAnalysisService.getRegionalAnalysis(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(analysis));
+    }
+
+    @Operation(summary = "获取回款趋势分析", description = "分析回款金额和回款率的时间趋势")
+    @GetMapping("/recovery-trend")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER') or hasRole('DISPOSAL_VIEWER')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.TrendData>>> getRecoveryTrendAnalysis(
+            @Parameter(description = "机构ID，为空时查看全平台数据") @RequestParam(required = false) Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.TrendData> trend = 
+            reportAnalysisService.getRecoveryTrendAnalysis(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(trend));
+    }
+
+    @Operation(summary = "获取案件状态分布", description = "分析案件在不同状态下的分布情况")
+    @GetMapping("/case-status-distribution")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER') or hasRole('DISPOSAL_VIEWER')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.DistributionData>>> getCaseStatusDistribution(
+            @Parameter(description = "机构ID，为空时查看全平台数据") @RequestParam(required = false) Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.DistributionData> distribution = 
+            reportAnalysisService.getCaseStatusDistribution(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(distribution));
+    }
+
+    @Operation(summary = "获取实时统计数据", description = "获取实时的统计数据")
+    @GetMapping("/real-time-stats")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('CASE_MANAGER') or hasRole('DISPOSAL_VIEWER') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getRealTimeStatistics(
+            @Parameter(description = "机构ID，为空时查看全平台数据") @RequestParam(required = false) Long organizationId) {
+        
+        Map<String, Object> realTimeStats = reportAnalysisService.getRealTimeStatistics(organizationId);
+        return ResponseEntity.ok(ApiResponse.success(realTimeStats));
+    }
+
+    @Operation(summary = "生成统计报表", description = "生成并导出统计报表文件")
+    @PostMapping("/generate/{reportType}")
+    @PreAuthorize("hasRole('CASE_MANAGER') or hasRole('DISPOSAL_MANAGER') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> generateStatisticsReport(
+            @PathVariable String reportType,
+            @Parameter(description = "机构ID") @RequestParam(required = false) Long organizationId,
+            @Valid @RequestBody DashboardQueryRequest request) {
+        
+        String reportPath = reportAnalysisService.generateStatisticsReport(organizationId, reportType, request);
+        return ResponseEntity.ok(ApiResponse.success(reportPath, "报表生成成功"));
+    }
+
+    @Operation(summary = "获取机构活跃度趋势", description = "分析机构活跃度随时间的变化趋势")
+    @GetMapping("/organization-activity-trend")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.TrendData>>> getOrganizationActivityTrend(
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.TrendData> trend = 
+            reportAnalysisService.getOrganizationActivityTrend(request);
+        return ResponseEntity.ok(ApiResponse.success(trend));
+    }
+
+    @Operation(summary = "获取平台收入分析", description = "分析平台收入构成和趋势")
+    @GetMapping("/platform-revenue-analysis")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPlatformRevenueAnalysis(
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        Map<String, Object> revenueAnalysis = reportAnalysisService.getPlatformRevenueAnalysis(request);
+        return ResponseEntity.ok(ApiResponse.success(revenueAnalysis));
+    }
+
+    @Operation(summary = "获取处置方式效果对比", description = "对比不同处置方式的效果")
+    @GetMapping("/disposal-method-effectiveness")
+    @PreAuthorize("hasRole('CASE_VIEWER') or hasRole('DISPOSAL_VIEWER') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<DashboardResponse.ComparisonData>>> getDisposalMethodEffectiveness(
+            @Parameter(description = "机构ID，为空时查看全平台数据") @RequestParam(required = false) Long organizationId,
+            @Valid @ModelAttribute DashboardQueryRequest request) {
+        
+        List<DashboardResponse.ComparisonData> comparison = 
+            reportAnalysisService.getDisposalMethodEffectiveness(organizationId, request);
+        return ResponseEntity.ok(ApiResponse.success(comparison));
+    }
+
+    @Operation(summary = "手动触发统计数据聚合", description = "手动触发指定日期的统计数据聚合（管理员功能）")
+    @PostMapping("/aggregate-statistics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> aggregateStatistics(
+            @Parameter(description = "统计日期") 
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        
+        reportAnalysisService.aggregateDailyStatistics(date);
+        return ResponseEntity.ok(ApiResponse.success("统计数据聚合完成"));
+    }
+}

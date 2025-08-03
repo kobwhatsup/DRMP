@@ -179,7 +179,7 @@ public class CasePackageController {
     @Operation(summary = "批量导入案件", description = "从Excel/CSV文件批量导入案件到案件包")
     @PostMapping("/{id}/import-cases")
     @PreAuthorize("hasRole('CASE_MANAGER')")
-    public ResponseEntity<ApiResponse<String>> batchImportCases(
+    public ResponseEntity<ApiResponse<Void>> batchImportCases(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
         log.info("Batch importing cases for package: {} with file: {}", id, file.getOriginalFilename());
@@ -188,7 +188,7 @@ public class CasePackageController {
             casePackageService.batchImportCases(id, file);
         
         // 返回任务ID，客户端可以通过WebSocket或轮询获取进度
-        return ResponseEntity.ok(ApiResponse.success("导入任务已启动，请稍后查看结果"));
+        return ResponseEntity.ok(ApiResponse.successWithMessage("导入任务已启动，请稍后查看结果"));
     }
 
     @Operation(summary = "获取案件包统计", description = "获取案件包统计信息")

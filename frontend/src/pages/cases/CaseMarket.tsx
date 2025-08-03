@@ -95,6 +95,7 @@ const CaseMarket: React.FC = () => {
         {
           id: 1,
           packageName: '华北地区个贷不良资产包A',
+          packageCode: 'PKG-001',
           sourceOrgId: 1,
           sourceOrgName: '某股份制银行',
           totalCases: 256,

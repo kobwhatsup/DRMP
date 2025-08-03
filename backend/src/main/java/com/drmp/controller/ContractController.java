@@ -312,7 +312,7 @@ public class ContractController {
         
         String contractNumber = contractService.generateContractNumber(contractType);
         
-        return ResponseEntity.ok(ApiResponse.success(contractNumber));
+        return ResponseEntity.ok(ApiResponse.<String>success(contractNumber));
     }
     
     @Operation(summary = "检查合同编号可用性", description = "检查合同编号是否可用")

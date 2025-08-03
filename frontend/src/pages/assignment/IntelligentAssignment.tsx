@@ -100,6 +100,7 @@ const IntelligentAssignment: React.FC = () => {
       const mockCasePackage: CasePackage = {
         id: Number(packageId),
         packageName: '测试案件包A',
+        packageCode: 'PKG-' + packageId,
         sourceOrgId: 1,
         sourceOrgName: '某银行',
         totalCases: 450,
