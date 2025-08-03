@@ -1,0 +1,36 @@
+{
+  "project": {
+    "name": "DRMP - 全国分散诉调平台",
+    "description": "B2B个贷不良资产处置平台",
+    "version": "1.0.0"
+  },
+  "auto-save": {
+    "enabled": true,
+    "interval": 300,
+    "use-smart-commit": true,
+    "max-files-per-commit": 50,
+    "excluded-patterns": [
+      "node_modules/**",
+      "target/**",
+      ".git/**",
+      "*.log",
+      "*.tmp"
+    ]
+  },
+  "hooks": {
+    "pre-commit": {
+      "enabled": true,
+      "run-tests": false,
+      "run-lint": false
+    },
+    "post-commit": {
+      "enabled": false,
+      "notify": false
+    }
+  },
+  "backup": {
+    "create-daily-backup": true,
+    "backup-path": ".claude/backups",
+    "keep-days": 7
+  }
+}

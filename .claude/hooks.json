@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "file-changed": {
+      "command": "bash .claude/scripts/auto-commit.sh",
+      "description": "Auto-commit changes when files are modified",
+      "enabled": true
+    },
+    "tool-called": {
+      "command": "bash .claude/scripts/log-tool-usage.sh",
+      "description": "Log tool usage for audit",
+      "enabled": false
+    },
+    "prompt-submitted": {
+      "command": "bash .claude/scripts/backup-prompt.sh",
+      "description": "Backup prompts for reference",
+      "enabled": false
+    }
+  },
+  "settings": {
+    "auto-commit": {
+      "interval": 300,
+      "message-prefix": "Auto-save:",
+      "include-timestamp": true,
+      "max-files-per-commit": 50
+    }
+  }
+}
