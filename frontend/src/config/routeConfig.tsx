@@ -19,6 +19,12 @@ import SourceOrgAPIManagement from '@/pages/source-org/SourceOrgAPIManagement';
 import DisposalOrgList from '@/pages/disposal-org/DisposalOrgList';
 import DisposalOrgDetail from '@/pages/disposal-org/DisposalOrgDetail';
 import DisposalOrgForm from '@/pages/disposal-org/DisposalOrgForm';
+import DisposalOrgRegister from '@/pages/disposal-org/DisposalOrgRegister';
+import RegisterSuccess from '@/pages/disposal-org/RegisterSuccess';
+import DisposalOrgCapabilityMatching from '@/pages/disposal-org/DisposalOrgCapabilityMatching';
+import CaseProcessingWorkbench from '@/pages/disposal-org/CaseProcessingWorkbench';
+import DisposalPerformanceDashboard from '@/pages/disposal-org/DisposalPerformanceDashboard';
+import ReconciliationSettlement from '@/pages/disposal-org/ReconciliationSettlement';
 import DisposalOrgPerformanceStats from '@/pages/disposal-org/DisposalOrgPerformanceStats';
 import DisposalOrgCapacityManagement from '@/pages/disposal-org/DisposalOrgCapacityManagement';
 import DisposalOrgResourceManagement from '@/pages/disposal-org/DisposalOrgResourceManagement';
@@ -36,6 +42,30 @@ import CasePackageDetail from '@/pages/case/CasePackageDetail';
 import CaseList from '@/pages/case/CaseList';
 import CaseTimeline from '@/pages/case/CaseTimeline';
 import CaseMarket from '@/pages/cases/CaseMarket';
+import CaseReportAnalysis from '@/pages/cases/CaseReportAnalysis';
+import IDSSystemIntegration from '@/pages/cases/IDSSystemIntegration';
+import CaseManagementTest from '@/pages/cases/CaseManagementTest';
+
+// 案件发布
+import CasePublishTemplates from '@/pages/case-publish/CasePublishTemplates';
+
+// 案件包创建
+import CreateCasePackage from '@/pages/case-packages/CreateCasePackage';
+
+// 竞标管理
+import BiddingManagement from '@/pages/case-market/BiddingManagement';
+
+// 合作评价
+import CooperationEvaluation from '@/pages/source-partners/CooperationEvaluation';
+
+// 业绩分析
+import PerformanceAnalysis from '@/pages/performance/PerformanceAnalysis';
+
+// 财务管理
+import RevenueManagement from '@/pages/financial/RevenueManagement';
+import CaseReconciliation from '@/pages/financial/CaseReconciliation';
+import SettlementManagement from '@/pages/financial/SettlementManagement';
+import MembershipPayment from '@/pages/financial/MembershipPayment';
 
 // 智能分案
 import AssignmentConfig from '@/pages/assignment/AssignmentConfig';
@@ -49,6 +79,13 @@ import ReportDashboard from '@/pages/report/ReportDashboard';
 // 地图组件
 import CaseDistributionMap from '@/components/map/CaseDistributionMap';
 import DisposalOrgMap from '@/components/map/DisposalOrgMap';
+
+// 统一的机构管理组件
+import OrganizationList from '@/pages/organization/OrganizationList';
+import OrganizationDetail from '@/pages/organization/OrganizationDetail';
+import OrganizationDetailPage from '@/pages/organization/OrganizationDetailPage';
+import OrganizationForm from '@/pages/organization/OrganizationForm';
+import OrganizationApproval from '@/pages/organization/OrganizationApproval';
 
 // 主路由配置（管理员视角）
 export const mainRoutes: RouteObject[] = [
@@ -117,6 +154,14 @@ export const mainRoutes: RouteObject[] = [
         element: <DisposalOrgForm />,
       },
       {
+        path: 'register',
+        element: <DisposalOrgRegister />,
+      },
+      {
+        path: 'register-success',
+        element: <RegisterSuccess />,
+      },
+      {
         path: ':id',
         element: <DisposalOrgDetail />,
       },
@@ -133,6 +178,10 @@ export const mainRoutes: RouteObject[] = [
         element: <DisposalOrgPerformanceStats />,
       },
       {
+        path: 'dashboard',
+        element: <DisposalPerformanceDashboard />,
+      },
+      {
         path: 'capacity',
         element: <DisposalOrgCapacityManagement />,
       },
@@ -143,6 +192,18 @@ export const mainRoutes: RouteObject[] = [
       {
         path: 'membership',
         element: <DisposalOrgMembershipManagement />,
+      },
+      {
+        path: 'matching',
+        element: <DisposalOrgCapabilityMatching />,
+      },
+      {
+        path: 'workbench',
+        element: <CaseProcessingWorkbench />,
+      },
+      {
+        path: 'settlement',
+        element: <ReconciliationSettlement />,
       },
     ],
   },
@@ -199,6 +260,18 @@ export const mainRoutes: RouteObject[] = [
         path: 'timeline',
         element: <CaseTimeline />,
       },
+      {
+        path: 'reports',
+        element: <CaseReportAnalysis />,
+      },
+      {
+        path: 'ids-integration',
+        element: <IDSSystemIntegration />,
+      },
+      {
+        path: 'test',
+        element: <CaseManagementTest />,
+      },
     ],
   },
   
@@ -218,6 +291,56 @@ export const mainRoutes: RouteObject[] = [
   {
     path: '/reports',
     element: <ReportDashboard />,
+  },
+  
+  // 统一的机构管理路由
+  {
+    path: '/organizations',
+    children: [
+      {
+        index: true,
+        element: <OrganizationList />,
+      },
+      {
+        path: 'create',
+        element: <OrganizationForm mode="create" />,
+      },
+      {
+        path: ':id',
+        element: <OrganizationDetailPage />,
+      },
+      {
+        path: ':id/edit',
+        element: <OrganizationForm mode="edit" />,
+      },
+      {
+        path: 'approval',
+        element: <OrganizationApproval />,
+      },
+    ],
+  },
+  
+  // 财务管理路由
+  {
+    path: '/financial',
+    children: [
+      {
+        path: 'revenue',
+        element: <RevenueManagement />,
+      },
+      {
+        path: 'reconciliation',
+        element: <CaseReconciliation />,
+      },
+      {
+        path: 'settlement',
+        element: <SettlementManagement />,
+      },
+      {
+        path: 'membership',
+        element: <MembershipPayment />,
+      },
+    ],
   },
 ];
 
@@ -261,7 +384,7 @@ export const sourceOrgRoutes: RouteObject[] = [
       },
       {
         path: 'templates',
-        element: <div>案件发布模板</div>, // TODO: 创建组件
+        element: <CasePublishTemplates />,
       },
       {
         path: 'quality',
@@ -280,7 +403,7 @@ export const sourceOrgRoutes: RouteObject[] = [
       },
       {
         path: 'create',
-        element: <div>创建案件包</div>, // TODO: 创建组件
+        element: <CreateCasePackage />,
       },
       {
         path: ':id',
@@ -370,7 +493,7 @@ export const disposalOrgRoutes: RouteObject[] = [
       },
       {
         path: 'bidding',
-        element: <div>竞标管理</div>, // TODO: 创建组件
+        element: <BiddingManagement />,
       },
       {
         path: 'received',
@@ -383,6 +506,10 @@ export const disposalOrgRoutes: RouteObject[] = [
   {
     path: '/case-disposal',
     children: [
+      {
+        path: 'workbench',
+        element: <CaseProcessingWorkbench />,
+      },
       {
         path: 'processing',
         element: <CaseList />,
@@ -408,7 +535,7 @@ export const disposalOrgRoutes: RouteObject[] = [
       },
       {
         path: 'evaluation',
-        element: <div>合作评价</div>, // TODO: 创建组件
+        element: <CooperationEvaluation />,
       },
     ],
   },
@@ -418,12 +545,16 @@ export const disposalOrgRoutes: RouteObject[] = [
     path: '/performance',
     children: [
       {
+        path: 'dashboard',
+        element: <DisposalPerformanceDashboard />,
+      },
+      {
         path: 'stats',
         element: <DisposalOrgPerformanceStats />,
       },
       {
         path: 'analysis',
-        element: <div>业绩分析</div>, // TODO: 创建组件
+        element: <PerformanceAnalysis />,
       },
     ],
   },
@@ -434,11 +565,11 @@ export const disposalOrgRoutes: RouteObject[] = [
     children: [
       {
         path: 'income',
-        element: <div>收入管理</div>, // TODO: 创建组件
+        element: <RevenueManagement />,
       },
       {
         path: 'settlement',
-        element: <div>结算管理</div>, // TODO: 创建组件
+        element: <ReconciliationSettlement />,
       },
       {
         path: 'reports',
@@ -453,6 +584,14 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/disposal-org/register',
+    element: <DisposalOrgRegister />,
+  },
+  {
+    path: '/disposal-org/register-success',
+    element: <RegisterSuccess />,
   },
 ];
 

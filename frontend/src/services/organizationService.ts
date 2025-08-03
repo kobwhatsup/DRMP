@@ -2,6 +2,7 @@ import { message } from 'antd';
 
 // API基础配置
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const API_VERSION = process.env.REACT_APP_USE_DEV_API === 'true' ? '/v1/dev' : '';
 
 // 请求配置
 const getRequestConfig = () => {
@@ -233,7 +234,7 @@ class OrganizationService {
       }
     });
     
-    const url = `/v1/dev/organizations?${queryString.toString()}`;
+    const url = `${API_VERSION}/organizations?${queryString.toString()}`;
     const response: ApiResponse<PageResponse<Organization>> = await request(url);
     return response.data;
   }
@@ -242,7 +243,7 @@ class OrganizationService {
    * 获取机构详情
    */
   async getOrganizationDetail(id: number): Promise<OrganizationDetail> {
-    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}`);
+    const response: ApiResponse<OrganizationDetail> = await request(`${API_VERSION}/organizations/${id}`);
     return response.data;
   }
 
@@ -284,7 +285,7 @@ class OrganizationService {
    * 审核通过机构
    */
   async approveOrganization(id: number, data: OrganizationApprovalRequest): Promise<OrganizationDetail> {
-    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/approve`, {
+    const response: ApiResponse<OrganizationDetail> = await request(`${API_VERSION}/organizations/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -296,7 +297,7 @@ class OrganizationService {
    * 审核拒绝机构
    */
   async rejectOrganization(id: number, data: OrganizationApprovalRequest): Promise<OrganizationDetail> {
-    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/reject`, {
+    const response: ApiResponse<OrganizationDetail> = await request(`${API_VERSION}/organizations/${id}/reject`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -309,7 +310,7 @@ class OrganizationService {
    */
   async suspendOrganization(id: number, reason?: string): Promise<OrganizationDetail> {
     const queryString = reason ? `?reason=${encodeURIComponent(reason)}` : '';
-    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/suspend${queryString}`, {
+    const response: ApiResponse<OrganizationDetail> = await request(`${API_VERSION}/organizations/${id}/suspend${queryString}`, {
       method: 'POST',
     });
     message.success('机构已停用');
@@ -320,7 +321,7 @@ class OrganizationService {
    * 激活机构
    */
   async activateOrganization(id: number): Promise<OrganizationDetail> {
-    const response: ApiResponse<OrganizationDetail> = await request(`/v1/dev/organizations/${id}/activate`, {
+    const response: ApiResponse<OrganizationDetail> = await request(`${API_VERSION}/organizations/${id}/activate`, {
       method: 'POST',
     });
     message.success('机构已激活');
@@ -331,9 +332,14 @@ class OrganizationService {
    * 更新会员费支付信息
    */
   async updateMembershipPayment(id: number, data: MembershipPaymentRequest): Promise<OrganizationDetail> {
-    const response: ApiResponse<OrganizationDetail> = await request(`/organizations/${id}/membership-payment`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
+    const queryString = new URLSearchParams({
+      paymentMethod: data.paymentMethod,
+      paymentReference: data.paymentReference,
+      ...(data.remark && { remark: data.remark })
+    }).toString();
+    
+    const response: ApiResponse<OrganizationDetail> = await request(`${API_VERSION}/organizations/${id}/membership/payment?${queryString}`, {
+      method: 'POST',
     });
     message.success('会员费支付信息已更新');
     return response.data;
@@ -343,7 +349,7 @@ class OrganizationService {
    * 获取机构统计数据
    */
   async getOrganizationStatistics(): Promise<OrganizationStatistics> {
-    const response: ApiResponse<OrganizationStatistics> = await request('/v1/dev/organizations/statistics');
+    const response: ApiResponse<OrganizationStatistics> = await request(`${API_VERSION}/organizations/statistics`);
     return response.data;
   }
 
@@ -412,7 +418,7 @@ class OrganizationService {
       }
     });
     
-    const url = `/v1/dev/organizations?${queryString.toString()}`;
+    const url = `${API_VERSION}/organizations?${queryString.toString()}`;
     return await request(url);
   }
 
@@ -425,7 +431,7 @@ class OrganizationService {
   }
 
   async getStatistics(): Promise<ApiResponse<any>> {
-    return await request('/v1/dev/organizations/statistics');
+    return await request(`${API_VERSION}/organizations/statistics`);
   }
 }
 

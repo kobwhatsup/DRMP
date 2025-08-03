@@ -10,7 +10,7 @@ import {
   CheckCircleOutlined, WarningOutlined, StarOutlined, GiftOutlined,
   UserOutlined, SafetyCertificateOutlined, UpOutlined
 } from '@ant-design/icons';
-import { Line, Column, Pie } from '@ant-design/plots';
+// import { Line, Column, Pie } from '@ant-design/plots'; // 暂时注释掉有问题的图表组件
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
@@ -675,12 +675,53 @@ const DisposalOrgMembershipManagement: React.FC = () => {
               <Row gutter={16}>
                 <Col span={12}>
                   <Card title="会员发展趋势">
-                    <Line {...membershipTrendConfig} />
+                    <Table
+                      dataSource={membershipData?.membershipTrend || []}
+                      columns={[
+                        { title: '月份', dataIndex: 'month', key: 'month' },
+                        { 
+                          title: '新增会员', 
+                          dataIndex: 'newMembers', 
+                          key: 'newMembers',
+                          render: (count: number) => `${count}家`
+                        },
+                        { 
+                          title: '累计会员', 
+                          dataIndex: 'totalMembers', 
+                          key: 'totalMembers',
+                          render: (count: number) => `${count}家`
+                        },
+                        { 
+                          title: '流失率', 
+                          dataIndex: 'churnRate', 
+                          key: 'churnRate',
+                          render: (rate: number) => (
+                            <span style={{ color: rate > 5 ? '#ff4d4f' : '#52c41a' }}>
+                              {rate}%
+                            </span>
+                          )
+                        }
+                      ]}
+                      size="small"
+                      pagination={false}
+                    />
                   </Card>
                 </Col>
                 <Col span={12}>
                   <Card title="等级分布">
-                    <Pie {...levelDistributionConfig} />
+                    {(membershipData?.levelDistribution || []).map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span>{item.level}</span>
+                          <span style={{ fontWeight: 'bold' }}>{item.count}家 ({item.percentage}%)</span>
+                        </div>
+                        <Progress 
+                          percent={item.percentage} 
+                          strokeColor={['#722ed1', '#faad14', '#d9d9d9', '#d48806'][index % 4]}
+                          showInfo={false}
+                        />
+                      </div>
+                    ))}
                   </Card>
                 </Col>
               </Row>
@@ -688,7 +729,19 @@ const DisposalOrgMembershipManagement: React.FC = () => {
               <Row gutter={16} style={{ marginTop: 16 }}>
                 <Col span={16}>
                   <Card title="收入分析">
-                    <Column {...revenueAnalysisConfig} />
+                    {(membershipData?.revenueAnalysis || []).map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span>{item.level}</span>
+                          <span style={{ fontWeight: 'bold' }}>¥{(item.monthlyRevenue / 10000).toFixed(1)}万</span>
+                        </div>
+                        <Progress 
+                          percent={Math.round((item.monthlyRevenue / (membershipData?.revenueAnalysis?.reduce((sum, r) => sum + r.monthlyRevenue, 0) || item.monthlyRevenue)) * 100)} 
+                          strokeColor={['#52c41a', '#1890ff', '#fa8c16', '#ff4d4f'][index % 4]}
+                          showInfo={false}
+                        />
+                      </div>
+                    ))}
                   </Card>
                 </Col>
                 <Col span={8}>

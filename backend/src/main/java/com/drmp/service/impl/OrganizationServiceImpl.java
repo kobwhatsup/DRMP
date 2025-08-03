@@ -193,8 +193,8 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .orElseThrow(() -> new BusinessException("机构不存在"));
         
         // Check if organization has users
-        long userCount = userRepository.countByOrganizationId(id);
-        if (userCount > 0) {
+        List<User> users = userRepository.findByOrganizationId(id);
+        if (!users.isEmpty()) {
             throw new BusinessException("该机构下还有用户，无法删除");
         }
         
@@ -313,12 +313,36 @@ public class OrganizationServiceImpl implements OrganizationService {
             long suspendedCount = organizationRepository.countByStatus(OrganizationStatus.SUSPENDED);
             long rejectedCount = organizationRepository.countByStatus(OrganizationStatus.REJECTED);
             
+            // Count source and disposal organizations
+            long sourceCount = 0;
+            long disposalCount = 0;
+            
+            // Get all organizations with type information
+            List<Organization> allOrgs = organizationRepository.findAll();
+            for (Organization org : allOrgs) {
+                if (org.getType() != null) {
+                    if (org.getType().name().contains("BANK") || 
+                        org.getType().name().contains("CONSUMER_FINANCE") ||
+                        org.getType().name().contains("ONLINE_LOAN") ||
+                        org.getType().name().contains("MICRO_LOAN") ||
+                        org.getType().name().contains("AMC")) {
+                        sourceCount++;
+                    } else if (org.getType().name().contains("MEDIATION_CENTER") ||
+                               org.getType().name().contains("LAW_FIRM") ||
+                               org.getType().name().contains("OTHER")) {
+                        disposalCount++;
+                    }
+                }
+            }
+            
             statistics.put("total", totalCount);
             statistics.put("pending", pendingCount);
             statistics.put("approved", activeCount);  // For frontend compatibility
             statistics.put("active", activeCount);
             statistics.put("suspended", suspendedCount);
             statistics.put("rejected", rejectedCount);
+            statistics.put("sourceCount", sourceCount);
+            statistics.put("disposalCount", disposalCount);
             
             // Get audit statistics
             Map<String, Object> auditStats = auditService.getAuditStatistics();
@@ -333,6 +357,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             statistics.put("active", 0L);
             statistics.put("suspended", 0L);
             statistics.put("rejected", 0L);
+            statistics.put("sourceCount", 0L);
+            statistics.put("disposalCount", 0L);
             statistics.put("todayPending", 0L);
             statistics.put("weekApproved", 0L);
         }

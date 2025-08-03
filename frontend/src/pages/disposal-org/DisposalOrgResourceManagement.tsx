@@ -9,7 +9,7 @@ import {
   UserAddOutlined, UserDeleteOutlined, EditOutlined, SafetyCertificateOutlined,
   CalendarOutlined, ClockCircleOutlined, BarChartOutlined
 } from '@ant-design/icons';
-import { Line, Column, Gauge } from '@ant-design/plots';
+// import { Line, Column, Gauge } from '@ant-design/plots'; // 暂时注释掉有问题的图表组件
 import type { ColumnsType } from 'antd/es/table';
 
 const { TabPane } = Tabs;
@@ -674,12 +674,60 @@ const DisposalOrgResourceManagement: React.FC = () => {
               <Row gutter={16}>
                 <Col span={8}>
                   <Card title="人员利用率">
-                    <Gauge {...utilizationGaugeConfig} />
+                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      <Progress 
+                        type="circle" 
+                        percent={resourceData ? resourceData.summary.utilizationRate : 0}
+                        strokeColor={{
+                          '0%': '#30BF78',
+                          '85%': '#FAAD14', 
+                          '100%': '#F4664A'
+                        }}
+                        format={percent => (
+                          <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                            {percent}%
+                          </span>
+                        )}
+                        width={180}
+                      />
+                      <div style={{ marginTop: 16, fontSize: '14px', color: '#666' }}>人员利用率</div>
+                    </div>
                   </Card>
                 </Col>
                 <Col span={16}>
                   <Card title="工作负载趋势">
-                    <Line {...workloadTrendConfig} />
+                    <Table
+                      dataSource={resourceData?.workloadTrend || []}
+                      columns={[
+                        { title: '月份', dataIndex: 'month', key: 'month' },
+                        { 
+                          title: '平均负载', 
+                          dataIndex: 'avgLoad', 
+                          key: 'avgLoad',
+                          render: (load: number) => `${load}%`
+                        },
+                        { 
+                          title: '峰值负载', 
+                          dataIndex: 'peakLoad', 
+                          key: 'peakLoad',
+                          render: (load: number) => `${load}%`
+                        },
+                        { 
+                          title: '人员效率', 
+                          dataIndex: 'efficiency', 
+                          key: 'efficiency',
+                          render: (efficiency: number) => (
+                            <Progress 
+                              percent={efficiency} 
+                              size="small"
+                              strokeColor={efficiency > 80 ? '#52c41a' : efficiency > 60 ? '#1890ff' : '#fa8c16'}
+                            />
+                          )
+                        }
+                      ]}
+                      size="small"
+                      pagination={false}
+                    />
                   </Card>
                 </Col>
               </Row>
@@ -687,7 +735,19 @@ const DisposalOrgResourceManagement: React.FC = () => {
               <Row gutter={16} style={{ marginTop: 16 }}>
                 <Col span={12}>
                   <Card title="团队结构">
-                    <Column {...teamStructureConfig} />
+                    {(resourceData?.teamStructure || []).map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span>{item.department}</span>
+                          <span style={{ fontWeight: 'bold' }}>{item.totalMembers}人</span>
+                        </div>
+                        <Progress 
+                          percent={Math.round((item.totalMembers / (resourceData?.summary.totalMembers || 1)) * 100)} 
+                          strokeColor={['#52c41a', '#1890ff', '#fa8c16', '#ff4d4f'][index % 4]}
+                          showInfo={false}
+                        />
+                      </div>
+                    ))}
                   </Card>
                 </Col>
                 <Col span={12}>
@@ -740,7 +800,19 @@ const DisposalOrgResourceManagement: React.FC = () => {
               <Row gutter={16}>
                 <Col span={16}>
                   <Card title="技能分布">
-                    <Column {...skillDistributionConfig} />
+                    {(resourceData?.skillDistribution || []).map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span>{item.skill}</span>
+                          <span style={{ fontWeight: 'bold' }}>{item.memberCount}人</span>
+                        </div>
+                        <Progress 
+                          percent={Math.round((item.memberCount / (resourceData?.summary.totalMembers || 1)) * 100)} 
+                          strokeColor={['#52c41a', '#1890ff', '#fa8c16', '#ff4d4f', '#722ed1'][index % 5]}
+                          showInfo={false}
+                        />
+                      </div>
+                    ))}
                   </Card>
                 </Col>
                 <Col span={8}>

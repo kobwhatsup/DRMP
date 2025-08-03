@@ -10,7 +10,7 @@ import {
   DollarOutlined, ThunderboltOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import DisposalOrgMap from '@/components/map/DisposalOrgMap';
-import { Line, Column, Pie, Gauge } from '@ant-design/plots';
+// import { Line, Column, Pie, Gauge } from '@ant-design/plots'; // 暂时注释掉有问题的图表组件
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
@@ -259,67 +259,7 @@ const DisposalOrgPerformanceStats: React.FC = () => {
     message.success('导出功能开发中...');
   };
 
-  // 业绩趋势图配置
-  const performanceTrendConfig = {
-    data: statsData?.performanceTrend || [],
-    xField: 'month',
-    yField: 'avgScore',
-    height: 300,
-    point: {
-      size: 5,
-      shape: 'diamond',
-    },
-    color: '#1890ff',
-    smooth: true,
-  };
-
-  // 机构类型业绩图配置
-  const typePerformanceConfig = {
-    data: statsData?.typePerformance || [],
-    xField: 'orgType',
-    yField: 'avgScore',
-    height: 300,
-    color: '#52c41a',
-    label: {
-      position: 'middle' as const,
-      style: {
-        fill: '#FFFFFF',
-        opacity: 0.6,
-      },
-    },
-  };
-
-  // 业绩分布饼图配置
-  const performanceDistributionConfig = {
-    data: statsData?.performanceDistribution || [],
-    angleField: 'orgCount',
-    colorField: 'scoreRange',
-    radius: 0.8,
-    height: 300,
-    label: {
-      type: 'outer' as const,
-      content: '{name} {percentage}%',
-    },
-    interactions: [
-      {
-        type: 'element-active',
-      },
-    ],
-  };
-
-  // 满意度趋势图配置
-  const satisfactionTrendConfig = {
-    data: statsData?.satisfactionTrend || [],
-    xField: 'month',
-    yField: 'satisfaction',
-    height: 300,
-    point: {
-      size: 5,
-      shape: 'diamond',
-    },
-    color: '#faad14',
-    smooth: true,
-  };
+  // 图表配置已替换为Ant Design原生组件
 
   // 机构业绩排行表格配置
   const performanceColumns: ColumnsType<any> = [
@@ -609,12 +549,53 @@ const DisposalOrgPerformanceStats: React.FC = () => {
               <Row gutter={16}>
                 <Col span={12}>
                   <Card title="业绩趋势">
-                    <Line {...performanceTrendConfig} />
+                    <Table
+                      dataSource={statsData?.performanceTrend || []}
+                      columns={[
+                        { title: '月份', dataIndex: 'month', key: 'month' },
+                        { 
+                          title: '平均分数', 
+                          dataIndex: 'avgScore', 
+                          key: 'avgScore',
+                          render: (score: number) => (
+                            <span style={{ color: score > 80 ? '#52c41a' : score > 60 ? '#1890ff' : '#fa8c16' }}>
+                              {score}
+                            </span>
+                          )
+                        },
+                        { 
+                          title: '成功率', 
+                          dataIndex: 'successRate', 
+                          key: 'successRate',
+                          render: (rate: number) => `${rate}%`
+                        },
+                        { 
+                          title: '满意度', 
+                          dataIndex: 'satisfaction', 
+                          key: 'satisfaction',
+                          render: (satisfaction: number) => `${satisfaction}`
+                        }
+                      ]}
+                      size="small"
+                      pagination={false}
+                    />
                   </Card>
                 </Col>
                 <Col span={12}>
                   <Card title="机构类型业绩对比">
-                    <Column {...typePerformanceConfig} />
+                    {(statsData?.typePerformance || []).map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span>{item.orgType}</span>
+                          <span style={{ fontWeight: 'bold' }}>{item.avgScore}</span>
+                        </div>
+                        <Progress 
+                          percent={item.avgScore} 
+                          strokeColor={item.avgScore > 80 ? '#52c41a' : item.avgScore > 60 ? '#1890ff' : '#fa8c16'}
+                          showInfo={false}
+                        />
+                      </div>
+                    ))}
                   </Card>
                 </Col>
               </Row>
@@ -622,7 +603,19 @@ const DisposalOrgPerformanceStats: React.FC = () => {
               <Row gutter={16} style={{ marginTop: 16 }}>
                 <Col span={12}>
                   <Card title="业绩分布">
-                    <Pie {...performanceDistributionConfig} />
+                    {(statsData?.performanceDistribution || []).map((item: any, index: number) => (
+                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <span>{item.scoreRange}</span>
+                        <div style={{ flex: 1, marginLeft: 16, marginRight: 16 }}>
+                          <Progress 
+                            percent={Math.round((item.orgCount / (statsData?.summary.totalOrgs || 1)) * 100)} 
+                            strokeColor={['#52c41a', '#1890ff', '#fa8c16', '#ff4d4f'][index % 4]}
+                            showInfo={false}
+                          />
+                        </div>
+                        <span style={{ fontWeight: 'bold' }}>{item.orgCount}家</span>
+                      </div>
+                    ))}
                   </Card>
                 </Col>
                 <Col span={12}>
@@ -666,7 +659,36 @@ const DisposalOrgPerformanceStats: React.FC = () => {
               <Row gutter={16}>
                 <Col span={16}>
                   <Card title="客户满意度趋势">
-                    <Line {...satisfactionTrendConfig} />
+                    <Table
+                      dataSource={statsData?.satisfactionTrend || []}
+                      columns={[
+                        { title: '月份', dataIndex: 'month', key: 'month' },
+                        { 
+                          title: '满意度', 
+                          dataIndex: 'satisfaction', 
+                          key: 'satisfaction',
+                          render: (satisfaction: number) => (
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <Progress 
+                                percent={(satisfaction / 5) * 100} 
+                                size="small"
+                                strokeColor={satisfaction > 4 ? '#52c41a' : satisfaction > 3 ? '#1890ff' : '#fa8c16'}
+                                style={{ marginRight: 8, flex: 1 }}
+                              />
+                              <span>{satisfaction.toFixed(1)}</span>
+                            </div>
+                          )
+                        },
+                        { 
+                          title: '评价数', 
+                          dataIndex: 'reviewCount', 
+                          key: 'reviewCount',
+                          render: (count: number) => `${count}个`
+                        }
+                      ]}
+                      size="small"
+                      pagination={false}
+                    />
                   </Card>
                 </Col>
                 <Col span={8}>

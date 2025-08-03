@@ -26,7 +26,7 @@ export const mainMenuConfig: MenuItem[] = [
   },
   {
     key: 'source-orgs',
-    path: '/source-orgs',
+    path: '',
     name: '案源机构管理',
     icon: BankOutlined,
     children: [
@@ -70,7 +70,7 @@ export const mainMenuConfig: MenuItem[] = [
   },
   {
     key: 'disposal-orgs',
-    path: '/disposal-orgs',
+    path: '',
     name: '处置机构管理',
     icon: TeamOutlined,
     children: [
@@ -114,7 +114,7 @@ export const mainMenuConfig: MenuItem[] = [
   },
   {
     key: 'audit-center',
-    path: '/audit-center',
+    path: '',
     name: '机构审核中心',
     icon: AuditOutlined,
     children: [
@@ -167,6 +167,18 @@ export const mainMenuConfig: MenuItem[] = [
         path: '/assignment',
         name: '智能分案',
         icon: ExperimentOutlined,
+      },
+      {
+        key: 'case-reports',
+        path: '/cases/reports',
+        name: '报表分析',
+        icon: BarChartOutlined,
+      },
+      {
+        key: 'case-ids-integration',
+        path: '/cases/ids-integration',
+        name: 'IDS系统集成',
+        icon: ApiOutlined,
       }
     ]
   },
@@ -175,6 +187,58 @@ export const mainMenuConfig: MenuItem[] = [
     path: '/contracts',
     name: '合同管理',
     icon: FileProtectOutlined,
+  },
+  {
+    key: 'organizations',
+    path: '',
+    name: '机构管理',
+    icon: BankOutlined,
+    children: [
+      {
+        key: 'organizations-list',
+        path: '/organizations',
+        name: '机构列表',
+        icon: BankOutlined,
+      },
+      {
+        key: 'organizations-approval',
+        path: '/organizations/approval',
+        name: '机构审核',
+        icon: AuditOutlined,
+      },
+    ],
+  },
+  {
+    key: 'financial',
+    path: '',
+    name: '财务管理',
+    icon: DollarOutlined,
+    children: [
+      {
+        key: 'financial-revenue',
+        path: '/financial/revenue',
+        name: '收入管理',
+        icon: MoneyCollectOutlined,
+      },
+      {
+        key: 'financial-reconciliation',
+        path: '/financial/reconciliation',
+        name: '案件对账',
+        icon: AuditOutlined,
+      },
+      {
+        key: 'financial-settlement',
+        path: '/financial/settlement',
+        name: '结算管理',
+        icon: DollarOutlined,
+      },
+      {
+        key: 'financial-membership',
+        path: '/financial/membership',
+        name: '会员费管理',
+        icon: SafetyCertificateOutlined,
+      },
+    ],
   },
   {
     key: 'reports',

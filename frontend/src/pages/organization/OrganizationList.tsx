@@ -194,12 +194,12 @@ const OrganizationList: React.FC = () => {
       const data = await organizationService.getOrganizationStatistics();
       // 映射API响应到内部状态
       setStats({
-        total: data.totalCount,
+        total: data.total || data.totalCount || 0,
         source: (data as any).sourceCount || 0, // 根据实际API字段调整
         disposal: (data as any).disposalCount || 0, // 根据实际API字段调整
-        active: data.activeCount,
-        pending: data.pendingCount,
-        suspended: data.suspendedCount,
+        active: data.active || data.activeCount || 0,
+        pending: data.pending || data.pendingCount || 0,
+        suspended: data.suspended || data.suspendedCount || 0,
       });
     } catch (error) {
       console.error('加载统计数据失败', error);

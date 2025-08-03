@@ -37,7 +37,23 @@ const SideMenu: React.FC<SideMenuProps> = ({ userType, collapsed = false }) => {
         setOpenKeys(parentKeys);
       }
     }
-  }, [location.pathname, menuItems, collapsed]);
+  }, [location.pathname, menuItems]);
+
+  // 监听collapsed变化，处理菜单折叠/展开
+  useEffect(() => {
+    if (collapsed) {
+      // 折叠时清空展开的菜单
+      setOpenKeys([]);
+    } else {
+      // 展开时恢复当前选中项的父菜单
+      const currentPath = location.pathname;
+      const matchedItem = findMenuItemByPath(menuItems, currentPath);
+      if (matchedItem) {
+        const parentKeys = findParentKeys(menuItems, matchedItem.key);
+        setOpenKeys(parentKeys);
+      }
+    }
+  }, [collapsed, location.pathname, menuItems]);
 
   // 根据路径查找菜单项
   const findMenuItemByPath = (items: MenuItem[], path: string): MenuItem | null => {
@@ -75,12 +91,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ userType, collapsed = false }) => {
       const menuItem: any = {
         key: item.key,
         icon: item.icon ? React.createElement(item.icon) : null,
-        label: item.name,
-        onClick: () => {
-          if (item.path && !item.children) {
-            navigate(item.path);
-          }
-        }
+        label: item.name
       };
 
       if (item.children && item.children.length > 0) {
@@ -93,7 +104,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ userType, collapsed = false }) => {
 
   const handleMenuClick = ({ key }: { key: string }) => {
     const menuItem = findMenuItemByKey(menuItems, key);
-    if (menuItem && menuItem.path && !menuItem.children) {
+    // 只有当菜单项有path且不是父菜单时才导航
+    if (menuItem && menuItem.path && menuItem.path !== '' && !menuItem.children) {
       navigate(menuItem.path);
     }
   };
@@ -112,7 +124,16 @@ const SideMenu: React.FC<SideMenuProps> = ({ userType, collapsed = false }) => {
   };
 
   const handleOpenChange = (keys: string[]) => {
-    setOpenKeys(keys);
+    // 在非折叠状态下才更新展开的菜单项
+    if (!collapsed) {
+      // 只保留最后一个展开的菜单，避免同时展开多个
+      const latestOpenKey = keys.find(key => openKeys.indexOf(key) === -1);
+      if (latestOpenKey) {
+        setOpenKeys([latestOpenKey]);
+      } else {
+        setOpenKeys(keys);
+      }
+    }
   };
 
   if (loading) {

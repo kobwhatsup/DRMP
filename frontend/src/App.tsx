@@ -21,7 +21,8 @@ const DevAutoLogin: React.FC = () => {
       if (isDevelopment && SKIP_LOGIN_IN_DEV) {
         try {
           // 总是重新获取新的token，确保有效性
-          const response = await fetch('http://localhost:8080/api/v1/dev/auth/token', {
+          const API_VERSION = process.env.REACT_APP_USE_DEV_API === 'true' ? '/v1/dev' : '';
+          const response = await fetch(`http://localhost:8080/api${API_VERSION}/auth/token`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

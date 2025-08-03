@@ -63,7 +63,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <AntdLayout className="main-layout" style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} theme="dark">
+      <Sider 
+        trigger={null} 
+        collapsible 
+        collapsed={collapsed} 
+        theme="dark"
+        width={200}
+        collapsedWidth={80}
+        onCollapse={(value) => setCollapsed(value)}
+      >
         <div
           style={{
             height: 64,

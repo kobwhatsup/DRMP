@@ -9,7 +9,7 @@ import {
   RiseOutlined, FallOutlined, SyncOutlined
 } from '@ant-design/icons';
 import DisposalOrgMap from '@/components/map/DisposalOrgMap';
-import { Column, Gauge, Line } from '@ant-design/plots';
+// import { Column, Gauge, Line } from '@ant-design/plots'; // 暂时注释掉有问题的图表组件
 import type { ColumnsType } from 'antd/es/table';
 
 const { TabPane } = Tabs;
@@ -171,49 +171,7 @@ const DisposalOrgCapacityManagement: React.FC = () => {
     message.success('导出产能报告功能开发中...');
   };
 
-  // 产能利用率仪表盘配置
-  const utilizationGaugeConfig = {
-    percent: capacityData ? capacityData.summary.avgUtilization / 100 : 0,
-    height: 200,
-    color: ['#F4664A', '#FAAD14', '#30BF78'],
-    innerRadius: 0.75,
-    statistic: {
-      title: {
-        formatter: () => '平均利用率',
-        style: ({ percent }: { percent: number }) => ({
-          fontSize: '14px',
-          color: percent > 0.85 ? '#F4664A' : '#30BF78',
-        }),
-      },
-      content: {
-        style: {
-          fontSize: '24px',
-          fontWeight: 'bold',
-        },
-        formatter: ({ percent }: { percent: number }) => `${(percent * 100).toFixed(1)}%`,
-      },
-    },
-  };
-
-  // 产能趋势图配置
-  const capacityTrendConfig = {
-    data: capacityData?.capacityTrend || [],
-    xField: 'month',
-    yField: 'utilization',
-    height: 300,
-    color: '#1890ff',
-    point: {
-      size: 4,
-      shape: 'diamond',
-    },
-    yAxis: {
-      min: 70,
-      max: 85,
-      label: {
-        formatter: (val: string) => `${val}%`,
-      },
-    },
-  };
+  // 图表配置已替换为Ant Design原生组件
 
   // 机构产能表格列配置
   const orgColumns: ColumnsType<any> = [
@@ -512,12 +470,64 @@ const DisposalOrgCapacityManagement: React.FC = () => {
               <Row gutter={16}>
                 <Col span={8}>
                   <Card title="平均产能利用率">
-                    <Gauge {...utilizationGaugeConfig} />
+                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      <Progress 
+                        type="circle" 
+                        percent={capacityData ? capacityData.summary.avgUtilization : 0}
+                        strokeColor={{
+                          '0%': '#30BF78',
+                          '85%': '#FAAD14', 
+                          '100%': '#F4664A'
+                        }}
+                        format={percent => (
+                          <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                            {percent}%
+                          </span>
+                        )}
+                        width={180}
+                      />
+                      <div style={{ marginTop: 16, fontSize: '14px', color: '#666' }}>平均利用率</div>
+                    </div>
                   </Card>
                 </Col>
                 <Col span={16}>
                   <Card title="产能利用率趋势">
-                    <Line {...capacityTrendConfig} />
+                    <Table
+                      dataSource={capacityData?.capacityTrend || []}
+                      columns={[
+                        { title: '月份', dataIndex: 'month', key: 'month' },
+                        { 
+                          title: '总产能', 
+                          dataIndex: 'totalCapacity', 
+                          key: 'totalCapacity',
+                          render: (capacity: number) => `${capacity.toLocaleString()}件`
+                        },
+                        { 
+                          title: '已用产能', 
+                          dataIndex: 'usedCapacity', 
+                          key: 'usedCapacity',
+                          render: (capacity: number) => `${capacity.toLocaleString()}件`
+                        },
+                        { 
+                          title: '利用率', 
+                          dataIndex: 'utilization', 
+                          key: 'utilization',
+                          render: (utilization: number) => (
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <Progress 
+                                percent={utilization} 
+                                size="small"
+                                strokeColor={utilization > 80 ? '#52c41a' : utilization > 70 ? '#1890ff' : '#fa8c16'}
+                                style={{ marginRight: 8, flex: 1 }}
+                              />
+                              <span style={{ fontWeight: 'bold' }}>{utilization}%</span>
+                            </div>
+                          )
+                        }
+                      ]}
+                      size="small"
+                      pagination={false}
+                    />
                   </Card>
                 </Col>
               </Row>
@@ -525,20 +535,19 @@ const DisposalOrgCapacityManagement: React.FC = () => {
               <Row gutter={16} style={{ marginTop: 16 }}>
                 <Col span={24}>
                   <Card title="产能分布统计">
-                    <Column
-                      data={capacityData?.capacityDistribution || []}
-                      xField="utilizationRange"
-                      yField="orgCount"
-                      height={300}
-                      color="#52c41a"
-                      label={{
-                        position: 'middle',
-                        style: {
-                          fill: '#FFFFFF',
-                          opacity: 0.6,
-                        },
-                      }}
-                    />
+                    {(capacityData?.capacityDistribution || []).map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span>{item.utilizationRange}</span>
+                          <span style={{ fontWeight: 'bold' }}>{item.orgCount}家 ({item.percentage}%)</span>
+                        </div>
+                        <Progress 
+                          percent={Math.round((item.orgCount / (capacityData?.summary.totalOrgs || 1)) * 100)} 
+                          strokeColor={['#52c41a', '#1890ff', '#fa8c16', '#ff4d4f', '#722ed1'][index % 5]}
+                          showInfo={false}
+                        />
+                      </div>
+                    ))}
                   </Card>
                 </Col>
               </Row>

@@ -9,7 +9,7 @@ import {
   DownloadOutlined, ReloadOutlined, SearchOutlined, FileTextOutlined,
   InfoCircleOutlined, BugOutlined, SafetyCertificateOutlined
 } from '@ant-design/icons';
-import { Line, Column, Gauge, Radar } from '@ant-design/plots';
+// import { Line, Column, Gauge, Radar } from '@ant-design/plots';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 
@@ -185,78 +185,93 @@ const SourceOrgQualityAnalysis: React.FC = () => {
     message.info(`查看 ${record.orgName} 详细质量报告`);
   };
 
-  // 质量趋势图配置
-  const qualityTrendConfig = {
-    data: qualityData?.qualityTrend || [],
-    xField: 'month',
-    yField: 'overallScore',
-    height: 300,
-    point: {
-      size: 5,
-      shape: 'diamond',
-    },
-    color: '#1890ff',
-    smooth: true,
-    yAxis: {
-      min: 75,
-      max: 95,
-    },
+  // 渲染质量趋势表格
+  const renderQualityTrend = () => {
+    if (!qualityData?.qualityTrend) return null;
+    
+    return (
+      <Table
+        dataSource={qualityData.qualityTrend}
+        columns={[
+          { title: '月份', dataIndex: 'month', key: 'month' },
+          { 
+            title: '综合评分', 
+            dataIndex: 'overallScore', 
+            key: 'overallScore',
+            render: (score: number) => (
+              <span style={{ color: getQualityLevelColor(score), fontWeight: 'bold' }}>
+                {score}
+              </span>
+            )
+          },
+          { title: '完整率', dataIndex: 'completeRate', key: 'completeRate', render: (v: number) => `${v}%` },
+          { title: '准确率', dataIndex: 'accuracyRate', key: 'accuracyRate', render: (v: number) => `${v}%` },
+          { title: '争议率', dataIndex: 'disputeRate', key: 'disputeRate', render: (v: number) => `${v}%` },
+        ]}
+        size="small"
+        pagination={false}
+      />
+    );
   };
 
-  // 质量维度雷达图配置
-  const radarConfig = {
-    data: qualityData?.qualityDimensions.map(item => [
-      { dimension: item.dimension, value: item.score, type: '当前得分' },
-      { dimension: item.dimension, value: item.industry_avg, type: '行业平均' }
-    ]).flat() || [],
-    xField: 'dimension',
-    yField: 'value',
-    seriesField: 'type',
-    height: 300,
-    area: {},
-    point: {
-      size: 2,
-    },
+  // 渲染质量维度
+  const renderQualityDimensions = () => {
+    if (!qualityData?.qualityDimensions) return null;
+    
+    return (
+      <div>
+        {qualityData.qualityDimensions.map((item, index) => (
+          <div key={index} style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span>{item.dimension}</span>
+              <span style={{ fontWeight: 'bold', color: item.score >= item.industry_avg ? '#52c41a' : '#ff4d4f' }}>
+                {item.score}分 (行业平均: {item.industry_avg}分)
+              </span>
+            </div>
+            <Progress
+              percent={item.score}
+              strokeColor={item.score >= 90 ? '#52c41a' : item.score >= 70 ? '#faad14' : '#ff4d4f'}
+              status="active"
+            />
+            <Progress
+              percent={item.industry_avg}
+              strokeColor="#d9d9d9"
+              showInfo={false}
+              style={{ marginTop: -5 }}
+            />
+          </div>
+        ))}
+      </div>
+    );
   };
 
-  // 问题分布图配置
-  const issueDistributionConfig = {
-    data: qualityData?.issueDistribution || [],
-    xField: 'issueType',
-    yField: 'count',
-    height: 300,
-    color: '#ff7875',
-    label: {
-      position: 'middle' as const,
-      style: {
-        fill: '#FFFFFF',
-        opacity: 0.6,
-      },
-    },
-  };
-
-  // 质量评分仪表盘配置
-  const qualityGaugeConfig = {
-    percent: qualityData ? qualityData.summary.overallScore / 100 : 0,
-    height: 200,
-    color: ['#F4664A', '#FAAD14', '#30BF78'],
-    innerRadius: 0.75,
-    statistic: {
-      title: {
-        formatter: () => '综合质量评分',
-        style: ({ percent }: { percent: number }) => ({
-          fontSize: '14px',
-          color: percent > 0.8 ? '#30BF78' : percent > 0.6 ? '#FAAD14' : '#F4664A',
-        }),
-      },
-      content: {
-        style: {
-          fontSize: '24px',
-          fontWeight: 'bold',
-        },
-        formatter: ({ percent }: { percent: number }) => `${(percent * 100).toFixed(1)}`,
-      },
-    },
+  // 渲染问题分布
+  const renderIssueDistribution = () => {
+    if (!qualityData?.issueDistribution) return null;
+    
+    const maxCount = Math.max(...qualityData.issueDistribution.map(item => item.count));
+    
+    return (
+      <div>
+        {qualityData.issueDistribution.map((item, index) => (
+          <div key={index} style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span>{item.issueType}</span>
+              <span>
+                {item.count} ({item.percentage}%)
+                {item.trend === 'UP' && <RiseOutlined style={{ color: '#ff4d4f', marginLeft: 8 }} />}
+                {item.trend === 'DOWN' && <FallOutlined style={{ color: '#52c41a', marginLeft: 8 }} />}
+              </span>
+            </div>
+            <Progress
+              percent={(item.count / maxCount) * 100}
+              strokeColor="#ff7875"
+              showInfo={false}
+            />
+          </div>
+        ))}
+      </div>
+    );
   };
 
   // 机构质量列表表格配置
@@ -572,12 +587,27 @@ const SourceOrgQualityAnalysis: React.FC = () => {
               <Row gutter={16}>
                 <Col span={8}>
                   <Card title="综合质量评分">
-                    <Gauge {...qualityGaugeConfig} />
+                    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                      <Progress
+                        type="circle"
+                        percent={qualityData?.summary.overallScore || 0}
+                        strokeColor={getQualityLevelColor(qualityData?.summary.overallScore || 0)}
+                        format={(percent) => (
+                          <div>
+                            <div style={{ fontSize: 28, fontWeight: 'bold' }}>{percent}</div>
+                            <div style={{ fontSize: 14, marginTop: 4 }}>
+                              {getQualityLevelText(percent || 0)}
+                            </div>
+                          </div>
+                        )}
+                        width={150}
+                      />
+                    </div>
                   </Card>
                 </Col>
                 <Col span={16}>
                   <Card title="质量趋势">
-                    <Line {...qualityTrendConfig} />
+                    {renderQualityTrend()}
                   </Card>
                 </Col>
               </Row>
@@ -585,7 +615,7 @@ const SourceOrgQualityAnalysis: React.FC = () => {
               <Row gutter={16} style={{ marginTop: 16 }}>
                 <Col span={12}>
                   <Card title="质量维度分析">
-                    <Radar {...radarConfig} />
+                    {renderQualityDimensions()}
                   </Card>
                 </Col>
                 <Col span={12}>
@@ -658,7 +688,7 @@ const SourceOrgQualityAnalysis: React.FC = () => {
               <Row gutter={16}>
                 <Col span={16}>
                   <Card title="问题类型分布">
-                    <Column {...issueDistributionConfig} />
+                    {renderIssueDistribution()}
                   </Card>
                 </Col>
                 <Col span={8}>
