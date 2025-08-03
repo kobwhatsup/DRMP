@@ -1,7 +1,6 @@
 package com.drmp.entity.system;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 import javax.persistence.*;
@@ -11,6 +10,9 @@ import java.time.LocalDateTime;
  * 系统操作日志实体
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Entity
@@ -69,6 +71,7 @@ public class SysOperationLog {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "operation_status")
+    @Builder.Default
     private OperationStatus operationStatus = OperationStatus.SUCCESS;
 
     @Column(name = "operated_at")

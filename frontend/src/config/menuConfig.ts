@@ -290,6 +290,18 @@ export const mainMenuConfig: MenuItem[] = [
         path: '/system/settings',
         name: '系统设置',
         icon: SettingOutlined,
+      },
+      {
+        key: 'system-logs',
+        path: '/system/logs',
+        name: '操作日志',
+        icon: FileTextOutlined,
+      },
+      {
+        key: 'system-configs',
+        path: '/system/configs',
+        name: '系统配置',
+        icon: SettingOutlined,
       }
     ]
   }

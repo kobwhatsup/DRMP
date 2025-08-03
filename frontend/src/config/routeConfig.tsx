@@ -85,6 +85,8 @@ import RoleManagement from '@/pages/system/RoleManagement';
 import SystemSettings from '@/pages/system/SystemSettings';
 import MenuManagement from '@/pages/system/MenuManagement';
 import PermissionManagement from '@/pages/system/PermissionManagement';
+import OperationLogManagement from '@/pages/system/OperationLogManagement';
+import ConfigManagement from '@/pages/system/ConfigManagement';
 
 // 地图组件
 import CaseDistributionMap from '@/components/map/CaseDistributionMap';
@@ -408,6 +410,14 @@ export const mainRoutes: RouteObject[] = [
       {
         path: 'settings',
         element: <SystemSettings />,
+      },
+      {
+        path: 'logs',
+        element: <OperationLogManagement />,
+      },
+      {
+        path: 'configs',
+        element: <ConfigManagement />,
       },
     ],
   },
