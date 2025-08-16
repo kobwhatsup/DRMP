@@ -17,9 +17,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "case_attachments", indexes = {
-    @Index(name = "idx_business_type_id", columnList = "businessType,businessId"),
-    @Index(name = "idx_uploaded_by", columnList = "uploadedBy"),
-    @Index(name = "idx_file_md5", columnList = "fileMd5")
+    @Index(name = "idx_business_type_id", columnList = "business_type,business_id"),
+    @Index(name = "idx_uploaded_by", columnList = "uploaded_by"),
+    @Index(name = "idx_file_md5", columnList = "file_md5")
 })
 public class CaseAttachment extends BaseEntity {
 
@@ -168,8 +168,8 @@ public class CaseAttachment extends BaseEntity {
      * 检查是否为图片文件
      */
     public boolean isImage() {
-        if (fileType != null) {
-            return fileType.toLowerCase().startsWith("image/");
+        if (mimeType != null) {
+            return mimeType.toLowerCase().startsWith("image/");
         }
         return false;
     }
@@ -178,8 +178,8 @@ public class CaseAttachment extends BaseEntity {
      * 检查是否为PDF文件
      */
     public boolean isPdf() {
-        if (fileType != null) {
-            return "application/pdf".equals(fileType.toLowerCase());
+        if (mimeType != null) {
+            return "application/pdf".equals(mimeType.toLowerCase());
         }
         return false;
     }

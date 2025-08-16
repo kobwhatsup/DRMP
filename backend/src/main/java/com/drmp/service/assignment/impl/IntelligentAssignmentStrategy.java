@@ -231,7 +231,8 @@ public class IntelligentAssignmentStrategy implements AssignmentStrategy {
      */
     private Double calculateCapacityScore(Organization organization, CasePackage casePackage) {
         Integer monthlyCapacity = organization.getMonthlyCaseCapacity();
-        Double currentLoad = organization.getCurrentLoadPercentage();
+        Double currentLoad = organization.getCurrentLoadPercentage() != null ? 
+            organization.getCurrentLoadPercentage().doubleValue() : 0.0;
         Integer caseCount = casePackage.getCaseCount();
         
         if (monthlyCapacity == null || currentLoad == null || caseCount == null) {
@@ -324,7 +325,8 @@ public class IntelligentAssignmentStrategy implements AssignmentStrategy {
      * 计算可用性得分
      */
     private Double calculateAvailabilityScore(Organization organization) {
-        Double currentLoad = organization.getCurrentLoadPercentage();
+        Double currentLoad = organization.getCurrentLoadPercentage() != null ? 
+            organization.getCurrentLoadPercentage().doubleValue() : 0.0;
         if (currentLoad == null) {
             return 0.6; // 信息不足
         }

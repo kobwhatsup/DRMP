@@ -65,4 +65,18 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> error(String message) {
         return new ApiResponse<>(500, message, null);
     }
+    
+    /**
+     * 错误响应带数据
+     */
+    public static <T> ApiResponse<T> error(String message, T data) {
+        return new ApiResponse<>(400, message, data);
+    }
+    
+    /**
+     * 错误响应带代码、消息和数据
+     */
+    public static <T> ApiResponse<T> error(int code, String message, T data) {
+        return new ApiResponse<>(code, message, data);
+    }
 }

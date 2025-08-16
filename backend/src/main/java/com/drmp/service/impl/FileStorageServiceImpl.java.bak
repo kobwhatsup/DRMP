@@ -174,7 +174,12 @@ public class FileStorageServiceImpl implements FileStorageService {
             Files.copy(chunk.getInputStream(), chunkPath, StandardCopyOption.REPLACE_EXISTING);
 
             // 计算分片MD5
-            String chunkMd5 = calculateFileMd5(chunkPath.toFile());
+            String chunkMd5;
+            try {
+                chunkMd5 = calculateFileMd5(chunkPath.toFile());
+            } catch (Exception e) {
+                throw new RuntimeException("计算文件MD5失败", e);
+            }
             session.getChunkMd5Map().put(chunkNumber, chunkMd5);
             session.getUploadedChunks().add(chunkNumber);
 

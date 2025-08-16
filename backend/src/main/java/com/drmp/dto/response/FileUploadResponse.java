@@ -95,4 +95,13 @@ public class FileUploadResponse {
     private Long downloadCount;
     
     private LocalDateTime lastAccessTime;
+    
+    // 附加字段
+    private String storedFileName;
+    
+    private LocalDateTime uploadedAt;
+    
+    private String fileMd5;
+    
+    private String formattedSize;
 }

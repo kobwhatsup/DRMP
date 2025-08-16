@@ -63,6 +63,15 @@ public class SecurityUtils {
         // 这里暂时返回模拟值，实际实现需要根据认证机制获取
         return 1L; // 临时返回机构ID 1
     }
+    
+    /**
+     * 获取当前用户所属机构ID（别名方法）
+     * 
+     * @return 机构ID
+     */
+    public static Long getCurrentOrgId() {
+        return getCurrentUserOrganizationId();
+    }
 
     /**
      * 检查当前用户是否有指定角色
