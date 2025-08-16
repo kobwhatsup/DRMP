@@ -25,10 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Case Package Service Implementation
@@ -453,36 +453,107 @@ public class CasePackageServiceImpl implements CasePackageService {
     public BatchOperationResult batchOperateCasePackages(List<Long> ids, String action) {
         log.info("Batch operating case packages: {} with action: {}", ids, action);
         
-        int totalCount = ids.size();
-        int successCount = 0;
-        List<String> errors = new ArrayList<>();
-        
-        for (Long id : ids) {
-            try {
-                switch (action.toLowerCase()) {
-                    case "publish":
-                        publishCasePackage(id);
-                        break;
-                    case "withdraw":
-                        withdrawCasePackage(id);
-                        break;
-                    case "delete":
-                        deleteCasePackage(id);
-                        break;
-                    default:
-                        throw new BusinessException("不支持的操作类型：" + action);
-                }
-                successCount++;
-            } catch (Exception e) {
-                errors.add("案件包 " + id + "：" + e.getMessage());
-            }
+        if (ids == null || ids.isEmpty()) {
+            return new BatchOperationResult(true, 0, 0, 0, new ArrayList<>());
         }
         
-        boolean success = successCount == totalCount;
-        int failedCount = totalCount - successCount;
+        int totalCount = ids.size();
+        List<String> errors = new ArrayList<>();
         
-        log.info("Batch operation completed: {}/{} successful", successCount, totalCount);
-        return new BatchOperationResult(success, totalCount, successCount, failedCount, errors);
+        try {
+            // 批量预加载所有案件包，避免N+1查询
+            List<CasePackage> casePackages = casePackageRepository.findAllWithOrganizations(ids);
+            Map<Long, CasePackage> casePackageMap = casePackages.stream()
+                    .collect(Collectors.toMap(CasePackage::getId, Function.identity()));
+            
+            // 获取当前用户的机构ID进行权限验证
+            Long currentOrgId = SecurityUtils.getCurrentUserOrganizationId();
+            
+            List<CasePackage> updatedPackages = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            
+            for (Long id : ids) {
+                try {
+                    CasePackage casePackage = casePackageMap.get(id);
+                    if (casePackage == null) {
+                        errors.add("案件包 " + id + "：不存在");
+                        continue;
+                    }
+                    
+                    // 权限验证
+                    if (currentOrgId == null || !currentOrgId.equals(casePackage.getSourceOrganization().getId())) {
+                        errors.add("案件包 " + id + "：无权限操作");
+                        continue;
+                    }
+                    
+                    // 执行批量操作
+                    boolean shouldUpdate = false;
+                    switch (action.toLowerCase()) {
+                        case "publish":
+                            if (casePackage.getStatus() != CasePackageStatus.DRAFT) {
+                                errors.add("案件包 " + id + "：只能发布草稿状态的案件包");
+                                continue;
+                            }
+                            if (casePackage.getCaseCount() == null || casePackage.getCaseCount() <= 0) {
+                                errors.add("案件包 " + id + "：案件包必须包含案件");
+                                continue;
+                            }
+                            casePackage.setStatus(CasePackageStatus.PUBLISHED);
+                            casePackage.setPublishedAt(now);
+                            shouldUpdate = true;
+                            break;
+                            
+                        case "withdraw":
+                            if (casePackage.getStatus() != CasePackageStatus.PUBLISHED) {
+                                errors.add("案件包 " + id + "：只能撤回已发布的案件包");
+                                continue;
+                            }
+                            casePackage.setStatus(CasePackageStatus.WITHDRAWN);
+                            shouldUpdate = true;
+                            break;
+                            
+                        case "delete":
+                            if (casePackage.getStatus() != CasePackageStatus.DRAFT) {
+                                errors.add("案件包 " + id + "：只能删除草稿状态的案件包");
+                                continue;
+                            }
+                            // 删除操作单独处理，不加入更新列表
+                            casePackageRepository.delete(casePackage);
+                            break;
+                            
+                        default:
+                            errors.add("案件包 " + id + "：不支持的操作类型 " + action);
+                            continue;
+                    }
+                    
+                    if (shouldUpdate) {
+                        updatedPackages.add(casePackage);
+                    }
+                    
+                } catch (Exception e) {
+                    log.error("Error processing case package {}: {}", id, e.getMessage(), e);
+                    errors.add("案件包 " + id + "：" + e.getMessage());
+                }
+            }
+            
+            // 批量保存更新的案件包，提高数据库操作效率
+            if (!updatedPackages.isEmpty()) {
+                casePackageRepository.saveAll(updatedPackages);
+                log.info("Batch saved {} updated case packages", updatedPackages.size());
+            }
+            
+            int successCount = totalCount - errors.size();
+            int failedCount = errors.size();
+            boolean success = successCount == totalCount;
+            
+            log.info("Batch operation completed: {}/{} successful", successCount, totalCount);
+            return new BatchOperationResult(success, totalCount, successCount, failedCount, errors);
+            
+        } catch (Exception e) {
+            log.error("Batch operation failed completely", e);
+            errors.add("批量操作失败：" + e.getMessage());
+            return new BatchOperationResult(false, totalCount, 0, totalCount, errors);
+        }
     }
 
     // 私有方法

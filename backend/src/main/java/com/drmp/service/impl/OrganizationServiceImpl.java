@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -54,41 +55,22 @@ public class OrganizationServiceImpl implements OrganizationService {
     public PageResponse<OrganizationListResponse> getOrganizations(
             Pageable pageable, String keyword, OrganizationType type, OrganizationStatus status) {
         
-        // 为了简化，暂时使用预加载的方法获取所有数据，然后在应用层过滤和分页
-        List<Organization> allOrganizations = organizationRepository.findAllWithCollections();
+        // 使用优化后的数据库级分页查询，避免加载所有数据到内存
+        Page<Organization> organizationsPage = organizationRepository.findWithFiltersAndCollections(
+                keyword, type, status, pageable);
         
-        // 应用过滤条件
-        List<Organization> filteredOrganizations = allOrganizations.stream()
-                .filter(org -> keyword == null || keyword.isEmpty() || 
-                        org.getOrgName().toLowerCase().contains(keyword.toLowerCase()) ||
-                        org.getOrgCode().toLowerCase().contains(keyword.toLowerCase()))
-                .filter(org -> type == null || org.getType().equals(type))
-                .filter(org -> status == null || org.getStatus().equals(status))
-                .collect(Collectors.toList());
-        
-        // 应用排序
-        if (pageable.getSort().isSorted()) {
-            // 简单按创建时间排序
-            filteredOrganizations.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
-        }
-        
-        // 应用分页
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), filteredOrganizations.size());
-        List<Organization> pagedOrganizations = start < filteredOrganizations.size() ? 
-                filteredOrganizations.subList(start, end) : new ArrayList<>();
-        
-        List<OrganizationListResponse> content = pagedOrganizations.stream()
+        List<OrganizationListResponse> content = organizationsPage.getContent().stream()
                 .map(this::convertToListResponse)
                 .collect(Collectors.toList());
         
-        return PageResponse.of(content, pageable.getPageNumber(), pageable.getPageSize(), filteredOrganizations.size());
+        return PageResponse.of(content, organizationsPage.getNumber(), organizationsPage.getSize(), organizationsPage.getTotalElements());
     }
 
     @Override
     @Transactional(readOnly = true)
     public OrganizationDetailResponse getOrganizationDetail(Long id) {
-        Organization organization = organizationRepository.findById(id)
+        // 使用优化的查询方法，预加载集合字段
+        Organization organization = organizationRepository.findByIdWithCollections(id)
                 .orElseThrow(() -> new BusinessException("机构不存在"));
         
         return convertToDetailResponse(organization);
@@ -313,27 +295,23 @@ public class OrganizationServiceImpl implements OrganizationService {
             long suspendedCount = organizationRepository.countByStatus(OrganizationStatus.SUSPENDED);
             long rejectedCount = organizationRepository.countByStatus(OrganizationStatus.REJECTED);
             
-            // Count source and disposal organizations
-            long sourceCount = 0;
-            long disposalCount = 0;
+            // 使用优化的数据库聚合查询计算不同类型机构数量，避免加载所有数据到内存
+            List<OrganizationType> sourceTypes = Arrays.asList(
+                OrganizationType.BANK, 
+                OrganizationType.CONSUMER_FINANCE,
+                OrganizationType.ONLINE_LOAN,
+                OrganizationType.MICRO_LOAN,
+                OrganizationType.AMC
+            );
             
-            // Get all organizations with type information
-            List<Organization> allOrgs = organizationRepository.findAll();
-            for (Organization org : allOrgs) {
-                if (org.getType() != null) {
-                    if (org.getType().name().contains("BANK") || 
-                        org.getType().name().contains("CONSUMER_FINANCE") ||
-                        org.getType().name().contains("ONLINE_LOAN") ||
-                        org.getType().name().contains("MICRO_LOAN") ||
-                        org.getType().name().contains("AMC")) {
-                        sourceCount++;
-                    } else if (org.getType().name().contains("MEDIATION_CENTER") ||
-                               org.getType().name().contains("LAW_FIRM") ||
-                               org.getType().name().contains("OTHER")) {
-                        disposalCount++;
-                    }
-                }
-            }
+            List<OrganizationType> disposalTypes = Arrays.asList(
+                OrganizationType.MEDIATION_CENTER,
+                OrganizationType.LAW_FIRM,
+                OrganizationType.OTHER
+            );
+            
+            long sourceCount = organizationRepository.countByTypes(sourceTypes);
+            long disposalCount = organizationRepository.countByTypes(disposalTypes);
             
             statistics.put("total", totalCount);
             statistics.put("pending", pendingCount);
@@ -413,13 +391,60 @@ public class OrganizationServiceImpl implements OrganizationService {
         response.setTypeName(organization.getType().getName());
         response.setStatusName(organization.getStatus().getName());
         
-        // Get approval user name if exists
+        // 对于单个详情查询，这种方式是可接受的
+        // 批量查询应使用 convertToDetailResponsesBatch 方法
         if (organization.getApprovalBy() != null) {
             userRepository.findById(organization.getApprovalBy())
                     .ifPresent(user -> response.setApprovalByName(user.getRealName()));
         }
         
         return response;
+    }
+
+    /**
+     * 批量转换机构为详情响应，避免N+1查询
+     */
+    private List<OrganizationDetailResponse> convertToDetailResponsesBatch(List<Long> organizationIds) {
+        if (organizationIds == null || organizationIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 使用批量查询获取机构和审批用户信息，避免N+1查询
+        List<Object[]> orgWithUserNames = organizationRepository.findOrganizationsWithApprovalUserNames(organizationIds);
+        
+        // 构建审批用户名称映射
+        Map<Long, String> approvalUserNameMap = new HashMap<>();
+        Map<Long, Organization> organizationMap = new HashMap<>();
+        
+        for (Object[] row : orgWithUserNames) {
+            Organization org = (Organization) row[0];
+            String approvalUserName = (String) row[1];  // 可能为null
+            
+            organizationMap.put(org.getId(), org);
+            if (org.getApprovalBy() != null && approvalUserName != null) {
+                approvalUserNameMap.put(org.getId(), approvalUserName);
+            }
+        }
+        
+        // 转换为响应对象
+        return organizationIds.stream()
+                .map(organizationMap::get)
+                .filter(Objects::nonNull)
+                .map(organization -> {
+                    OrganizationDetailResponse response = new OrganizationDetailResponse();
+                    BeanUtils.copyProperties(organization, response);
+                    response.setTypeName(organization.getType().getName());
+                    response.setStatusName(organization.getStatus().getName());
+                    
+                    // 使用预加载的审批用户名称
+                    String approvalUserName = approvalUserNameMap.get(organization.getId());
+                    if (approvalUserName != null) {
+                        response.setApprovalByName(approvalUserName);
+                    }
+                    
+                    return response;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override

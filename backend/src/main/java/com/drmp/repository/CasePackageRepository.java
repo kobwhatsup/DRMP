@@ -99,4 +99,25 @@ public interface CasePackageRepository extends JpaRepository<CasePackage, Long>,
                                         @Param("minOverdueDays") Integer minOverdueDays,
                                         @Param("maxOverdueDays") Integer maxOverdueDays,
                                         Pageable pageable);
+
+    /**
+     * 批量查找案件包及其关联机构，预加载以避免N+1查询
+     */
+    @Query("SELECT DISTINCT cp FROM CasePackage cp " +
+           "LEFT JOIN FETCH cp.sourceOrganization " +
+           "LEFT JOIN FETCH cp.disposalOrganization " +
+           "WHERE cp.id IN :ids")
+    List<CasePackage> findAllWithOrganizations(@Param("ids") List<Long> ids);
+
+    /**
+     * 批量查找指定状态的案件包
+     */
+    @Query("SELECT cp FROM CasePackage cp WHERE cp.id IN :ids AND cp.status = :status")
+    List<CasePackage> findByIdsAndStatus(@Param("ids") List<Long> ids, @Param("status") CasePackageStatus status);
+
+    /**
+     * 批量查找特定机构的案件包
+     */
+    @Query("SELECT cp FROM CasePackage cp WHERE cp.id IN :ids AND cp.sourceOrganization.id = :orgId")
+    List<CasePackage> findByIdsAndSourceOrganization(@Param("ids") List<Long> ids, @Param("orgId") Long orgId);
 }

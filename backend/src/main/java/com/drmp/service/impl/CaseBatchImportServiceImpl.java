@@ -20,11 +20,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,27 +70,31 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
         "逾期天数", "overdueDays"
     );
 
-    // 可选字段映射
-    private static final Map<String, String> OPTIONAL_FIELDS = Map.of(
-        "债务人电话", "debtorPhone",
-        "债务人性别", "debtorGender",
-        "债务人年龄", "debtorAge",
-        "债务人省份", "debtorProvince",
-        "债务人城市", "debtorCity",
-        "债务人地址", "debtorAddress",
-        "产品线", "productLine",
-        "放款日期", "loanDate",
-        "到期日期", "dueDate",
-        "委托开始日期", "entrustStartDate",
-        "委托结束日期", "entrustEndDate",
-        "资金方", "fundingParty",
-        "联系人1姓名", "contact1Name",
-        "联系人1电话", "contact1Phone",
-        "联系人1关系", "contact1Relation",
-        "联系人2姓名", "contact2Name",
-        "联系人2电话", "contact2Phone",
-        "联系人2关系", "contact2Relation"
-    );
+    // 可选字段映射 - Java 11兼容写法
+    private static final Map<String, String> OPTIONAL_FIELDS;
+    
+    static {
+        Map<String, String> optFields = new HashMap<>();
+        optFields.put("债务人电话", "debtorPhone");
+        optFields.put("债务人性别", "debtorGender");
+        optFields.put("债务人年龄", "debtorAge");
+        optFields.put("债务人省份", "debtorProvince");
+        optFields.put("债务人城市", "debtorCity");
+        optFields.put("债务人地址", "debtorAddress");
+        optFields.put("产品线", "productLine");
+        optFields.put("放款日期", "loanDate");
+        optFields.put("到期日期", "dueDate");
+        optFields.put("委托开始日期", "entrustStartDate");
+        optFields.put("委托结束日期", "entrustEndDate");
+        optFields.put("资金方", "fundingParty");
+        optFields.put("联系人1姓名", "contact1Name");
+        optFields.put("联系人1电话", "contact1Phone");
+        optFields.put("联系人1关系", "contact1Relation");
+        optFields.put("联系人2姓名", "contact2Name");
+        optFields.put("联系人2电话", "contact2Phone");
+        optFields.put("联系人2关系", "contact2Relation");
+        OPTIONAL_FIELDS = Collections.unmodifiableMap(optFields);
+    }
 
     // 数据验证规则
     private static final Pattern ID_CARD_PATTERN = Pattern.compile("^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]$");
@@ -96,7 +102,16 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
     private static final Pattern GENDER_PATTERN = Pattern.compile("^[男女MF]$");
 
     @Override
-    public BatchImportResponse validateImportFile(MultipartFile file, Long casePackageId) {
+    public BatchImportResponse validateCases(MultipartFile file) {
+        return validateImportFile(file, null);
+    }
+
+    @Override
+    public BatchImportResponse importCases(MultipartFile file, Long casePackageId) {
+        return importCasesFromFile(file, casePackageId, false);
+    }
+
+    private BatchImportResponse validateImportFile(MultipartFile file, Long casePackageId) {
         log.info("Validating import file: {}, size: {}, package: {}", 
             file.getOriginalFilename(), file.getSize(), casePackageId);
 
@@ -146,7 +161,6 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
         return response;
     }
 
-    @Override
     @Transactional
     public BatchImportResponse importCasesFromFile(MultipartFile file, Long casePackageId, boolean skipErrors) {
         log.info("Importing cases from file: {}, package: {}, skipErrors: {}", 
@@ -219,8 +233,7 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
     }
 
     @Override
-    public BatchImportResponse getImportTemplate() {
-        BatchImportResponse response = new BatchImportResponse();
+    public byte[] getImportTemplate() {
         
         try {
             // 创建模板工作簿
@@ -268,24 +281,18 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
             // 创建说明sheet
             createInstructionSheet(workbook);
 
-            response.setSuccess(true);
-            response.setMessage("模板生成成功");
-            response.setTemplateData(workbook);
+            // 转换为字节数组
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
 
         } catch (Exception e) {
             log.error("Failed to generate import template", e);
-            response.setSuccess(false);
-            response.setMessage("模板生成失败: " + e.getMessage());
+            return new byte[0];
         }
-
-        return response;
     }
 
-    @Override
-    public List<BatchImportResponse> getImportHistory(Long organizationId, int days) {
-        // TODO: 实现导入历史查询
-        return Collections.emptyList();
-    }
 
     // 私有方法实现
 
@@ -458,7 +465,7 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
     private void validateDataFormats(Map<String, Object> rowData, List<String> errors, List<String> warnings) {
         // 验证身份证格式
         Object idCard = rowData.get("债务人身份证");
-        if (idCard != null && !validationUtils.isValidIdCard(idCard.toString())) {
+        if (idCard != null && !ValidationUtils.isValidIdCard(idCard.toString())) {
             errors.add("身份证格式不正确");
         }
 
@@ -633,7 +640,8 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
             }
             
             // 设置状态和时间
-            caseEntity.setStatus(com.drmp.entity.enums.CaseStatus.PENDING);
+            // Case entity should have a status field of type String
+            caseEntity.setStatus(com.drmp.entity.enums.CaseStatus.PENDING.getCode());
             caseEntity.setCreatedAt(LocalDateTime.now());
             caseEntity.setCreatedBy(1L); // TODO: 从安全上下文获取
             
@@ -690,8 +698,8 @@ public class CaseBatchImportServiceImpl implements CaseBatchImportService {
         Map<String, Object> statistics = new HashMap<>();
         statistics.put("totalLoanAmount", totalLoanAmount);
         statistics.put("totalRemainingAmount", totalRemainingAmount);
-        statistics.put("avgLoanAmount", totalLoanAmount.divide(BigDecimal.valueOf(validData.size()), 2, BigDecimal.ROUND_HALF_UP));
-        statistics.put("avgRemainingAmount", totalRemainingAmount.divide(BigDecimal.valueOf(validData.size()), 2, BigDecimal.ROUND_HALF_UP));
+        statistics.put("avgLoanAmount", totalLoanAmount.divide(BigDecimal.valueOf(validData.size()), 2, java.math.RoundingMode.HALF_UP));
+        statistics.put("avgRemainingAmount", totalRemainingAmount.divide(BigDecimal.valueOf(validData.size()), 2, java.math.RoundingMode.HALF_UP));
         statistics.put("avgOverdueDays", totalOverdueDays / validData.size());
 
         response.setStatistics(statistics);

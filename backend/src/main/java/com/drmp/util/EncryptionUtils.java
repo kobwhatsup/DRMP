@@ -111,4 +111,18 @@ public class EncryptionUtils {
         }
         return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
     }
+
+    /**
+     * 实例方法加密（用于注入）
+     */
+    public String encrypt(String plainText) {
+        return encryptAES(plainText, DEFAULT_KEY);
+    }
+
+    /**
+     * 实例方法解密（用于注入）
+     */
+    public String decrypt(String encryptedText) {
+        return decryptAES(encryptedText, DEFAULT_KEY);
+    }
 }

@@ -27,6 +27,7 @@ public class UserPrincipal implements UserDetails {
     private Long id;
     private String username;
     private String email;
+    private String realName;
     @JsonIgnore
     private String password;
     private Long organizationId;
@@ -48,6 +49,7 @@ public class UserPrincipal implements UserDetails {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .realName(user.getRealName())
                 .password(user.getPassword())
                 .organizationId(user.getOrganization() != null ? user.getOrganization().getId() : null)
                 .organizationType(user.getOrganization() != null ? user.getOrganization().getType().name() : null)

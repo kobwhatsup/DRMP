@@ -1,0 +1,31 @@
+package com.drmp.validation.annotation;
+
+import com.drmp.validation.validator.PhoneNumberValidator;
+
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.*;
+
+/**
+ * 手机号码验证注解
+ * 
+ * @author DRMP Team
+ * @since 1.0.0
+ */
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Constraint(validatedBy = PhoneNumberValidator.class)
+public @interface ValidPhoneNumber {
+    
+    String message() default "手机号码格式不正确";
+    
+    Class<?>[] groups() default {};
+    
+    Class<? extends Payload>[] payload() default {};
+    
+    /**
+     * 是否允许空值
+     */
+    boolean nullable() default false;
+}

@@ -115,4 +115,33 @@ public class JwtTokenProvider {
             return null;
         }
     }
+
+    public boolean validateRefreshToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(jwtSecret)
+                    .parseClaimsJws(token)
+                    .getBody();
+            String type = (String) claims.get("type");
+            return "refresh".equals(type) && !claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Long getUserIdFromRefreshToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(jwtSecret)
+                    .parseClaimsJws(token)
+                    .getBody();
+            String type = (String) claims.get("type");
+            if ("refresh".equals(type)) {
+                return Long.parseLong(claims.getSubject());
+            }
+        } catch (Exception e) {
+            log.error("Error extracting user ID from refresh token", e);
+        }
+        return null;
+    }
 }

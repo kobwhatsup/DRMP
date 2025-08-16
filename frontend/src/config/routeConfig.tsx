@@ -92,12 +92,6 @@ import ConfigManagement from '@/pages/system/ConfigManagement';
 import CaseDistributionMap from '@/components/map/CaseDistributionMap';
 import DisposalOrgMap from '@/components/map/DisposalOrgMap';
 
-// 统一的机构管理组件
-import OrganizationList from '@/pages/organization/OrganizationList';
-import OrganizationDetail from '@/pages/organization/OrganizationDetail';
-import OrganizationDetailPage from '@/pages/organization/OrganizationDetailPage';
-import OrganizationForm from '@/pages/organization/OrganizationForm';
-import OrganizationApproval from '@/pages/organization/OrganizationApproval';
 
 // 主路由配置（管理员视角）
 export const mainRoutes: RouteObject[] = [
@@ -322,47 +316,7 @@ export const mainRoutes: RouteObject[] = [
     ],
   },
   
-  // 按键管理路由
-  {
-    path: '/access-keys',
-    children: [
-      {
-        index: true,
-        element: React.createElement(React.lazy(() => import('@/pages/access-keys/AccessKeyList'))),
-      },
-      {
-        path: 'stats',
-        element: React.createElement(React.lazy(() => import('@/pages/access-keys/KeyUsageStats'))),
-      },
-    ],
-  },
   
-  // 统一的机构管理路由
-  {
-    path: '/organizations',
-    children: [
-      {
-        index: true,
-        element: <OrganizationList />,
-      },
-      {
-        path: 'create',
-        element: <OrganizationForm mode="create" />,
-      },
-      {
-        path: ':id',
-        element: <OrganizationDetailPage />,
-      },
-      {
-        path: ':id/edit',
-        element: <OrganizationForm mode="edit" />,
-      },
-      {
-        path: 'approval',
-        element: <OrganizationApproval />,
-      },
-    ],
-  },
   
   // 财务管理路由
   {
@@ -418,6 +372,19 @@ export const mainRoutes: RouteObject[] = [
       {
         path: 'configs',
         element: <ConfigManagement />,
+      },
+      {
+        path: 'access-keys',
+        children: [
+          {
+            index: true,
+            element: React.createElement(React.lazy(() => import('@/pages/access-keys/AccessKeyList'))),
+          },
+          {
+            path: 'stats',
+            element: React.createElement(React.lazy(() => import('@/pages/access-keys/KeyUsageStats'))),
+          },
+        ],
       },
     ],
   },

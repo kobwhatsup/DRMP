@@ -22,4 +22,8 @@ public enum UserStatus {
         this.code = code;
         this.name = name;
     }
+
+    public boolean isActive() {
+        return this == ACTIVE;
+    }
 }

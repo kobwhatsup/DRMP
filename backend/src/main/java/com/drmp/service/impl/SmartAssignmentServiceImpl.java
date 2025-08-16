@@ -181,15 +181,28 @@ public class SmartAssignmentServiceImpl implements SmartAssignmentService {
             }
         }
         
+        // 优化：批量预加载所有案件包，避免N+1查询
+        Map<Long, CasePackage> casePackageMap = casePackageRepository.findAllById(casePackageIds)
+                .stream().collect(Collectors.toMap(CasePackage::getId, Function.identity()));
+        
+        // 一次性获取可用机构，避免在循环中重复查询
+        List<Organization> availableOrganizations = getAvailableOrganizations();
+        Map<Long, Organization> organizationMap = availableOrganizations.stream()
+                .collect(Collectors.toMap(Organization::getId, Function.identity()));
+        
+        List<CasePackage> updatedCasePackages = new ArrayList<>();
+        
         for (Long casePackageId : casePackageIds) {
             try {
-                CasePackage casePackage = getCasePackageEntity(casePackageId);
+                CasePackage casePackage = casePackageMap.get(casePackageId);
+                if (casePackage == null) {
+                    results.add(new AssignmentResult(false, null, null, 0.0, "unknown", "案件包不存在"));
+                    continue;
+                }
                 
                 // 选择策略
                 AssignmentStrategy selectedStrategy = strategy != null ? strategy : strategyManager.getOptimalStrategy(casePackage);
                 
-                // 获取可用机构
-                List<Organization> availableOrganizations = getAvailableOrganizations();
                 if (availableOrganizations.isEmpty()) {
                     results.add(new AssignmentResult(false, null, null, 0.0, selectedStrategy.getStrategyName(), 
                         "没有可用的处置机构"));
@@ -207,19 +220,19 @@ public class SmartAssignmentServiceImpl implements SmartAssignmentService {
                 // 选择最佳候选
                 AssignmentStrategy.AssignmentCandidate bestCandidate = candidates.get(0);
                 
-                // 执行分配
-                Organization selectedOrg = organizationRepository.findById(bestCandidate.getOrganizationId()).orElse(null);
+                // 从预加载的机构Map中获取，避免额外数据库查询
+                Organization selectedOrg = organizationMap.get(bestCandidate.getOrganizationId());
                 if (selectedOrg == null) {
                     results.add(new AssignmentResult(false, null, null, bestCandidate.getScore(), 
                         selectedStrategy.getStrategyName(), "选中的机构不存在"));
                     continue;
                 }
                 
-                // 更新案件包状态
+                // 更新案件包状态（先在内存中更新，稍后批量保存）
                 casePackage.setDisposalOrganization(selectedOrg);
                 casePackage.setStatus(com.drmp.entity.enums.CasePackageStatus.ASSIGNED);
                 casePackage.setAssignedAt(LocalDateTime.now());
-                casePackageRepository.save(casePackage);
+                updatedCasePackages.add(casePackage);
                 
                 AssignmentResult result = new AssignmentResult(true, bestCandidate.getOrganizationId(), 
                     bestCandidate.getOrganizationName(), bestCandidate.getScore(), 
@@ -235,6 +248,12 @@ public class SmartAssignmentServiceImpl implements SmartAssignmentService {
                 results.add(new AssignmentResult(false, null, null, 0.0, strategyName, 
                     "处理失败: " + e.getMessage()));
             }
+        }
+        
+        // 批量保存所有更新的案件包，提高数据库操作效率
+        if (!updatedCasePackages.isEmpty()) {
+            casePackageRepository.saveAll(updatedCasePackages);
+            log.info("Batch saved {} updated case packages", updatedCasePackages.size());
         }
         
         batchResult.setResults(results);
@@ -490,8 +509,14 @@ public class SmartAssignmentServiceImpl implements SmartAssignmentService {
     }
 
     private List<Organization> getAvailableOrganizations() {
-        // TODO: 实现获取可用机构的逻辑，考虑状态、容量等因素
-        return organizationRepository.findAll();
+        // 获取活跃状态且已支付会员费的处置机构，避免加载不可用的机构
+        return organizationRepository.findByTypeAndStatus(
+                com.drmp.entity.enums.OrganizationType.MEDIATION_CENTER, 
+                com.drmp.entity.enums.OrganizationStatus.ACTIVE)
+                .stream()
+                .filter(org -> org.getMembershipPaid() != null && org.getMembershipPaid())
+                .filter(org -> org.getCurrentLoadPercentage() == null || org.getCurrentLoadPercentage() < 95) // 过滤负载过高的机构
+                .collect(Collectors.toList());
     }
 
     private List<AssignmentRule> getApplicableRules(Long casePackageId, String strategy) {

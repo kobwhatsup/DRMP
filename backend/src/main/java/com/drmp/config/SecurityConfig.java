@@ -1,5 +1,6 @@
 package com.drmp.config;
 
+import com.drmp.gateway.ApiGatewayFilter;
 import com.drmp.security.JwtAuthenticationEntryPoint;
 import com.drmp.security.JwtAuthenticationFilter;
 import com.drmp.security.RateLimitingFilter;
@@ -40,6 +41,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitingFilter rateLimitingFilter;
+    private final ApiGatewayFilter apiGatewayFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -77,8 +79,12 @@ public class SecurityConfig {
                 .anyRequest().authenticated();
 
         http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // API网关过滤器最先执行，处理路由和基础认证
+        http.addFilterBefore(apiGatewayFilter, UsernamePasswordAuthenticationFilter.class);
+        // 限流过滤器在网关之后
+        http.addFilterAfter(rateLimitingFilter, ApiGatewayFilter.class);
+        // JWT认证过滤器最后执行
+        http.addFilterAfter(jwtAuthenticationFilter, RateLimitingFilter.class);
 
         return http.build();
     }

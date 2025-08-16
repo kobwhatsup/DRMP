@@ -76,6 +76,12 @@ public enum ErrorCode {
     BUSINESS_RULE_VIOLATION(10002, "业务规则违反"),
     CONCURRENCY_CONFLICT(10003, "并发冲突"),
     
+    // 通用别名
+    INTERNAL_ERROR(1000, "系统错误"),
+    RESOURCE_NOT_FOUND(1004, "资源不存在"),
+    ACCESS_DENIED(1003, "无权限访问"),
+    NOT_IMPLEMENTED(10000, "功能未实现"),
+    
     // 外部服务相关错误码 (20000-29999)
     EXTERNAL_SERVICE_ERROR(20000, "外部服务错误"),
     PAYMENT_SERVICE_ERROR(20001, "支付服务错误"),

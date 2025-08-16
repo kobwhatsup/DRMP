@@ -248,7 +248,10 @@ const MembershipPayment: React.FC = () => {
       key: 'orgName',
       width: 200,
       render: (text, record) => (
-        <a onClick={() => navigate(`/organizations/${record.id}`)}>
+        <a onClick={() => {
+          const basePath = record.category === 'SOURCE' ? '/source-orgs' : '/disposal-orgs';
+          navigate(`${basePath}/${record.id}`);
+        }}>
           {text}
         </a>
       ),
@@ -341,7 +344,10 @@ const MembershipPayment: React.FC = () => {
         <Space>
           <Button
             type="link"
-            onClick={() => navigate(`/organizations/${record.id}`)}
+            onClick={() => {
+              const basePath = record.category === 'SOURCE' ? '/source-orgs' : '/disposal-orgs';
+              navigate(`${basePath}/${record.id}`);
+            }}
           >
             查看详情
           </Button>

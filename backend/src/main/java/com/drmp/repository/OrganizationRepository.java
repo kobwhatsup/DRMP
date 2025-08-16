@@ -55,4 +55,60 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
            "LEFT JOIN FETCH o.disposalTypes " +
            "LEFT JOIN FETCH o.settlementMethods")
     List<Organization> findAllWithCollections();
+
+    /**
+     * 高效的分页查询，支持关键字、类型和状态过滤，在数据库层面进行过滤和分页
+     */
+    @Query("SELECT DISTINCT o FROM Organization o " +
+           "LEFT JOIN FETCH o.serviceRegions " +
+           "LEFT JOIN FETCH o.businessScopes " +
+           "LEFT JOIN FETCH o.disposalTypes " +
+           "LEFT JOIN FETCH o.settlementMethods " +
+           "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+           "       LOWER(o.orgName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "       LOWER(o.orgCode) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+           "      (:type IS NULL OR o.type = :type) AND " +
+           "      (:status IS NULL OR o.status = :status) " +
+           "ORDER BY o.createdAt DESC")
+    Page<Organization> findWithFiltersAndCollections(@Param("keyword") String keyword,
+                                                    @Param("type") OrganizationType type,
+                                                    @Param("status") OrganizationStatus status,
+                                                    Pageable pageable);
+
+    /**
+     * 批量查询机构及其审批用户信息，避免N+1查询
+     */
+    @Query("SELECT DISTINCT o, u FROM Organization o " +
+           "LEFT JOIN FETCH o.serviceRegions " +
+           "LEFT JOIN FETCH o.businessScopes " +
+           "LEFT JOIN FETCH o.disposalTypes " +
+           "LEFT JOIN FETCH o.settlementMethods " +
+           "LEFT JOIN User u ON o.approvalBy = u.id " +
+           "WHERE o.id IN :ids")
+    List<Object[]> findAllWithCollectionsAndApprovalUser(@Param("ids") List<Long> ids);
+
+    /**
+     * 统计不同类型的机构数量，避免加载全部数据到内存
+     */
+    @Query("SELECT COUNT(o) FROM Organization o WHERE o.type IN :types")
+    long countByTypes(@Param("types") List<OrganizationType> types);
+
+    /**
+     * 根据ID查找机构，并预加载审批用户信息，避免N+1查询
+     */
+    @Query("SELECT DISTINCT o FROM Organization o " +
+           "LEFT JOIN FETCH o.serviceRegions " +
+           "LEFT JOIN FETCH o.businessScopes " +
+           "LEFT JOIN FETCH o.disposalTypes " +
+           "LEFT JOIN FETCH o.settlementMethods " +
+           "WHERE o.id = :id")
+    Optional<Organization> findByIdWithCollections(@Param("id") Long id);
+
+    /**
+     * 批量查询机构详情，预加载审批用户名称，避免N+1查询
+     */
+    @Query("SELECT o, u.realName FROM Organization o " +
+           "LEFT JOIN User u ON o.approvalBy = u.id " +
+           "WHERE o.id IN :ids")
+    List<Object[]> findOrganizationsWithApprovalUserNames(@Param("ids") List<Long> ids);
 }

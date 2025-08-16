@@ -50,6 +50,27 @@ public class BatchImportResponse {
     private String downloadUrl;
     
     private String errorReportUrl;
+    
+    // Additional fields for CaseBatchImportService compatibility
+    private Long casePackageId;
+    
+    private String casePackageName;
+    
+    private Integer totalRows;
+    
+    private Integer validRows;
+    
+    private Integer invalidRows;
+    
+    private Integer duplicateRows;
+    
+    private Integer importedRows;
+    
+    private Map<Integer, List<String>> validationErrors;
+    
+    private Map<Integer, List<String>> validationWarnings;
+    
+    private Long durationMs;
 
     @Data
     @Builder

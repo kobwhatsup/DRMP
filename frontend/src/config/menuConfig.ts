@@ -1,9 +1,23 @@
 import {
-  DashboardOutlined, BankOutlined, TeamOutlined, FileTextOutlined,
-  SettingOutlined, AuditOutlined, BarChartOutlined, EnvironmentOutlined,
-  UserOutlined, SafetyCertificateOutlined, TrophyOutlined, DollarOutlined,
-  ApiOutlined, LineChartOutlined, SearchOutlined, ThunderboltOutlined,
-  ExperimentOutlined, FileProtectOutlined, AlertOutlined, MoneyCollectOutlined
+  AlertOutlined,
+  ApiOutlined,
+  AuditOutlined,
+  BankOutlined,
+  BarChartOutlined,
+  DashboardOutlined,
+  DollarOutlined,
+  EnvironmentOutlined,
+  ExperimentOutlined, FileProtectOutlined,
+  FileTextOutlined,
+  LineChartOutlined,
+  MoneyCollectOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  ThunderboltOutlined,
+  TrophyOutlined,
+  UserOutlined
 } from '@ant-design/icons';
 
 export interface MenuItem {
@@ -27,7 +41,7 @@ export const mainMenuConfig: MenuItem[] = [
   {
     key: 'source-orgs',
     path: '',
-    name: '案源机构管理',
+    name: '案源机构',
     icon: BankOutlined,
     children: [
       {
@@ -71,7 +85,7 @@ export const mainMenuConfig: MenuItem[] = [
   {
     key: 'disposal-orgs',
     path: '',
-    name: '处置机构管理',
+    name: '处置机构',
     icon: TeamOutlined,
     children: [
       {
@@ -115,7 +129,7 @@ export const mainMenuConfig: MenuItem[] = [
   {
     key: 'audit-center',
     path: '',
-    name: '机构审核中心',
+    name: '机构审核',
     icon: AuditOutlined,
     children: [
       {
@@ -189,26 +203,6 @@ export const mainMenuConfig: MenuItem[] = [
     icon: FileProtectOutlined,
   },
   {
-    key: 'organizations',
-    path: '',
-    name: '机构管理',
-    icon: BankOutlined,
-    children: [
-      {
-        key: 'organizations-list',
-        path: '/organizations',
-        name: '机构列表',
-        icon: BankOutlined,
-      },
-      {
-        key: 'organizations-approval',
-        path: '/organizations/approval',
-        name: '机构审核',
-        icon: AuditOutlined,
-      },
-    ],
-  },
-  {
     key: 'financial',
     path: '',
     name: '财务管理',
@@ -247,26 +241,6 @@ export const mainMenuConfig: MenuItem[] = [
     icon: BarChartOutlined,
   },
   {
-    key: 'access-keys',
-    path: '',
-    name: '按键管理',
-    icon: SafetyCertificateOutlined,
-    children: [
-      {
-        key: 'access-keys-list',
-        path: '/access-keys',
-        name: '访问密钥',
-        icon: SafetyCertificateOutlined,
-      },
-      {
-        key: 'access-keys-stats',
-        path: '/access-keys/stats',
-        name: '使用统计',
-        icon: BarChartOutlined,
-      },
-    ],
-  },
-  {
     key: 'system',
     path: '/system',
     name: '系统管理',
@@ -302,6 +276,26 @@ export const mainMenuConfig: MenuItem[] = [
         path: '/system/configs',
         name: '系统配置',
         icon: SettingOutlined,
+      },
+      {
+        key: 'system-access-keys',
+        path: '/system/access-keys',
+        name: 'API密钥管理',
+        icon: SafetyCertificateOutlined,
+        children: [
+          {
+            key: 'system-access-keys-list',
+            path: '/system/access-keys',
+            name: '密钥列表',
+            icon: SafetyCertificateOutlined,
+          },
+          {
+            key: 'system-access-keys-stats',
+            path: '/system/access-keys/stats',
+            name: '使用统计',
+            icon: BarChartOutlined,
+          },
+        ],
       }
     ]
   }
@@ -590,18 +584,18 @@ export const getMenuConfigByUserType = (userType: 'admin' | 'source_org' | 'disp
 };
 
 // 获取面包屑导航
-export const getBreadcrumb = (pathname: string, menuConfig: MenuItem[]): Array<{name: string, path?: string}> => {
-  const breadcrumb: Array<{name: string, path?: string}> = [];
-  
-  const findBreadcrumb = (items: MenuItem[], currentPath: string, parents: Array<{name: string, path?: string}> = []) => {
+export const getBreadcrumb = (pathname: string, menuConfig: MenuItem[]): Array<{ name: string, path?: string }> => {
+  const breadcrumb: Array<{ name: string, path?: string }> = [];
+
+  const findBreadcrumb = (items: MenuItem[], currentPath: string, parents: Array<{ name: string, path?: string }> = []) => {
     for (const item of items) {
       const newParents = [...parents, { name: item.name, path: item.path }];
-      
+
       if (item.path === currentPath) {
         breadcrumb.push(...newParents);
         return true;
       }
-      
+
       if (item.children) {
         if (findBreadcrumb(item.children, currentPath, newParents)) {
           return true;
@@ -610,7 +604,7 @@ export const getBreadcrumb = (pathname: string, menuConfig: MenuItem[]): Array<{
     }
     return false;
   };
-  
+
   findBreadcrumb(menuConfig, pathname);
   return breadcrumb;
 };

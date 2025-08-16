@@ -1,5 +1,6 @@
 package com.drmp.service;
 
+import com.drmp.dto.response.FileUploadResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -13,6 +14,64 @@ import java.util.Map;
  * @since 1.0.0
  */
 public interface FileStorageService {
+
+    /**
+     * 安全上传文件（主要方法）
+     */
+    FileUploadResponse uploadFile(MultipartFile file, String businessType, Long businessId, 
+                                String category, Long userId);
+
+    /**
+     * 初始化分片上传
+     */
+    Map<String, Object> initChunkUpload(String fileName, Long fileSize, String fileType,
+                                      String businessType, Long businessId, Long userId);
+
+    /**
+     * 上传文件分片
+     */
+    Map<String, Object> uploadChunk(String uploadId, Integer chunkNumber, MultipartFile chunk);
+
+    /**
+     * 完成分片上传
+     */
+    FileUploadResponse completeChunkUpload(String uploadId, List<String> chunkMd5List);
+
+    /**
+     * 批量上传文件
+     */
+    Map<String, Object> batchUploadFiles(MultipartFile[] files, String businessType, 
+                                       Long businessId, String category, Long userId);
+
+    /**
+     * 获取上传进度
+     */
+    Map<String, Object> getUploadProgress(String uploadId);
+
+    /**
+     * 取消上传
+     */
+    void cancelUpload(String uploadId);
+
+    /**
+     * 删除文件
+     */
+    void deleteFile(Long fileId, Long userId);
+
+    /**
+     * 获取下载链接
+     */
+    String getDownloadUrl(Long fileId, Integer expireSeconds);
+
+    /**
+     * 获取文件列表
+     */
+    List<FileUploadResponse> getFileList(String businessType, Long businessId, String category);
+
+    /**
+     * 获取存储统计
+     */
+    Map<String, Object> getStorageStatistics(Long organizationId, String startDate, String endDate);
 
     /**
      * 上传文件
