@@ -325,7 +325,7 @@ export const caseService = {
     api.put<Case>(`/cases/${id}`, data),
 
   // 批量更新案件状态
-  batchUpdateCaseStatus: (caseIds: number[], status: string) =>
+  batchUpdateCaseStatus: (caseIds: string[], status: string) =>
     api.post('/cases/batch-update-status', { caseIds, status }),
 
   // 分配案件
@@ -333,7 +333,7 @@ export const caseService = {
     api.post<Case>(`/cases/${caseId}/assign`, { disposalOrgId, handlerId }),
 
   // 批量分配案件
-  batchAssignCases: (caseIds: number[], disposalOrgId: number) =>
+  batchAssignCases: (caseIds: string[], disposalOrgId: number) =>
     api.post('/cases/batch-assign', { caseIds, disposalOrgId }),
 
   // 获取案件处置进展
@@ -444,7 +444,7 @@ export const caseAssignmentService = {
   // 手动分案
   manualAssignment: (casePackageId: number, assignments: Array<{
     disposalOrgId: number;
-    caseIds: number[];
+    caseIds: string[];
     assignmentReason?: string;
   }>) =>
     api.post<CaseAssignment[]>(`/case-packages/${casePackageId}/manual-assignment`, { assignments }),

@@ -41,6 +41,8 @@ public enum ErrorCode {
     CASE_NOT_FOUND(5000, "案件不存在"),
     CASE_ALREADY_ASSIGNED(5001, "案件已分配"),
     CASE_CANNOT_BE_ASSIGNED(5002, "案件不能分配"),
+    WORK_RECORD_NOT_FOUND(5003, "作业记录不存在"),
+    CASE_TAG_NOT_FOUND(5004, "案件标签不存在"),
     
     // 分案相关错误码 (6000-6999)
     ASSIGNMENT_STRATEGY_NOT_FOUND(6000, "分案策略不存在"),

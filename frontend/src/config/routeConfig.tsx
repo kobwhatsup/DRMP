@@ -40,6 +40,7 @@ import RiskAssessment from '@/pages/audit-center/RiskAssessment';
 import CasePackageList from '@/pages/case-packages/CasePackageList';
 import CasePackageDetail from '@/pages/case-packages/CasePackageDetail';
 import CaseList from '@/pages/case/CaseList';
+import CaseDetail from '@/pages/case/CaseDetail';
 import CaseTimeline from '@/pages/case/CaseTimeline';
 import CaseMarket from '@/pages/cases/CaseMarket';
 import CaseReportAnalysis from '@/pages/cases/CaseReportAnalysis';
@@ -263,6 +264,10 @@ export const mainRoutes: RouteObject[] = [
         element: <CaseList />,
       },
       {
+        path: 'detail/:id',
+        element: <CaseDetail />,
+      },
+      {
         path: 'timeline',
         element: <CaseTimeline />,
       },
@@ -277,6 +282,10 @@ export const mainRoutes: RouteObject[] = [
       {
         path: 'test',
         element: <CaseManagementTest />,
+      },
+      {
+        path: 'document-templates',
+        element: React.createElement(React.lazy(() => import('@/pages/documents/DocumentTemplateManagement'))),
       },
     ],
   },

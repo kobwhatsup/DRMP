@@ -165,6 +165,12 @@ export const mainMenuConfig: MenuItem[] = [
     icon: FileTextOutlined,
     children: [
       {
+        key: 'case-list',
+        path: '/cases/list',
+        name: '案件列表',
+        icon: FileTextOutlined,
+      },
+      {
         key: 'case-packages',
         path: '/cases/packages',
         name: '案件包管理',
@@ -193,6 +199,12 @@ export const mainMenuConfig: MenuItem[] = [
         path: '/cases/ids-integration',
         name: 'IDS系统集成',
         icon: ApiOutlined,
+      },
+      {
+        key: 'document-templates',
+        path: '/cases/document-templates',
+        name: '文书模板管理',
+        icon: FileProtectOutlined,
       }
     ]
   },

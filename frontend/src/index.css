@@ -214,7 +214,7 @@ code {
 }
 
 /* 去除所有点击动画效果，但保留必要的下拉菜单功能 */
-*:not(.ant-select-dropdown):not(.ant-dropdown):not(.ant-tooltip):not(.ant-popover):not(.ant-modal):not(.ant-drawer) {
+*:not(.ant-select-dropdown):not(.ant-dropdown):not(.ant-tooltip):not(.ant-popover):not(.ant-modal):not(.ant-drawer):not(.ant-btn):not(.ant-space) {
   transition: none !important;
   animation: none !important;
 }
@@ -300,8 +300,8 @@ code {
   box-shadow: inherit !important;
 }
 
-/* 去除表格hover效果 */
-.ant-table-tbody > tr:hover > td {
+/* 去除表格hover效果，但保留右侧固定列背景 */
+.ant-table-tbody > tr:hover > td:not(.ant-table-cell-fix-right) {
   background-color: inherit !important;
   transition: none !important;
 }
@@ -339,6 +339,55 @@ code {
   transform: none !important;
   padding-left: inherit !important;
   padding-right: inherit !important;
+}
+
+/* 确保表格操作列按钮可见 */
+.ant-table-tbody .ant-btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+}
+
+.ant-table .ant-space {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+}
+
+.ant-table .ant-space .ant-btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+}
+
+/* 修复表格右侧固定列的显示问题 */
+.ant-table-fixed-right {
+  opacity: 1 !important;
+  visibility: visible !important;
+  background-color: #fff !important;
+  z-index: 2 !important;
+}
+
+.ant-table-cell-fix-right {
+  opacity: 1 !important;
+  visibility: visible !important;
+  background-color: #fff !important;
+  z-index: 2 !important;
+}
+
+.ant-table-cell-fix-right::before {
+  background: transparent !important;
+}
+
+/* 表头右侧固定列样式 */
+.ant-table-thead .ant-table-cell-fix-right {
+  background-color: #fafafa !important;
+  z-index: 3 !important;
+}
+
+/* 鼠标悬浮时保持右侧固定列背景色 */
+.ant-table-tbody > tr:hover .ant-table-cell-fix-right {
+  background-color: #f5f5f5 !important;
 }
 
 /* Responsive */

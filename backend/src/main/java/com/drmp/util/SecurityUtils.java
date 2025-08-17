@@ -49,6 +49,15 @@ public class SecurityUtils {
     }
 
     /**
+     * 获取当前用户姓名（别名方法）
+     * 
+     * @return 用户姓名
+     */
+    public static String getCurrentUserName() {
+        return getCurrentUsername();
+    }
+
+    /**
      * 获取当前用户所属机构ID
      * 
      * @return 机构ID

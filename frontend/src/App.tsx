@@ -1,10 +1,50 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { App as AntdApp } from 'antd';
+import { App as AntdApp, message, notification } from 'antd';
 import { useAuthStore } from '@/store/authStore';
 import Layout from '@/components/layout/Layout';
 import AppRouter from '@/components/layout/AppRouter';
 
+
+// 配置全局消息设置
+message.config({
+  duration: 3, // 3秒后自动关闭
+  maxCount: 3, // 最多同时显示3条消息
+  top: 80, // 距离顶部80px
+});
+
+// 配置全局通知设置
+notification.config({
+  duration: 4.5, // 4.5秒后自动关闭
+  maxCount: 3, // 最多同时显示3条通知
+  top: 80, // 距离顶部80px
+});
+
+// 全局清理函数 - 清除所有消息和通知
+const clearAllMessages = () => {
+  try {
+    message.destroy();
+    notification.destroy();
+    
+    // 额外的DOM清理 - 直接移除可能残留的通知元素
+    const notificationContainers = document.querySelectorAll('.ant-notification, .ant-message');
+    notificationContainers.forEach(container => {
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    });
+    
+    // 清理可能的固定定位元素
+    const fixedElements = document.querySelectorAll('[class*="ant-notification"], [class*="ant-message"]');
+    fixedElements.forEach(element => {
+      if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+    });
+  } catch (error) {
+    console.warn('清理消息时出错:', error);
+  }
+};
 
 // 开发模式配置
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -69,6 +109,37 @@ const DevAutoLogin: React.FC = () => {
  */
 const App: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
+  
+  // 组件挂载时清理所有悬浮消息
+  useEffect(() => {
+    // 立即清理
+    clearAllMessages();
+    
+    // 延迟清理，确保所有组件加载完成后再次清理
+    const delayedCleanup = setTimeout(() => {
+      clearAllMessages();
+    }, 1000);
+    
+    // 周期性清理机制 - 每30秒清理一次持久消息
+    const periodicCleanup = setInterval(() => {
+      clearAllMessages();
+    }, 30000);
+    
+    // 添加全局键盘事件监听器，ESC键清理所有消息
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        clearAllMessages();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      clearTimeout(delayedCleanup);
+      clearInterval(periodicCleanup);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
   
   return (
     <AntdApp>
