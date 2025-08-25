@@ -36,7 +36,8 @@ import {
   DisposalMethod, 
   DisposalMethodConfig, 
   DisposalRecommendation,
-  CaseDisposalInfo 
+  CaseDisposalInfo,
+  DisposalPhase 
 } from '../../types/disposal';
 
 const { Title, Text, Paragraph } = Typography;
@@ -83,7 +84,7 @@ const DisposalMethodSelector: React.FC<DisposalMethodSelectorProps> = ({
       successRate: 0.68,
       applicableAmountRange: { min: 1000, max: 500000 },
       requiredDocuments: ['借款合同', '身份证明', '联系方式确认'],
-      workflow: ['PRE_MEDIATION', 'MEDIATION_ACTIVE', 'MEDIATION_COMPLETED']
+      workflow: [DisposalPhase.PRE_MEDIATION, DisposalPhase.MEDIATION_ACTIVE, DisposalPhase.MEDIATION_COMPLETED]
     },
     {
       method: DisposalMethod.LITIGATION,
@@ -96,7 +97,7 @@ const DisposalMethodSelector: React.FC<DisposalMethodSelectorProps> = ({
       successRate: 0.75,
       applicableAmountRange: { min: 10000, max: 10000000 },
       requiredDocuments: ['借款合同', '身份证明', '催收记录', '财产线索'],
-      workflow: ['PRE_LITIGATION', 'LITIGATION_FILED', 'LITIGATION_ACTIVE', 'JUDGMENT', 'EXECUTION']
+      workflow: [DisposalPhase.PRE_LITIGATION, DisposalPhase.LITIGATION_FILED, DisposalPhase.LITIGATION_ACTIVE, DisposalPhase.JUDGMENT, DisposalPhase.EXECUTION]
     },
     {
       method: DisposalMethod.MIXED,
@@ -109,7 +110,7 @@ const DisposalMethodSelector: React.FC<DisposalMethodSelectorProps> = ({
       successRate: 0.72,
       applicableAmountRange: { min: 5000, max: 2000000 },
       requiredDocuments: ['借款合同', '身份证明', '联系方式确认', '财产线索'],
-      workflow: ['PRE_MEDIATION', 'MEDIATION_ACTIVE', 'PRE_LITIGATION', 'LITIGATION_ACTIVE', 'EXECUTION']
+      workflow: [DisposalPhase.PRE_MEDIATION, DisposalPhase.MEDIATION_ACTIVE, DisposalPhase.PRE_LITIGATION, DisposalPhase.LITIGATION_ACTIVE, DisposalPhase.EXECUTION]
     }
   ];
 
@@ -416,7 +417,7 @@ const DisposalMethodSelector: React.FC<DisposalMethodSelectorProps> = ({
             </Text>
             <Space wrap>
               {config.requiredDocuments.map(doc => (
-                <Tag key={doc} size="small">{doc}</Tag>
+                <Tag key={doc}>{doc}</Tag>
               ))}
             </Space>
           </div>
@@ -521,11 +522,6 @@ const DisposalMethodSelector: React.FC<DisposalMethodSelectorProps> = ({
         </Space>
       </Spin>
 
-      <style jsx>{`
-        .disposal-method-selected {
-          box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-        }
-      `}</style>
     </Modal>
   );
 };

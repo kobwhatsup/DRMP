@@ -130,13 +130,13 @@ public interface SysOperationLogRepository extends JpaRepository<SysOperationLog
     int deleteExpiredLogs(@Param("expireTime") LocalDateTime expireTime);
 
     /**
-     * 获取系统操作趋势数据
+     * 获取系统操作趋势数据 (按小时统计)
      */
-    @Query("SELECT DATE(log.operatedAt) as operationDate, COUNT(log) as operationCount " +
+    @Query("SELECT log.operatedAt, COUNT(log) as operationCount " +
            "FROM SysOperationLog log " +
            "WHERE log.operatedAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY DATE(log.operatedAt) " +
-           "ORDER BY DATE(log.operatedAt)")
+           "GROUP BY log.operatedAt " +
+           "ORDER BY log.operatedAt")
     List<Object[]> getOperationTrend(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     /**

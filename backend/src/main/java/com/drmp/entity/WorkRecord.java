@@ -99,9 +99,6 @@ public class WorkRecord extends BaseEntity {
     @Column(name = "weather", length = 50)
     private String weather;
 
-    @Column(name = "is_deleted")
-    private Boolean isDeleted = false;
-
     /**
      * 记录类型枚举
      */

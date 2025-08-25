@@ -158,7 +158,7 @@ public class WorkRecordServiceImpl implements WorkRecordService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
-        workRecord.setIsDeleted(true);
+        workRecord.setDeleted(true);
         workRecordRepository.save(workRecord);
         
         log.info("Work record deleted successfully: {}", id);
