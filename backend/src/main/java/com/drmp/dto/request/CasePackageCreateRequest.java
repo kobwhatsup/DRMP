@@ -41,6 +41,13 @@ public class CasePackageCreateRequest {
     @Size(max = 500, message = "偏好处置方式长度不能超过500")
     private String preferredDisposalMethods;
 
+    @DecimalMin(value = "0.00", message = "最低预期回收率不能为负")
+    @DecimalMax(value = "1.00", message = "最低预期回收率不能超过100%")
+    private BigDecimal expectedRecoveryRateMin;
+
+    @Min(value = 1, message = "处置周期不能少于1天")
+    private Integer disposalPeriodDays;
+
     @Size(max = 50, message = "分案策略长度不能超过50")
     private String assignmentStrategy;
 

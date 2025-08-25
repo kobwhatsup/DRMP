@@ -240,7 +240,8 @@ const CreateCasePackage: React.FC = () => {
       // 验证基本信息
       try {
         await form.validateFields([
-          'packageName', 'caseType', 'description', 'serviceRegions'
+          'packageName', 'caseType', 'description', 'serviceRegions',
+          'expectedRecoveryRate', 'expectedDisposalDays', 'entrustDateRange'
         ]);
         setCurrentStep(1);
       } catch (error) {
@@ -397,6 +398,127 @@ const CreateCasePackage: React.FC = () => {
                     <Option value="杭州市">杭州市</Option>
                     <Option value="南京市">南京市</Option>
                   </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="expectedRecoveryRate"
+                  label="预期回收率"
+                  tooltip="预期的债务回收百分比"
+                  rules={[{ required: true, message: '请输入预期回收率' }]}
+                >
+                  <InputNumber
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    precision={2}
+                    style={{ width: '100%' }}
+                    placeholder="请输入预期回收率（%）"
+                    addonAfter="%"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="expectedRecoveryRateMin"
+                  label="最低预期回收率"
+                  tooltip="可接受的最低债务回收百分比"
+                >
+                  <InputNumber
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    precision={2}
+                    style={{ width: '100%' }}
+                    placeholder="请输入最低预期回收率（%）"
+                    addonAfter="%"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="expectedDisposalDays"
+                  label="预期处置天数"
+                  tooltip="预计完成案件处置的天数"
+                  rules={[{ required: true, message: '请输入预期处置天数' }]}
+                >
+                  <InputNumber
+                    min={1}
+                    max={1095} // 最多3年
+                    style={{ width: '100%' }}
+                    placeholder="请输入预期处置天数"
+                    addonAfter="天"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="disposalPeriodDays"
+                  label="处置周期"
+                  tooltip="整体处置周期，包括准备、执行、收尾等环节"
+                >
+                  <InputNumber
+                    min={1}
+                    max={1095} // 最多3年
+                    style={{ width: '100%' }}
+                    placeholder="请输入处置周期"
+                    addonAfter="天"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="preferredDisposalMethods"
+                  label="偏好处置方式"
+                  tooltip="选择偏好的案件处置方式，可多选"
+                >
+                  <Select mode="multiple" placeholder="请选择偏好处置方式">
+                    <Option value="mediation">调解</Option>
+                    <Option value="litigation">诉讼</Option>
+                    <Option value="preservation">保全</Option>
+                    <Option value="negotiation">协商</Option>
+                    <Option value="other">其他</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="assignmentStrategy"
+                  label="分案策略"
+                  tooltip="案件分配给处置机构的策略"
+                >
+                  <Select placeholder="请选择分案策略">
+                    <Option value="AUTOMATIC">自动分案</Option>
+                    <Option value="MANUAL">手动分案</Option>
+                    <Option value="BIDDING">竞价分案</Option>
+                    <Option value="ROUND_ROBIN">轮询分案</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="entrustDateRange"
+                  label="委托期限"
+                  tooltip="案件委托的开始和结束日期"
+                  rules={[{ required: true, message: '请选择委托期限' }]}
+                >
+                  <RangePicker 
+                    style={{ width: '100%' }}
+                    placeholder={['委托开始日期', '委托结束日期']}
+                    format="YYYY-MM-DD"
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -564,6 +686,46 @@ const CreateCasePackage: React.FC = () => {
               </Col>
             </Row>
 
+            <Row gutter={16} style={{ marginTop: 16 }}>
+              <Col span={8}>
+                <Text strong>预期回收率：</Text>
+                <div>{form.getFieldValue('expectedRecoveryRate')}%</div>
+              </Col>
+              <Col span={8}>
+                <Text strong>最低预期回收率：</Text>
+                <div>{form.getFieldValue('expectedRecoveryRateMin') || '未设置'}%</div>
+              </Col>
+              <Col span={8}>
+                <Text strong>预期处置天数：</Text>
+                <div>{form.getFieldValue('expectedDisposalDays')} 天</div>
+              </Col>
+            </Row>
+
+            <Row gutter={16} style={{ marginTop: 16 }}>
+              <Col span={8}>
+                <Text strong>处置周期：</Text>
+                <div>{form.getFieldValue('disposalPeriodDays') || '未设置'} 天</div>
+              </Col>
+              <Col span={8}>
+                <Text strong>偏好处置方式：</Text>
+                <div>{form.getFieldValue('preferredDisposalMethods')?.join(', ') || '未设置'}</div>
+              </Col>
+              <Col span={8}>
+                <Text strong>分案策略：</Text>
+                <div>{form.getFieldValue('assignmentStrategy') || '未设置'}</div>
+              </Col>
+            </Row>
+
+            <Row gutter={16} style={{ marginTop: 16 }}>
+              <Col span={24}>
+                <Text strong>委托期限：</Text>
+                <div>
+                  {form.getFieldValue('entrustDateRange')?.[0]?.format('YYYY-MM-DD')} 至 
+                  {form.getFieldValue('entrustDateRange')?.[1]?.format('YYYY-MM-DD')}
+                </div>
+              </Col>
+            </Row>
+
             <Divider>案件数据</Divider>
             <Row gutter={16}>
               <Col span={8}>
@@ -607,6 +769,9 @@ const CreateCasePackage: React.FC = () => {
     // 初始化表单默认值
     form.setFieldsValue({
       packageCode: `PKG${Date.now()}`,
+      expectedRecoveryRate: 35.0, // 默认35%回收率
+      expectedDisposalDays: 90,   // 默认90天处置期
+      assignmentStrategy: 'AUTOMATIC', // 默认自动分案
       feeStructure: { feeType: 'PERCENTAGE' },
       slaRequirements: {
         maxResponseTime: 24,

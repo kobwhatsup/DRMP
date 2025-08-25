@@ -66,6 +66,12 @@ public class CasePackage extends BaseEntity {
     @Column(name = "preferred_disposal_methods", length = 500)
     private String preferredDisposalMethods;
 
+    @Column(name = "expected_recovery_rate_min", precision = 5, scale = 2)
+    private BigDecimal expectedRecoveryRateMin;
+
+    @Column(name = "disposal_period_days")
+    private Integer disposalPeriodDays;
+
     @Column(name = "assignment_strategy", length = 50)
     private String assignmentStrategy;
 

@@ -14,6 +14,7 @@ import com.drmp.exception.ResourceNotFoundException;
 import com.drmp.repository.CasePackageRepository;
 import com.drmp.repository.OrganizationRepository;
 import com.drmp.service.CasePackageService;
+import com.drmp.service.CaseBatchImportService;
 import com.drmp.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class CasePackageServiceImpl implements CasePackageService {
 
     private final CasePackageRepository casePackageRepository;
     private final OrganizationRepository organizationRepository;
+    private final CaseBatchImportService caseBatchImportService;
 
     @Override
     public CasePackageDetailResponse createCasePackage(CasePackageCreateRequest request) {
@@ -73,7 +75,9 @@ public class CasePackageServiceImpl implements CasePackageService {
             .totalAmount(request.getTotalAmount())
             .remainingAmount(request.getTotalAmount())
             .expectedRecoveryRate(request.getExpectedRecoveryRate())
+            .expectedRecoveryRateMin(request.getExpectedRecoveryRateMin())
             .expectedDisposalDays(request.getExpectedDisposalDays())
+            .disposalPeriodDays(request.getDisposalPeriodDays())
             .preferredDisposalMethods(request.getPreferredDisposalMethods())
             .assignmentStrategy(request.getAssignmentStrategy())
             .assignmentRules(request.getAssignmentRules())
@@ -331,7 +335,8 @@ public class CasePackageServiceImpl implements CasePackageService {
     @Override
     @Async
     public CompletableFuture<BatchImportResult> batchImportCases(Long casePackageId, MultipartFile file) {
-        log.info("Starting batch import for case package: {}", casePackageId);
+        log.info("Starting batch import for case package: {}, file: {}, size: {}", 
+                casePackageId, file.getOriginalFilename(), file.getSize());
         
         try {
             CasePackage casePackage = getCasePackageEntity(casePackageId);
@@ -346,18 +351,23 @@ public class CasePackageServiceImpl implements CasePackageService {
             
             // 生成任务ID
             String taskId = UUID.randomUUID().toString();
+            log.info("Generated task ID: {} for case package: {}", taskId, casePackageId);
             
-            // TODO: 实现Excel/CSV文件解析和批量导入逻辑
-            // 这里暂时返回模拟结果
-            Thread.sleep(2000); // 模拟处理时间
+            // 使用 CaseBatchImportService 进行实际的批量导入
+            com.drmp.dto.response.BatchImportResponse importResponse = 
+                caseBatchImportService.importCases(file, casePackageId);
             
-            BatchImportResult result = new BatchImportResult(
-                true, 100, 98, 2, 
-                List.of("第10行：身份证格式错误", "第50行：金额字段为空"),
-                taskId
-            );
+            // 转换响应格式
+            BatchImportResult result = convertImportResponse(importResponse, taskId);
             
-            log.info("Batch import completed for case package: {}", casePackageId);
+            if (result.isSuccess()) {
+                log.info("Batch import completed successfully for package {}: {}/{} cases imported", 
+                        casePackageId, result.getSuccessCount(), result.getTotalCount());
+            } else {
+                log.warn("Batch import completed with errors for package {}: {}/{} cases imported, {} errors", 
+                        casePackageId, result.getSuccessCount(), result.getTotalCount(), result.getFailedCount());
+            }
+            
             return CompletableFuture.completedFuture(result);
             
         } catch (Exception e) {
@@ -629,5 +639,49 @@ public class CasePackageServiceImpl implements CasePackageService {
         }
         
         return response;
+    }
+    
+    /**
+     * 转换批量导入响应格式
+     */
+    private BatchImportResult convertImportResponse(com.drmp.dto.response.BatchImportResponse importResponse, String taskId) {
+        List<String> errors = new ArrayList<>();
+        
+        // 收集验证错误
+        if (importResponse.getValidationErrors() != null) {
+            importResponse.getValidationErrors().forEach((rowNum, errorList) -> {
+                errorList.forEach(error -> 
+                    errors.add(String.format("第%d行：%s", rowNum, error))
+                );
+            });
+        }
+        
+        // 收集警告（作为错误处理）
+        if (importResponse.getValidationWarnings() != null) {
+            importResponse.getValidationWarnings().forEach((rowNum, warningList) -> {
+                warningList.forEach(warning -> 
+                    errors.add(String.format("第%d行（警告）：%s", rowNum, warning))
+                );
+            });
+        }
+        
+        // 如果没有具体错误但导入失败，添加通用错误信息
+        if (!importResponse.getSuccess() && errors.isEmpty()) {
+            errors.add(importResponse.getMessage() != null ? 
+                      importResponse.getMessage() : "未知导入错误");
+        }
+        
+        int totalCount = importResponse.getTotalRows() != null ? importResponse.getTotalRows() : 0;
+        int successCount = importResponse.getImportedRows() != null ? importResponse.getImportedRows() : 0;
+        int failedCount = totalCount - successCount;
+        
+        return new BatchImportResult(
+            importResponse.getSuccess(),
+            totalCount,
+            successCount, 
+            failedCount,
+            errors,
+            taskId
+        );
     }
 }
