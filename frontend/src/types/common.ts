@@ -4,6 +4,7 @@
 
 // 通用API响应格式
 export interface ApiResponse<T = any> {
+  success: boolean;
   code: number;
   message: string;
   data: T;

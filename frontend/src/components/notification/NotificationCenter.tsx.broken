@@ -343,7 +343,6 @@ const NotificationCenter: React.FC = () => {
                         </Text>
                         <Tag 
                           color={getPriorityColor(message.priority)}
-                          size="small"
                         >
                           {message.priority}
                         </Tag>

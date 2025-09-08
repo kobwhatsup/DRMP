@@ -262,11 +262,14 @@ public class GlobalExceptionHandler {
      * 根据错误码获取HTTP状态码
      */
     private HttpStatus getHttpStatus(int errorCode) {
-        return switch (errorCode / 100) {
-            case 4 -> HttpStatus.valueOf(errorCode);
-            case 5 -> HttpStatus.INTERNAL_SERVER_ERROR;
-            default -> HttpStatus.BAD_REQUEST;
-        };
+        int statusCategory = errorCode / 100;
+        if (statusCategory == 4) {
+            return HttpStatus.valueOf(errorCode);
+        } else if (statusCategory == 5) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        } else {
+            return HttpStatus.BAD_REQUEST;
+        }
     }
 
     /**

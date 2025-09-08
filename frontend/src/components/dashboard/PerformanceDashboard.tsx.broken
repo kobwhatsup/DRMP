@@ -145,17 +145,17 @@ const PerformanceDashboard: React.FC<DashboardProps> = ({ userType }) => {
   };
 
   const renderOverviewCards = () => (
-    <Row gutter={[16, 16]} className=\"mb-6\">
+    <Row gutter={[16, 16]} className="mb-6">
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title=\"案件总数\"
+            title="案件总数"
             value={data?.totalCases || 0}
             prefix={<FileTextOutlined />}
-            suffix=\"件\"
+            suffix="件"
             valueStyle={{ color: '#1890ff' }}
           />
-          <div className=\"mt-2 text-sm text-gray-500\">
+          <div className="mt-2 text-sm text-gray-500">
             已处理: {data?.processedCases || 0}件
           </div>
         </Card>
@@ -163,14 +163,14 @@ const PerformanceDashboard: React.FC<DashboardProps> = ({ userType }) => {
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title=\"委托金额\"
+            title="委托金额"
             value={data?.totalAmount || 0}
             prefix={<MoneyCollectOutlined />}
-            suffix=\"万元\"
+            suffix="万元"
             precision={2}
             valueStyle={{ color: '#52c41a' }}
           />
-          <div className=\"mt-2 text-sm text-gray-500\">
+          <div className="mt-2 text-sm text-gray-500">
             已回款: {((data?.recoveredAmount || 0) / 10000).toFixed(2)}万元
           </div>
         </Card>
@@ -178,13 +178,13 @@ const PerformanceDashboard: React.FC<DashboardProps> = ({ userType }) => {
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title=\"回款率\"
+            title="回款率"
             value={data?.recoveryRate || 0}
             prefix={
               data?.recoveryRate && data.recoveryRate > 50 ? 
               <ArrowUpOutlined /> : <ArrowDownOutlined />
             }
-            suffix=\"%\"
+            suffix="%"
             precision={2}
             valueStyle={{ 
               color: data?.recoveryRate && data.recoveryRate > 50 ? '#52c41a' : '#f5222d' 
@@ -192,7 +192,7 @@ const PerformanceDashboard: React.FC<DashboardProps> = ({ userType }) => {
           />
           <Progress
             percent={data?.recoveryRate || 0}
-            size=\"small\"
+            size="small"
             showInfo={false}
             strokeColor={data?.recoveryRate && data.recoveryRate > 50 ? '#52c41a' : '#faad14'}
           />
@@ -201,13 +201,13 @@ const PerformanceDashboard: React.FC<DashboardProps> = ({ userType }) => {
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title=\"平均处置周期\"
+            title="平均处置周期"
             value={data?.avgProcessingDays || 0}
             prefix={<ClockCircleOutlined />}
-            suffix=\"天\"
+            suffix="天"
             valueStyle={{ color: '#722ed1' }}
           />
-          <div className=\"mt-2\">
+          <div className="mt-2">
             <Tag color={data?.avgProcessingDays && data.avgProcessingDays < 30 ? 'green' : 'orange'}>
               {data?.avgProcessingDays && data.avgProcessingDays < 30 ? '高效' : '待优化'}
             </Tag>

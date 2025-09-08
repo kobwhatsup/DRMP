@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { message } from 'antd';
 import { useAuthStore } from '@/store/authStore';
-import { notificationAPI } from './notificationAPI';
 
 export interface ApiResponse<T = any> {
+  success: boolean;
   code: number;
   message: string;
   data: T;
@@ -142,7 +142,7 @@ export const performanceAPI = {
   exportPerformanceReport: (params: any) => apiService.post('/v1/performance/export', params),
 };
 
-// Export notification API
-export { notificationAPI };
+// Export notification API (temporarily disabled)
+// export { notificationAPI };
 
 export default apiService;

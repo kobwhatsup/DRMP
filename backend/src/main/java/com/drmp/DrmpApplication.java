@@ -2,10 +2,6 @@ package com.drmp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * DRMP Platform Main Application
@@ -13,11 +9,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author DRMP Team
  * @since 1.0.0
  */
-@SpringBootApplication
-@EnableJpaAuditing
-@EnableTransactionManagement
-@EnableAsync
-@EnableScheduling
+@SpringBootApplication(exclude = {
+    org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
+})
 public class DrmpApplication {
 
     public static void main(String[] args) {
