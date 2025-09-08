@@ -16,10 +16,10 @@ spring:
     allow-bean-definition-overriding: true
   
   datasource:
-    url: jdbc:h2:mem:drmp;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:mysql://localhost:3306/drmp?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4&allowPublicKeyRetrieval=true
+    username: root
+    password: root123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -30,9 +30,9 @@ spring:
       connection-test-query: SELECT 1
   
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -45,14 +45,25 @@ spring:
         order_updates: true
     open-in-view: false
   
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    database: 0
+    timeout: 2000ms
+    jedis:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
   
-  # 禁用Redis，使用内存缓存
   cache:
-    type: caffeine
+    type: redis
+    redis:
+      time-to-live: 3600000
+      cache-null-values: false
   
   flyway:
     enabled: false
@@ -172,6 +183,10 @@ app:
     password-strength: medium
     max-login-attempts: 5
     lock-time-minutes: 30
+    encryption:
+      enabled: true
+      secret-key: drmp2024EncryptionSecretKeyForSensitiveDataProtection
+      key-rotation-days: 90
 
 # Logging Configuration
 logging:
