@@ -36,6 +36,7 @@ import MediationManagement from '@/pages/disposal-management/mediation';
 import LitigationManagement from '@/pages/disposal-management/litigation';
 import DisposalConversion from '@/pages/disposal-management/conversion';
 import DisposalAnalysis from '@/pages/disposal-management/analysis';
+import AlertCenter from '@/pages/disposal-management/alert-center';
 
 // 机构审核中心
 import OrgAuditCenter from '@/pages/audit-center/OrgAuditCenter';
@@ -344,6 +345,15 @@ export const mainRoutes: RouteObject[] = [
           {
             index: true,
             element: <DisposalAnalysis />,
+          },
+        ],
+      },
+      {
+        path: 'alerts',
+        children: [
+          {
+            index: true,
+            element: <AlertCenter />,
           },
         ],
       },

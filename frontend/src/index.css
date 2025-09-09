@@ -213,8 +213,8 @@ code {
   margin-top: 8px;
 }
 
-/* 去除所有点击动画效果，但保留必要的下拉菜单功能 */
-*:not(.ant-select-dropdown):not(.ant-dropdown):not(.ant-tooltip):not(.ant-popover):not(.ant-modal):not(.ant-drawer):not(.ant-btn):not(.ant-space) {
+/* 去除所有点击动画效果，但保留必要的下拉菜单和日期选择器功能 */
+*:not(.ant-select-dropdown):not(.ant-dropdown):not(.ant-tooltip):not(.ant-popover):not(.ant-modal):not(.ant-drawer):not(.ant-btn):not(.ant-space):not(.ant-picker):not(.ant-picker-dropdown):not(.ant-picker-panel):not(.ant-picker-content):not(.ant-picker-cell):not(.ant-picker-cell-inner) {
   transition: none !important;
   animation: none !important;
 }
@@ -241,13 +241,16 @@ code {
   transform: none !important;
 }
 
-/* 保留下拉组件的必要CSS动画 */
+/* 保留下拉组件和日期选择器的必要CSS动画 */
 .ant-select-dropdown,
 .ant-dropdown,
 .ant-tooltip,
 .ant-popover,
 .ant-modal,
-.ant-drawer {
+.ant-drawer,
+.ant-picker,
+.ant-picker-dropdown,
+.ant-picker-panel {
   /* 允许这些组件保留必要的显示/隐藏动画 */
 }
 
