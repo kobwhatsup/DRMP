@@ -60,7 +60,7 @@ const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 interface SmartAssignmentModalProps {
-  visible: boolean;
+  open: boolean;
   packageId: number;
   packageName: string;
   caseCount: number;
@@ -70,7 +70,7 @@ interface SmartAssignmentModalProps {
 }
 
 const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
-  visible,
+  open,
   packageId,
   packageName,
   caseCount,
@@ -94,13 +94,13 @@ const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
   const [step, setStep] = useState<'config' | 'preview' | 'result'>('config');
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadRecommendedOrgs();
       setStep('config');
       setPreviewResult(null);
       form.resetFields();
     }
-  }, [visible]);
+  }, [open]);
 
   const loadRecommendedOrgs = async () => {
     try {
@@ -689,7 +689,7 @@ const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
           智能分案 - {packageName}
         </Space>
       }
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       width={900}
       footer={renderFooter()}

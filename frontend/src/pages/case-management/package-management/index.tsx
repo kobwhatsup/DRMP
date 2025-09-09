@@ -676,7 +676,7 @@ const CasePackageManagement: React.FC = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => navigate('/case-management/packages/create')}
+              onClick={() => setCreateModalVisible(true)}
             >
               创建案件包
             </Button>
@@ -797,7 +797,7 @@ const CasePackageManagement: React.FC = () => {
       
       {/* 创建/编辑案件包模态框 */}
       <CasePackageForm
-        visible={createModalVisible}
+        open={createModalVisible}
         editData={editData}
         onCancel={() => {
           setCreateModalVisible(false);
@@ -813,7 +813,7 @@ const CasePackageManagement: React.FC = () => {
       {/* 智能分案模态框 */}
       {selectedPackage && (
         <SmartAssignmentModal
-          visible={smartAssignModalVisible}
+          open={smartAssignModalVisible}
           packageId={selectedPackage.id}
           packageName={selectedPackage.packageName}
           caseCount={selectedPackage.caseCount}
@@ -833,7 +833,7 @@ const CasePackageManagement: React.FC = () => {
       {/* 竞标评估模态框 */}
       {selectedPackage && biddingModalVisible && (
         <BiddingEvaluationModal
-          visible={biddingModalVisible}
+          open={biddingModalVisible}
           packageId={selectedPackage.id}
           packageName={selectedPackage.packageName}
           totalAmount={selectedPackage.totalAmount}

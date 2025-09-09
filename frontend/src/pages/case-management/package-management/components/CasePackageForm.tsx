@@ -49,7 +49,7 @@ const { Title, Text } = Typography;
 const { Dragger } = Upload;
 
 interface CasePackageFormProps {
-  visible: boolean;
+  open: boolean;
   editData?: any;
   onCancel: () => void;
   onSuccess: () => void;
@@ -68,7 +68,7 @@ interface CaseItem {
 }
 
 const CasePackageForm: React.FC<CasePackageFormProps> = ({
-  visible,
+  open,
   editData,
   onCancel,
   onSuccess
@@ -84,7 +84,7 @@ const CasePackageForm: React.FC<CasePackageFormProps> = ({
   const [availableOrgs, setAvailableOrgs] = useState<any[]>([]);
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       if (editData) {
         form.setFieldsValue({
           ...editData,
@@ -106,7 +106,7 @@ const CasePackageForm: React.FC<CasePackageFormProps> = ({
       }
       loadAvailableOrgs();
     }
-  }, [visible, editData]);
+  }, [open, editData]);
 
   const loadCases = async (packageId: number) => {
     try {
@@ -630,7 +630,7 @@ const CasePackageForm: React.FC<CasePackageFormProps> = ({
   return (
     <Modal
       title={editData ? '编辑案件包' : '创建案件包'}
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       onOk={handleSubmit}
       confirmLoading={loading}

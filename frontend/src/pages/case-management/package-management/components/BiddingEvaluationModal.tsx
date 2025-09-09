@@ -54,7 +54,7 @@ const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 interface BiddingEvaluationModalProps {
-  visible: boolean;
+  open: boolean;
   packageId: number;
   packageName: string;
   totalAmount: number;
@@ -72,7 +72,7 @@ interface EvaluationCriteria {
 }
 
 const BiddingEvaluationModal: React.FC<BiddingEvaluationModalProps> = ({
-  visible,
+  open,
   packageId,
   packageName,
   totalAmount,
@@ -95,10 +95,10 @@ const BiddingEvaluationModal: React.FC<BiddingEvaluationModalProps> = ({
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadBids();
     }
-  }, [visible, packageId]);
+  }, [open, packageId]);
 
   const loadBids = async () => {
     setLoading(true);
@@ -655,7 +655,7 @@ const BiddingEvaluationModal: React.FC<BiddingEvaluationModalProps> = ({
           竞标评估 - {packageName}
         </Space>
       }
-      visible={visible}
+      open={open}
       onCancel={onCancel}
       width={1200}
       footer={[
