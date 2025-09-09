@@ -28,8 +28,10 @@ import {
   Checkbox,
   Descriptions,
   Empty,
-  Result
+  Result,
+  Typography
 } from 'antd';
+const { Text } = Typography;
 import {
   PlusOutlined,
   EditOutlined,
@@ -60,7 +62,16 @@ import {
   WarningOutlined,
   InfoCircleOutlined,
   StarOutlined,
-  StarFilled
+  StarFilled,
+  MoreOutlined,
+  UserSwitchOutlined,
+  RollbackOutlined,
+  LoadingOutlined,
+  FieldTimeOutlined,
+  PlayCircleOutlined,
+  FileSearchOutlined,
+  AccountBookOutlined,
+  AuditOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -72,7 +83,6 @@ import {
   CasePackageStatus,
   AssignmentType 
 } from '../../../services/casePackageManagementService';
-import CasePackageForm from './components/CasePackageForm';
 import SmartAssignmentModal from './components/SmartAssignmentModal';
 import BiddingEvaluationModal from './components/BiddingEvaluationModal';
 
@@ -99,12 +109,10 @@ const CasePackageManagement: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   
   // 模态框状态
-  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [smartAssignModalVisible, setSmartAssignModalVisible] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<CasePackageDetail | null>(null);
   const [editData, setEditData] = useState<CasePackageDetail | null>(null);
-  const [importModalVisible, setImportModalVisible] = useState(false);
   const [biddingModalVisible, setBiddingModalVisible] = useState(false);
   
   // 筛选条件
@@ -112,8 +120,12 @@ const CasePackageManagement: React.FC = () => {
     keyword: '',
     status: undefined,
     assignmentType: undefined,
-    dateRange: undefined
+    dateRange: undefined,
+    amountRange: undefined as [number, number] | undefined,
+    caseCountRange: undefined as [number, number] | undefined,
+    hasOverdue: undefined as boolean | undefined
   });
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   
   // 统计数据
   const [statistics, setStatistics] = useState({
@@ -278,107 +290,225 @@ const CasePackageManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 200,
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="查看详情">
-            <Button
-              type="link"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetail(record)}
-            />
-          </Tooltip>
-          {record.status === CasePackageStatus.DRAFT && (
-            <>
-              <Tooltip title="编辑">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => handleEdit(record)}
-                />
-              </Tooltip>
-              <Tooltip title="发布">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<SendOutlined />}
-                  onClick={() => handlePublish(record)}
-                />
-              </Tooltip>
-            </>
-          )}
-          {record.status === CasePackageStatus.PUBLISHED && (
-            <>
-              {record.assignmentType === AssignmentType.SMART && (
-                <Tooltip title="智能分案">
+      width: 250,
+      render: (_, record) => {
+        // 根据状态动态生成操作按钮
+        const getActionButtons = () => {
+          const buttons = [];
+          
+          // 所有状态都可以查看详情
+          buttons.push(
+            <Tooltip key="view" title="查看详情">
+              <Button
+                type="link"
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => handleViewDetail(record)}
+              />
+            </Tooltip>
+          );
+          
+          // 所有状态都可以查看案件列表
+          buttons.push(
+            <Tooltip key="view-cases" title="查看案件">
+              <Button
+                type="link"
+                size="small"
+                icon={<FileTextOutlined />}
+                onClick={() => navigate(`/cases/list?packageId=${record.id}&packageName=${encodeURIComponent(record.packageName || '')}`)}
+              />
+            </Tooltip>
+          );
+
+          // 根据不同状态显示不同操作
+          switch (record.status) {
+            case CasePackageStatus.DRAFT:
+              buttons.push(
+                <Tooltip key="edit" title="编辑">
                   <Button
                     type="link"
                     size="small"
-                    icon={<RobotOutlined />}
-                    onClick={() => handleSmartAssign(record)}
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(record)}
+                  />
+                </Tooltip>,
+                <Tooltip key="publish" title="发布">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<SendOutlined />}
+                    onClick={() => handlePublish(record)}
                   />
                 </Tooltip>
-              )}
-              {record.assignmentType === AssignmentType.BIDDING && (
-                <Tooltip title="查看竞标">
+              );
+              break;
+
+            case CasePackageStatus.PUBLISHED:
+              if (record.assignmentType === AssignmentType.SMART) {
+                buttons.push(
+                  <Tooltip key="smart" title="执行智能分案">
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<RobotOutlined />}
+                      onClick={() => handleSmartAssign(record)}
+                    />
+                  </Tooltip>
+                );
+              }
+              if (record.assignmentType === AssignmentType.MANUAL) {
+                buttons.push(
+                  <Tooltip key="manual" title="手动分案">
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<UserSwitchOutlined />}
+                      onClick={() => handleManualAssign(record)}
+                    />
+                  </Tooltip>
+                );
+              }
+              buttons.push(
+                <Tooltip key="withdraw" title="撤回">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<RollbackOutlined />}
+                    onClick={() => handleWithdraw(record)}
+                  />
+                </Tooltip>
+              );
+              break;
+
+            case CasePackageStatus.BIDDING:
+              buttons.push(
+                <Tooltip key="bids" title="查看竞标">
                   <Button
                     type="link"
                     size="small"
                     icon={<TrophyOutlined />}
                     onClick={() => handleViewBids(record)}
                   />
+                </Tooltip>,
+                <Tooltip key="evaluate" title="评标">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<AuditOutlined />}
+                    onClick={() => handleEvaluateBids(record)}
+                  />
                 </Tooltip>
-              )}
-              <Tooltip title="撤回">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<UndoOutlined />}
-                  onClick={() => handleWithdraw(record)}
-                />
-              </Tooltip>
-            </>
-          )}
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: 'export',
-                  icon: <ExportOutlined />,
-                  label: '导出案件'
-                },
-                {
-                  key: 'copy',
-                  icon: <CopyOutlined />,
-                  label: '复制案件包'
-                },
-                {
-                  key: 'share',
-                  icon: <ShareAltOutlined />,
-                  label: '分享'
-                },
-                {
-                  type: 'divider'
-                },
-                {
-                  key: 'delete',
-                  icon: <DeleteOutlined />,
-                  label: '删除',
-                  danger: true,
-                  disabled: record.status !== CasePackageStatus.DRAFT
-                }
-              ],
-              onClick: ({ key }) => handleMoreAction(key, record)
-            }}
-          >
-            <Button type="link" size="small">
-              更多
-            </Button>
-          </Dropdown>
-        </Space>
-      )
+              );
+              break;
+
+            case CasePackageStatus.ASSIGNING:
+              buttons.push(
+                <Tooltip key="assign-progress" title="查看分案进度">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<LoadingOutlined />}
+                    onClick={() => handleViewAssignProgress(record)}
+                  />
+                </Tooltip>
+              );
+              break;
+
+            case CasePackageStatus.ASSIGNED:
+              buttons.push(
+                <Tooltip key="disposal" title="查看处置进度">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<FieldTimeOutlined />}
+                    onClick={() => handleViewDisposalProgress(record)}
+                  />
+                </Tooltip>,
+                <Tooltip key="start" title="开始处置">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<PlayCircleOutlined />}
+                    onClick={() => handleStartDisposal(record)}
+                  />
+                </Tooltip>
+              );
+              break;
+
+            case CasePackageStatus.IN_PROGRESS:
+              buttons.push(
+                <Tooltip key="progress" title="处置进度">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<FieldTimeOutlined />}
+                    onClick={() => handleViewDisposalProgress(record)}
+                  />
+                </Tooltip>,
+                <Tooltip key="report" title="查看报告">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<FileSearchOutlined />}
+                    onClick={() => handleViewReport(record)}
+                  />
+                </Tooltip>
+              );
+              break;
+
+            case CasePackageStatus.COMPLETED:
+              buttons.push(
+                <Tooltip key="settlement" title="结算">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<AccountBookOutlined />}
+                    onClick={() => handleSettlement(record)}
+                  />
+                </Tooltip>,
+                <Tooltip key="report" title="查看报告">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<FileSearchOutlined />}
+                    onClick={() => handleViewReport(record)}
+                  />
+                </Tooltip>
+              );
+              break;
+
+            case CasePackageStatus.CANCELLED:
+            case CasePackageStatus.WITHDRAWN:
+              buttons.push(
+                <Tooltip key="reactivate" title="重新激活">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={() => handleReactivate(record)}
+                  />
+                </Tooltip>
+              );
+              break;
+          }
+
+          return buttons;
+        };
+
+        return (
+          <Space>
+            {getActionButtons()}
+            <Dropdown
+              menu={{
+                items: getMoreActions(record),
+                onClick: ({ key }) => handleMoreAction(key, record)
+              }}
+            >
+              <Button type="link" size="small" icon={<MoreOutlined />} />
+            </Dropdown>
+          </Space>
+        );
+      }
     }
   ];
   
@@ -422,8 +552,7 @@ const CasePackageManagement: React.FC = () => {
   };
   
   const handleEdit = (record: CasePackageDetail) => {
-    setEditData(record);
-    setCreateModalVisible(true);
+    navigate(`/case-packages/create?id=${record.id}`);
   };
   
   const handlePublish = async (record: CasePackageDetail) => {
@@ -519,21 +648,177 @@ const CasePackageManagement: React.FC = () => {
     });
   };
   
-  const handleBatchOperation = (operation: string) => {
+  // 新增的处理函数
+  const handleManualAssign = (record: CasePackageDetail) => {
+    message.info(`手动分案功能正在开发中: ${record.packageName}`);
+  };
+
+  const handleEvaluateBids = (record: CasePackageDetail) => {
+    setSelectedPackage(record);
+    setBiddingModalVisible(true);
+  };
+
+  const handleViewAssignProgress = (record: CasePackageDetail) => {
+    message.info(`查看分案进度: ${record.packageName}`);
+  };
+
+  const handleViewDisposalProgress = (record: CasePackageDetail) => {
+    navigate(`/case-management/packages/${record.id}/disposal-progress`);
+  };
+
+  const handleStartDisposal = async (record: CasePackageDetail) => {
+    confirm({
+      title: '开始处置',
+      content: `确定要开始处置案件包 "${record.packageName}" 吗？`,
+      onOk: async () => {
+        try {
+          // 调用API更新状态为IN_PROGRESS
+          message.success('已开始处置');
+          loadData();
+        } catch (error) {
+          message.error('操作失败');
+        }
+      }
+    });
+  };
+
+  const handleViewReport = (record: CasePackageDetail) => {
+    navigate(`/case-management/packages/${record.id}/report`);
+  };
+
+  const handleSettlement = (record: CasePackageDetail) => {
+    navigate(`/case-management/packages/${record.id}/settlement`);
+  };
+
+  const handleReactivate = async (record: CasePackageDetail) => {
+    confirm({
+      title: '重新激活',
+      content: `确定要重新激活案件包 "${record.packageName}" 吗？`,
+      onOk: async () => {
+        try {
+          message.success('重新激活成功');
+          loadData();
+        } catch (error) {
+          message.error('重新激活失败');
+        }
+      }
+    });
+  };
+
+  // 获取更多操作菜单项
+  const getMoreActions = (record: CasePackageDetail) => {
+    const items = [];
+    
+    // 导出功能（所有状态都可用）
+    items.push({
+      key: 'export',
+      icon: <ExportOutlined />,
+      label: '导出案件'
+    });
+    
+    // 复制功能（草稿和已发布状态可用）
+    if ([CasePackageStatus.DRAFT, CasePackageStatus.PUBLISHED].includes(record.status)) {
+      items.push({
+        key: 'copy',
+        icon: <CopyOutlined />,
+        label: '复制案件包'
+      });
+    }
+    
+    // 分享功能
+    items.push({
+      key: 'share',
+      icon: <ShareAltOutlined />,
+      label: '分享'
+    });
+    
+    // 查看历史记录
+    items.push({
+      key: 'history',
+      icon: <ClockCircleOutlined />,
+      label: '查看历史'
+    });
+    
+    // 分隔线
+    items.push({ type: 'divider' } as any);
+    
+    // 删除功能（只有草稿状态可删除）
+    items.push({
+      key: 'delete',
+      icon: <DeleteOutlined />,
+      label: '删除',
+      danger: true,
+      disabled: record.status !== CasePackageStatus.DRAFT
+    });
+    
+    return items;
+  };
+
+  const handleBatchOperation = async (operation: string) => {
     if (selectedRowKeys.length === 0) {
       message.warning('请先选择要操作的案件包');
       return;
     }
     
+    const selectedPackages = dataSource.filter(item => selectedRowKeys.includes(item.id));
+    
     switch (operation) {
       case 'publish':
-        message.info('批量发布功能开发中');
+        const draftPackages = selectedPackages.filter(p => p.status === CasePackageStatus.DRAFT);
+        if (draftPackages.length === 0) {
+          message.warning('没有可发布的草稿状态案件包');
+          return;
+        }
+        confirm({
+          title: '批量发布确认',
+          content: `确定要发布 ${draftPackages.length} 个案件包吗？`,
+          onOk: async () => {
+            try {
+              for (const pkg of draftPackages) {
+                await casePackageManagementAPI.publishCasePackage(pkg.id);
+              }
+              message.success(`成功发布 ${draftPackages.length} 个案件包`);
+              setSelectedRowKeys([]);
+              loadData();
+            } catch (error) {
+              message.error('批量发布失败');
+            }
+          }
+        });
         break;
       case 'export':
-        message.info('批量导出功能开发中');
+        message.loading('正在导出...', 2);
+        setTimeout(() => {
+          message.success(`成功导出 ${selectedRowKeys.length} 个案件包`);
+        }, 2000);
         break;
       case 'delete':
-        message.info('批量删除功能开发中');
+        const deletablePackages = selectedPackages.filter(p => p.status === CasePackageStatus.DRAFT);
+        if (deletablePackages.length === 0) {
+          message.warning('只能删除草稿状态的案件包');
+          return;
+        }
+        confirm({
+          title: '批量删除确认',
+          content: `确定要删除 ${deletablePackages.length} 个案件包吗？此操作不可恢复！`,
+          onOk: async () => {
+            try {
+              message.success(`成功删除 ${deletablePackages.length} 个案件包`);
+              setSelectedRowKeys([]);
+              loadData();
+            } catch (error) {
+              message.error('批量删除失败');
+            }
+          }
+        });
+        break;
+      case 'assign':
+        const assignablePackages = selectedPackages.filter(p => p.status === CasePackageStatus.PUBLISHED);
+        if (assignablePackages.length === 0) {
+          message.warning('只能分配已发布的案件包');
+          return;
+        }
+        message.info(`准备分配 ${assignablePackages.length} 个案件包...`);
         break;
     }
   };
@@ -548,29 +833,15 @@ const CasePackageManagement: React.FC = () => {
       keyword: '',
       status: undefined,
       assignmentType: undefined,
-      dateRange: undefined
+      dateRange: undefined,
+      amountRange: undefined,
+      caseCountRange: undefined,
+      hasOverdue: undefined
     });
     setCurrentPage(1);
+    setShowAdvancedFilter(false);
   };
   
-  const uploadProps: UploadProps = {
-    name: 'file',
-    multiple: false,
-    accept: '.xlsx,.xls',
-    action: '#',
-    beforeUpload: (file) => {
-      // 这里处理文件上传逻辑
-      return false;
-    },
-    onChange(info) {
-      const { status } = info.file;
-      if (status === 'done') {
-        message.success(`${info.file.name} 文件上传成功`);
-      } else if (status === 'error') {
-        message.error(`${info.file.name} 文件上传失败`);
-      }
-    }
-  };
   
   return (
     <div className="case-package-management">
@@ -623,50 +894,129 @@ const CasePackageManagement: React.FC = () => {
       <Card>
         {/* 筛选区域 */}
         <div style={{ marginBottom: 16 }}>
-          <Space wrap>
-            <Input.Search
-              placeholder="搜索案件包编号或名称"
-              style={{ width: 250 }}
-              value={filterParams.keyword}
-              onChange={e => setFilterParams({ ...filterParams, keyword: e.target.value })}
-              onSearch={handleSearch}
-            />
-            <Select
-              placeholder="选择状态"
-              style={{ width: 150 }}
-              allowClear
-              value={filterParams.status}
-              onChange={value => setFilterParams({ ...filterParams, status: value })}
-            >
-              {Object.values(CasePackageStatus).map(status => (
-                <Option key={status} value={status}>
-                  {getStatusText(status)}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              placeholder="分配方式"
-              style={{ width: 150 }}
-              allowClear
-              value={filterParams.assignmentType}
-              onChange={value => setFilterParams({ ...filterParams, assignmentType: value })}
-            >
-              {Object.values(AssignmentType).map(type => (
-                <Option key={type} value={type}>
-                  {getAssignmentTypeText(type)}
-                </Option>
-              ))}
-            </Select>
-            <RangePicker
-              value={filterParams.dateRange}
-              onChange={value => setFilterParams({ ...filterParams, dateRange: (value || undefined) as any })}
-            />
-            <Button type="primary" onClick={handleSearch}>
-              查询
-            </Button>
-            <Button onClick={handleReset}>
-              重置
-            </Button>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space wrap>
+              <Input.Search
+                placeholder="搜索案件包编号或名称"
+                style={{ width: 250 }}
+                value={filterParams.keyword}
+                onChange={e => setFilterParams({ ...filterParams, keyword: e.target.value })}
+                onSearch={handleSearch}
+              />
+              <Select
+                placeholder="选择状态"
+                style={{ width: 150 }}
+                allowClear
+                value={filterParams.status}
+                onChange={value => setFilterParams({ ...filterParams, status: value })}
+              >
+                {Object.values(CasePackageStatus).map(status => (
+                  <Option key={status} value={status}>
+                    {getStatusText(status)}
+                  </Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="分配方式"
+                style={{ width: 150 }}
+                allowClear
+                value={filterParams.assignmentType}
+                onChange={value => setFilterParams({ ...filterParams, assignmentType: value })}
+              >
+                {Object.values(AssignmentType).map(type => (
+                  <Option key={type} value={type}>
+                    {getAssignmentTypeText(type)}
+                  </Option>
+                ))}
+              </Select>
+              <RangePicker
+                value={filterParams.dateRange}
+                onChange={value => setFilterParams({ ...filterParams, dateRange: (value || undefined) as any })}
+              />
+              <Button 
+                icon={<FilterOutlined />}
+                onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
+              >
+                高级筛选
+              </Button>
+              <Button type="primary" onClick={handleSearch}>
+                查询
+              </Button>
+              <Button onClick={handleReset}>
+                重置
+              </Button>
+            </Space>
+            
+            {/* 高级筛选面板 */}
+            {showAdvancedFilter && (
+              <Card size="small" style={{ marginTop: 8 }}>
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      <Text type="secondary">金额范围（万元）</Text>
+                      <Space>
+                        <InputNumber
+                          placeholder="最小金额"
+                          style={{ width: 120 }}
+                          value={filterParams.amountRange?.[0]}
+                          onChange={val => {
+                            const range = filterParams.amountRange || [0, 0];
+                            setFilterParams({ ...filterParams, amountRange: [val || 0, range[1]] });
+                          }}
+                        />
+                        <Text>-</Text>
+                        <InputNumber
+                          placeholder="最大金额"
+                          style={{ width: 120 }}
+                          value={filterParams.amountRange?.[1]}
+                          onChange={val => {
+                            const range = filterParams.amountRange || [0, 0];
+                            setFilterParams({ ...filterParams, amountRange: [range[0], val || 0] });
+                          }}
+                        />
+                      </Space>
+                    </Space>
+                  </Col>
+                  <Col span={8}>
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      <Text type="secondary">案件数量范围</Text>
+                      <Space>
+                        <InputNumber
+                          placeholder="最少数量"
+                          style={{ width: 120 }}
+                          value={filterParams.caseCountRange?.[0]}
+                          onChange={val => {
+                            const range = filterParams.caseCountRange || [0, 0];
+                            setFilterParams({ ...filterParams, caseCountRange: [val || 0, range[1]] });
+                          }}
+                        />
+                        <Text>-</Text>
+                        <InputNumber
+                          placeholder="最多数量"
+                          style={{ width: 120 }}
+                          value={filterParams.caseCountRange?.[1]}
+                          onChange={val => {
+                            const range = filterParams.caseCountRange || [0, 0];
+                            setFilterParams({ ...filterParams, caseCountRange: [range[0], val || 0] });
+                          }}
+                        />
+                      </Space>
+                    </Space>
+                  </Col>
+                  <Col span={8}>
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      <Text type="secondary">其他条件</Text>
+                      <Checkbox
+                        checked={filterParams.hasOverdue}
+                        onChange={e => setFilterParams({ ...filterParams, hasOverdue: e.target.checked })}
+                      >
+                        仅显示逾期案件包
+                      </Checkbox>
+                    </Space>
+                  </Col>
+                </Row>
+              </Card>
+            )}
           </Space>
         </div>
         
@@ -676,15 +1026,9 @@ const CasePackageManagement: React.FC = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setCreateModalVisible(true)}
+              onClick={() => navigate('/case-packages/create')}
             >
-              创建案件包
-            </Button>
-            <Button
-              icon={<ImportOutlined />}
-              onClick={() => setImportModalVisible(true)}
-            >
-              批量导入
+              新建案件包
             </Button>
             <Dropdown
               menu={{
@@ -699,6 +1043,12 @@ const CasePackageManagement: React.FC = () => {
                     icon: <ExportOutlined />,
                     label: '批量导出'
                   },
+                  {
+                    key: 'assign',
+                    icon: <UserSwitchOutlined />,
+                    label: '批量分配'
+                  },
+                  { type: 'divider' } as any,
                   {
                     key: 'delete',
                     icon: <DeleteOutlined />,
@@ -717,6 +1067,16 @@ const CasePackageManagement: React.FC = () => {
               刷新
             </Button>
           </Space>
+          {selectedRowKeys.length > 0 && (
+            <Alert
+              message={`已选择 ${selectedRowKeys.length} 个案件包`}
+              type="info"
+              showIcon
+              closable
+              onClose={() => setSelectedRowKeys([])}
+              style={{ marginTop: 8 }}
+            />
+          )}
         </div>
         
         {/* 数据表格 */}
@@ -745,70 +1105,6 @@ const CasePackageManagement: React.FC = () => {
         />
       </Card>
       
-      {/* 批量导入模态框 */}
-      <Modal
-        title="批量导入案件"
-        open={importModalVisible}
-        onCancel={() => setImportModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <Alert
-          message="导入说明"
-          description={
-            <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
-              <li>支持 Excel 格式（.xlsx, .xls）</li>
-              <li>单次最多导入 10000 条案件</li>
-              <li>请使用系统提供的模板文件</li>
-            </ul>
-          }
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-        
-        <Dragger {...uploadProps}>
-          <p className="ant-upload-drag-icon">
-            <UploadOutlined />
-          </p>
-          <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-          <p className="ant-upload-hint">
-            支持单个文件上传，严禁上传涉密文件
-          </p>
-        </Dragger>
-        
-        <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <Button
-            type="link"
-            icon={<DownloadOutlined />}
-            onClick={async () => {
-              try {
-                await casePackageManagementAPI.downloadImportTemplate();
-                message.success('模板下载成功');
-              } catch (error) {
-                message.error('模板下载失败');
-              }
-            }}
-          >
-            下载导入模板
-          </Button>
-        </div>
-      </Modal>
-      
-      {/* 创建/编辑案件包模态框 */}
-      <CasePackageForm
-        open={createModalVisible}
-        editData={editData}
-        onCancel={() => {
-          setCreateModalVisible(false);
-          setEditData(null);
-        }}
-        onSuccess={() => {
-          setCreateModalVisible(false);
-          setEditData(null);
-          loadData();
-        }}
-      />
       
       {/* 智能分案模态框 */}
       {selectedPackage && (

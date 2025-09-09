@@ -60,6 +60,7 @@ import CasePublishTemplates from '@/pages/case-publish/CasePublishTemplates';
 
 // 案件包创建
 import CreateCasePackage from '@/pages/case-packages/CreateCasePackage';
+import CaseBatchImport from '@/pages/case-packages/CaseBatchImport';
 
 // 竞标管理
 import BiddingManagement from '@/pages/case-market/BiddingManagement';
@@ -256,6 +257,14 @@ export const mainRoutes: RouteObject[] = [
           {
             index: true,
             element: <CasePackageList />,
+          },
+          {
+            path: 'create',
+            element: <CreateCasePackage />,
+          },
+          {
+            path: 'import',
+            element: <CaseBatchImport />,
           },
           {
             path: ':id',

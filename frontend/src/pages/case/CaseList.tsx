@@ -56,7 +56,7 @@ import {
 } from '@ant-design/icons';
 import { ColumnsType } from 'antd/es/table';
 import moment from 'moment';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   batchUpdateCaseStatus,
   batchAssignCases,
@@ -87,6 +87,8 @@ const { TabPane } = Tabs;
 interface CaseRecord {
   id: string;
   caseNo: string;
+  packageId?: string;
+  packageName?: string;
   debtorName: string;
   debtorIdCard: string;
   debtorPhone: string;
@@ -117,6 +119,10 @@ interface BatchOperation {
 
 const CaseList: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const packageId = searchParams.get('packageId');
+  const packageName = searchParams.get('packageName');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedRows, setSelectedRows] = useState<CaseRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -233,9 +239,16 @@ const CaseList: React.FC = () => {
       key: 'caseNo',
       width: 120,
       render: (text: string, record: CaseRecord) => (
-        <Button type="link" onClick={() => handleViewDetail(record)}>
-          {text}
-        </Button>
+        <Space direction="vertical" size={0}>
+          <Button type="link" onClick={() => handleViewDetail(record)}>
+            {text}
+          </Button>
+          {record.packageName && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {record.packageName}
+            </Text>
+          )}
+        </Space>
       )
     },
     {
@@ -462,9 +475,11 @@ const CaseList: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // 生成模拟数据
-      const mockData: CaseRecord[] = Array.from({ length: 50 }, (_, i) => ({
+      let mockData: CaseRecord[] = Array.from({ length: 50 }, (_, i) => ({
         id: `CASE${(i + 1).toString().padStart(6, '0')}`,
         caseNo: `2024${(i + 1).toString().padStart(6, '0')}`,
+        packageId: `PKG${Math.floor(i / 10) + 1}`,
+        packageName: `案件包-${Math.floor(i / 10) + 1}`,
         debtorName: `债务人${i + 1}`,
         debtorIdCard: `110105199001${(i + 1).toString().padStart(6, '0')}`,
         debtorPhone: `138${(10000000 + i).toString()}`,
@@ -486,6 +501,11 @@ const CaseList: React.FC = () => {
         updatedAt: moment().subtract(Math.floor(Math.random() * 7), 'days').toISOString()
       }));
 
+      // 如果有 packageId 参数，则过滤案件
+      if (packageId) {
+        mockData = mockData.filter(item => item.packageId === packageId);
+      }
+
       setData(mockData.slice((currentPage - 1) * pageSize, currentPage * pageSize));
       setTotal(mockData.length);
 
@@ -502,7 +522,7 @@ const CaseList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, packageId]);
 
   useEffect(() => {
     // 清理所有悬浮消息和通知
@@ -720,7 +740,21 @@ const CaseList: React.FC = () => {
       <Card bordered={false} style={{ marginBottom: 16 }}>
         <Row gutter={16} align="middle">
           <Col flex="auto">
-            <Title level={4} style={{ margin: 0 }}>案件管理</Title>
+            <Space direction="vertical" size={0}>
+              <Title level={4} style={{ margin: 0 }}>案件管理</Title>
+              {packageName && (
+                <Space>
+                  <Text type="secondary">当前筛选：{packageName}</Text>
+                  <Button 
+                    type="link" 
+                    size="small" 
+                    onClick={() => navigate('/cases/list')}
+                  >
+                    清除筛选
+                  </Button>
+                </Space>
+              )}
+            </Space>
           </Col>
           <Col>
             <Space>
@@ -784,6 +818,13 @@ const CaseList: React.FC = () => {
                 <Button onClick={handleReset}>
                   重置
                 </Button>
+                {packageId && (
+                  <Button 
+                    onClick={() => navigate(`/case-management/package-detail?id=${packageId}`)}
+                  >
+                    返回案件包
+                  </Button>
+                )}
               </Space>
             </Col>
           </Row>

@@ -436,7 +436,7 @@ const CasePackageList: React.FC = () => {
               key: 'edit',
               icon: <EditOutlined />,
               label: '编辑',
-              onClick: () => navigate(`/case-packages/${record.id}/edit`)
+              onClick: () => navigate(`/cases/packages/${record.id}/edit`)
             },
             {
               key: 'publish',
@@ -493,7 +493,7 @@ const CasePackageList: React.FC = () => {
             key: 'view',
             icon: <EyeOutlined />,
             label: '查看详情',
-            onClick: () => navigate(`/case-packages/${record.id}`)
+            onClick: () => navigate(`/cases/packages/${record.id}`)
           }
         );
 
@@ -504,7 +504,7 @@ const CasePackageList: React.FC = () => {
                 type="link" 
                 size="small"
                 icon={<EyeOutlined />}
-                onClick={() => navigate(`/case-packages/${record.id}`)}
+                onClick={() => navigate(`/cases/packages/${record.id}`)}
               />
             </Tooltip>
             <Dropdown menu={{ items: actionItems }} trigger={['click']}>
@@ -602,14 +602,14 @@ const CasePackageList: React.FC = () => {
           <Space>
             <Button 
               icon={<ImportOutlined />} 
-              onClick={() => navigate('/case-packages/import')}
+              onClick={() => navigate('/cases/packages/import')}
             >
               批量导入
             </Button>
             <Button 
               type="primary" 
               icon={<PlusOutlined />}
-              onClick={() => navigate('/case-packages/create')}
+              onClick={() => navigate('/cases/packages/create')}
             >
               新建案件包
             </Button>
