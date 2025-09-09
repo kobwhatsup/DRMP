@@ -17,7 +17,11 @@ import {
   TeamOutlined,
   ThunderboltOutlined,
   TrophyOutlined,
-  UserOutlined
+  UserOutlined,
+  SolutionOutlined,
+  BranchesOutlined,
+  SwapOutlined,
+  FundOutlined
 } from '@ant-design/icons';
 
 export interface MenuItem {
@@ -207,6 +211,44 @@ export const mainMenuConfig: MenuItem[] = [
         icon: FileProtectOutlined,
       }
     ]
+  },
+  {
+    key: 'disposal-management',
+    path: '',
+    name: '处置管理',
+    icon: SolutionOutlined,
+    children: [
+      {
+        key: 'disposal-overview',
+        path: '/disposal-management',
+        name: '处置总览',
+        icon: DashboardOutlined,
+      },
+      {
+        key: 'mediation-management',
+        path: '/disposal-management/mediation',
+        name: '调解管理',
+        icon: BranchesOutlined,
+      },
+      {
+        key: 'litigation-management',
+        path: '/disposal-management/litigation',
+        name: '诉讼管理',
+        icon: AuditOutlined,
+      },
+      {
+        key: 'disposal-conversion',
+        path: '/disposal-management/conversion',
+        name: '处置转换',
+        icon: SwapOutlined,
+      },
+      {
+        key: 'disposal-analysis',
+        path: '/disposal-management/analysis',
+        name: '处置分析',
+        icon: BarChartOutlined,
+      },
+    ],
   },
   {
     key: 'contract-management',

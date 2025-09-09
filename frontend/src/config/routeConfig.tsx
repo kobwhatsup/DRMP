@@ -30,6 +30,13 @@ import DisposalOrgCapacityManagement from '@/pages/disposal-org/DisposalOrgCapac
 import DisposalOrgResourceManagement from '@/pages/disposal-org/DisposalOrgResourceManagement';
 import DisposalOrgMembershipManagement from '@/pages/disposal-org/DisposalOrgMembershipManagement';
 
+// 处置管理
+import DisposalOverview from '@/pages/disposal-management';
+import MediationManagement from '@/pages/disposal-management/mediation';
+import LitigationManagement from '@/pages/disposal-management/litigation';
+import DisposalConversion from '@/pages/disposal-management/conversion';
+import DisposalAnalysis from '@/pages/disposal-management/analysis';
+
 // 机构审核中心
 import OrgAuditCenter from '@/pages/audit-center/OrgAuditCenter';
 import AuditDashboard from '@/pages/audit-center/AuditDashboard';
@@ -294,6 +301,53 @@ export const mainRoutes: RouteObject[] = [
   {
     path: '/assignment',
     element: <AssignmentConfig />,
+  },
+  
+  // 处置管理路由
+  {
+    path: '/disposal-management',
+    children: [
+      {
+        index: true,
+        element: <DisposalOverview />,
+      },
+      {
+        path: 'mediation',
+        children: [
+          {
+            index: true,
+            element: <MediationManagement />,
+          },
+        ],
+      },
+      {
+        path: 'litigation',
+        children: [
+          {
+            index: true,
+            element: <LitigationManagement />,
+          },
+        ],
+      },
+      {
+        path: 'conversion',
+        children: [
+          {
+            index: true,
+            element: <DisposalConversion />,
+          },
+        ],
+      },
+      {
+        path: 'analysis',
+        children: [
+          {
+            index: true,
+            element: <DisposalAnalysis />,
+          },
+        ],
+      },
+    ],
   },
   
   // 合同管理路由

@@ -3,7 +3,6 @@ import { message } from 'antd';
 import { useAuthStore } from '@/store/authStore';
 
 export interface ApiResponse<T = any> {
-  success: boolean;
   code: number;
   message: string;
   data: T;
@@ -142,7 +141,7 @@ export const performanceAPI = {
   exportPerformanceReport: (params: any) => apiService.post('/v1/performance/export', params),
 };
 
-// Export notification API (temporarily disabled)
-// export { notificationAPI };
+// Export notification API
+// export { notificationAPI } from './notificationAPI';
 
 export default apiService;
