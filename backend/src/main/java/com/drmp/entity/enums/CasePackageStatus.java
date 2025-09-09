@@ -14,6 +14,8 @@ import lombok.Getter;
 public enum CasePackageStatus {
     DRAFT("DRAFT", "草稿"),
     PUBLISHED("PUBLISHED", "已发布"),
+    BIDDING("BIDDING", "竞标中"),
+    ASSIGNING("ASSIGNING", "分配中"),
     WITHDRAWN("WITHDRAWN", "已撤回"),
     ASSIGNED("ASSIGNED", "已分配"),
     IN_PROGRESS("IN_PROGRESS", "处置中"),

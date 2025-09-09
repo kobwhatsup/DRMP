@@ -442,8 +442,8 @@ public class DisposalAnalysisService {
         // 根据时间范围过滤预警
         if (request.getStartTime() != null && request.getEndTime() != null) {
             LocalDateTime alertTime = alert.getAlertTime();
-            LocalDateTime startTime = LocalDateTime.parse(request.getStartTime().replace(" ", "T"));
-            LocalDateTime endTime = LocalDateTime.parse(request.getEndTime().replace(" ", "T"));
+            LocalDateTime startTime = request.getStartTime();
+            LocalDateTime endTime = request.getEndTime();
             
             if (alertTime.isBefore(startTime) || alertTime.isAfter(endTime)) {
                 return false;

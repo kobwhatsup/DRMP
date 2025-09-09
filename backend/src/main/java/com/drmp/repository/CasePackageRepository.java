@@ -26,6 +26,8 @@ public interface CasePackageRepository extends JpaRepository<CasePackage, Long>,
     Optional<CasePackage> findByPackageCode(String packageCode);
 
     boolean existsByPackageCode(String packageCode);
+    
+    boolean existsByPackageName(String packageName);
 
     List<CasePackage> findByStatus(CasePackageStatus status);
 

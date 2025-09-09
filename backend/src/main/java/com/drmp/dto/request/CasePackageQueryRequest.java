@@ -1,7 +1,10 @@
 package com.drmp.dto.request;
 
+import com.drmp.entity.enums.AssignmentType;
 import com.drmp.entity.enums.CasePackageStatus;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 /**
  * Case Package Query Request DTO
@@ -27,4 +30,11 @@ public class CasePackageQueryRequest {
     private Integer minOverdueDays;
     
     private Integer maxOverdueDays;
+    
+    // 新增字段
+    private AssignmentType assignmentType;
+    
+    private LocalDateTime startDate;
+    
+    private LocalDateTime endDate;
 }

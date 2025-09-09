@@ -1,10 +1,13 @@
 package com.drmp.dto.request;
 
+import com.drmp.entity.enums.AssignmentType;
 import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Case Package Create Request DTO
@@ -60,4 +63,32 @@ public class CasePackageCreateRequest {
     private LocalDate entrustEndDate;
 
     private String description;
+    
+    // 新增字段
+    @NotNull(message = "分案类型不能为空")
+    private AssignmentType assignmentType;
+    
+    @NotNull(message = "源机构ID不能为空")
+    private Long sourceOrgId;
+    
+    // 竞标相关字段
+    private LocalDateTime biddingStartTime;
+    
+    private LocalDateTime biddingEndTime;
+    
+    @DecimalMin(value = "0.00", message = "最低竞标金额不能为负")
+    private BigDecimal minBidAmount;
+    
+    @DecimalMin(value = "0.00", message = "竞标保证金不能为负")
+    private BigDecimal bidBondAmount;
+    
+    @Size(max = 1000, message = "竞标要求长度不能超过1000")
+    private String biddingRequirements;
+    
+    // 智能分案配置
+    @Size(max = 2000, message = "智能分案配置长度不能超过2000")
+    private String smartAssignConfig;
+    
+    // 案件ID列表
+    private List<Long> caseIds;
 }

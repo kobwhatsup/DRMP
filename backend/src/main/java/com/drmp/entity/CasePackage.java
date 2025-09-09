@@ -1,6 +1,7 @@
 package com.drmp.entity;
 
 import com.drmp.entity.enums.CasePackageStatus;
+import com.drmp.entity.enums.AssignmentType;
 import lombok.*;
 
 import javax.persistence.*;
@@ -77,6 +78,37 @@ public class CasePackage extends BaseEntity {
 
     @Column(name = "assignment_rules", columnDefinition = "JSON")
     private String assignmentRules;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "assignment_type", length = 30)
+    private AssignmentType assignmentType;
+    
+    @Column(name = "allow_bidding")
+    private Boolean allowBidding;
+    
+    @Column(name = "bidding_start_time")
+    private LocalDateTime biddingStartTime;
+    
+    @Column(name = "bidding_end_time")
+    private LocalDateTime biddingEndTime;
+    
+    @Column(name = "min_bid_amount", precision = 15, scale = 2)
+    private BigDecimal minBidAmount;
+    
+    @Column(name = "bid_bond_amount", precision = 15, scale = 2)
+    private BigDecimal bidBondAmount;
+    
+    @Column(name = "bidding_requirements", columnDefinition = "TEXT")
+    private String biddingRequirements;
+    
+    @Column(name = "evaluation_criteria", columnDefinition = "JSON")
+    private String evaluationCriteria;
+    
+    @Column(name = "smart_assign_config", columnDefinition = "JSON")
+    private String smartAssignConfig;
+    
+    @Column(name = "winning_bid_id")
+    private Long winningBidId;
 
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
@@ -104,4 +136,44 @@ public class CasePackage extends BaseEntity {
 
     @OneToMany(mappedBy = "casePackage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CasePackageAssignment> assignments = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "casePackage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CasePackageBid> bids = new ArrayList<>();
+    
+    // 便捷方法
+    @Transient
+    public Long getSourceOrgId() {
+        return sourceOrganization != null ? sourceOrganization.getId() : null;
+    }
+    
+    public void setSourceOrgId(Long sourceOrgId) {
+        if (sourceOrgId != null && (sourceOrganization == null || !sourceOrgId.equals(sourceOrganization.getId()))) {
+            Organization org = new Organization();
+            org.setId(sourceOrgId);
+            this.sourceOrganization = org;
+        }
+    }
+    
+    @Transient
+    public Long getDisposalOrgId() {
+        return disposalOrganization != null ? disposalOrganization.getId() : null;
+    }
+    
+    public void setDisposalOrgId(Long disposalOrgId) {
+        if (disposalOrgId != null && (disposalOrganization == null || !disposalOrgId.equals(disposalOrganization.getId()))) {
+            Organization org = new Organization();
+            org.setId(disposalOrgId);
+            this.disposalOrganization = org;
+        }
+    }
+    
+    @Transient
+    public String getSourceOrgName() {
+        return sourceOrganization != null ? sourceOrganization.getName() : null;
+    }
+    
+    @Transient
+    public String getDisposalOrgName() {
+        return disposalOrganization != null ? disposalOrganization.getName() : null;
+    }
 }

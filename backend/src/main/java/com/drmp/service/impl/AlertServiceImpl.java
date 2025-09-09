@@ -493,4 +493,10 @@ public class AlertServiceImpl implements AlertService {
     public void sendTestNotification(String subscriptionId) {
         log.info("发送测试通知: subscriptionId={}", subscriptionId);
     }
+    
+    @Override
+    public void sendAlertNotification(String alertId) {
+        log.info("发送预警通知: alertId={}", alertId);
+        // TODO: 实现预警通知发送逻辑
+    }
 }

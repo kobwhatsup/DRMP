@@ -1,10 +1,14 @@
 package com.drmp.repository;
 
 import com.drmp.entity.Case;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,4 +48,33 @@ public interface CaseRepository extends JpaRepository<Case, Long> {
      */
     @Query("SELECT c.debtorIdCard FROM Case c WHERE c.debtorIdCard IN :idCards GROUP BY c.debtorIdCard HAVING COUNT(c) > 1")
     List<String> findDuplicateIdCards(@Param("idCards") List<String> idCards);
+    
+    /**
+     * 根据案件包ID分页查找案件
+     */
+    Page<Case> findByCasePackageId(Long casePackageId, Pageable pageable);
+    
+    /**
+     * 更新案件的案件包ID
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Case c SET c.casePackageId = :packageId WHERE c.id IN :caseIds")
+    void updateCasePackageId(@Param("caseIds") List<Long> caseIds, @Param("packageId") Long packageId);
+    
+    /**
+     * 清除案件的案件包ID
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Case c SET c.casePackageId = NULL WHERE c.id IN :caseIds")
+    void clearCasePackageId(@Param("caseIds") List<Long> caseIds);
+    
+    /**
+     * 将案件包ID设置为NULL
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Case c SET c.casePackageId = NULL WHERE c.casePackageId = :packageId")
+    void updateCasePackageIdToNull(@Param("packageId") Long packageId);
 }

@@ -1,9 +1,11 @@
 package com.drmp.dto.request;
 
+import com.drmp.entity.enums.AssignmentType;
 import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * Case Package Update Request DTO
@@ -33,4 +35,11 @@ public class CasePackageUpdateRequest {
     private String assignmentRules;
 
     private String description;
+    
+    // 新增字段
+    private AssignmentType assignmentType;
+    
+    private LocalDate entrustStartDate;
+    
+    private LocalDate entrustEndDate;
 }
