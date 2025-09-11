@@ -9,7 +9,6 @@ import {
 } from '@ant-design/icons';
 import BasicInfoStep from './components/BasicInfoStep';
 import CaseBatchImport from './CaseBatchImport';
-import PublishSettingsStep from './components/PublishSettingsStep';
 import PreviewConfirmStep from './components/PreviewConfirmStep';
 import { casePackageService } from '@/services/casePackageService';
 import dayjs from 'dayjs';
@@ -26,7 +25,7 @@ const CreateCasePackage: React.FC = () => {
   // 监听步骤变化，确保预览步骤有最新数据
   useEffect(() => {
     // 当进入预览确认步骤时，确保获取所有表单数据
-    if (currentStep === 3) {
+    if (currentStep === 2) {
       const allFormData = form.getFieldsValue(true);
       console.log('Entering preview step, updating with all form data:', allFormData);
       setFormData(allFormData);
@@ -50,10 +49,6 @@ const CreateCasePackage: React.FC = () => {
           }}
         />
       )
-    },
-    {
-      title: '发布设置',
-      content: <PublishSettingsStep form={form} />
     },
     {
       title: '预览确认',
@@ -93,19 +88,6 @@ const CreateCasePackage: React.FC = () => {
           message.error('没有有效的案件数据');
           return false;
         }
-      } else if (currentStep === 2) {
-        // 验证发布设置
-        const assignmentType = form.getFieldValue('assignmentType');
-        if (!assignmentType) {
-          message.error('请选择分案方式');
-          return false;
-        }
-        
-        if (assignmentType === 'BIDDING') {
-          await form.validateFields(['biddingTime', 'minBidAmount', 'bidBondAmount']);
-        } else if (assignmentType === 'DESIGNATED') {
-          await form.validateFields(['targetOrgId']);
-        }
       }
       return true;
     } catch (error) {
@@ -130,7 +112,7 @@ const CreateCasePackage: React.FC = () => {
       });
       
       // 如果是要进入预览确认步骤，添加额外的调试信息
-      if (currentStep === 2) {
+      if (currentStep === 1) {
         console.log('About to enter preview step, all form data:', {
           ...formData,
           ...currentFormData
@@ -158,14 +140,11 @@ const CreateCasePackage: React.FC = () => {
         status: 'DRAFT',
         cases: caseData,
         entrustStartDate: values.entrustDates?.[0]?.format('YYYY-MM-DD'),
-        entrustEndDate: values.entrustDates?.[1]?.format('YYYY-MM-DD'),
-        biddingStartTime: values.biddingTime?.[0]?.format('YYYY-MM-DD HH:mm:ss'),
-        biddingEndTime: values.biddingTime?.[1]?.format('YYYY-MM-DD HH:mm:ss')
+        entrustEndDate: values.entrustDates?.[1]?.format('YYYY-MM-DD')
       };
 
       // 删除临时字段
       delete draftData.entrustDates;
-      delete draftData.biddingTime;
 
       // TODO: 调用保存草稿API
       console.log('Saving draft:', draftData);
@@ -200,14 +179,12 @@ const CreateCasePackage: React.FC = () => {
           // 准备提交的数据
           const submitData = {
             ...values,
-            status: 'PUBLISHED',
+            status: 'PENDING_ASSIGNMENT', // 待分案状态
             caseCount: caseData.length,
             totalAmount: caseStatistics?.totalAmount || 0,
             sourceOrgId: 1, // TODO: 从用户信息中获取
             entrustStartDate: values.entrustDates?.[0]?.format('YYYY-MM-DD'),
             entrustEndDate: values.entrustDates?.[1]?.format('YYYY-MM-DD'),
-            biddingStartTime: values.biddingTime?.[0]?.format('YYYY-MM-DD HH:mm:ss'),
-            biddingEndTime: values.biddingTime?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
             expectedRecoveryRate: (values.expectedRecoveryRate || 0) / 100, // 转换为小数
             expectedRecoveryRateMin: (values.expectedRecoveryRateMin || 0) / 100, // 转换为小数
             preferredDisposalMethods: values.preferredDisposalMethods?.join(','),
@@ -216,7 +193,6 @@ const CreateCasePackage: React.FC = () => {
 
           // 删除临时字段
           delete submitData.entrustDates;
-          delete submitData.biddingTime;
 
           // 调用创建API
           console.log('Creating case package:', submitData);
@@ -254,7 +230,7 @@ const CreateCasePackage: React.FC = () => {
               >
                 返回列表
               </Button>
-              {currentStep > 0 && currentStep < 3 && (
+              {currentStep > 0 && currentStep < 2 && (
                 <Button 
                   icon={<SaveOutlined />}
                   onClick={handleSaveDraft}

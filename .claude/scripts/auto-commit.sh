@@ -54,8 +54,14 @@ if git commit -m "$COMMIT_MESSAGE"; then
     # 记录提交日志
     echo "[$TIMESTAMP] Auto-commit successful on branch $BRANCH_NAME" >> .claude/logs/auto-commit.log
     
-    # 可选：推送到远程仓库（取消注释以启用）
-    # git push origin "$BRANCH_NAME" 2>/dev/null || echo "⚠️ 推送到远程仓库失败，但本地提交成功"
+    # 自动推送到远程仓库
+    echo "正在推送到远程仓库..."
+    if git push origin "$BRANCH_NAME" 2>/dev/null; then
+        echo "✅ 推送到远程仓库成功"
+    else
+        echo "⚠️ 推送到远程仓库失败，但本地提交成功"
+        echo "   稍后可以手动执行: git push origin $BRANCH_NAME"
+    fi
     
 else
     echo "❌ 自动提交失败"

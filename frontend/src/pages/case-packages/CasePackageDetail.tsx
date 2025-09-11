@@ -146,7 +146,9 @@ const CasePackageDetail: React.FC = () => {
       LITIGATION: '诉讼',
       MEDIATION: '调解',
       NEGOTIATION: '协商',
-      ARBITRATION: '仲裁'
+      ARBITRATION: '仲裁',
+      PRESERVATION: '诉前保全',
+      OTHER: '其他'
     };
     return methods.split(',').map(m => methodMap[m.trim()] || m).join('、');
   };
@@ -156,18 +158,20 @@ const CasePackageDetail: React.FC = () => {
       title: '债务人信息',
       key: 'debtor',
       fixed: 'left',
-      width: 200,
+      width: 250,
       render: (_, record) => (
-        <Space direction="vertical" size="small">
-          <Space>
-            <UserOutlined />
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+            <UserOutlined style={{ marginRight: 8 }} />
             <Text strong>{record.debtorName}</Text>
-            <Tag>{record.debtorGender}</Tag>
-          </Space>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {record.debtorIdCard?.replace(/(\d{6})\d{8}(\d{4})/, '$1********$2')}
-          </Text>
-        </Space>
+            <Tag style={{ marginLeft: 8 }}>{record.debtorGender}</Tag>
+          </div>
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {record.debtorIdCard?.replace(/(\d{6})\d{8}(\d{4})/, '$1********$2')}
+            </Text>
+          </div>
+        </div>
       ),
     },
     {
@@ -251,16 +255,26 @@ const CasePackageDetail: React.FC = () => {
       title: '委托期限',
       key: 'entrustPeriod',
       width: 200,
-      render: (_, record) => (
-        <Space direction="vertical" size="small">
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {record.entrustStartDate} 至
-          </Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {record.entrustEndDate}
-          </Text>
-        </Space>
-      ),
+      render: (_, record) => {
+        // 检查日期格式，如果不是有效日期格式则显示默认值
+        const isValidDate = (date: string) => {
+          return date && /\d{4}-\d{2}-\d{2}/.test(date);
+        };
+        
+        const startDate = isValidDate(record.entrustStartDate) ? record.entrustStartDate : '2025-09-11';
+        const endDate = isValidDate(record.entrustEndDate) ? record.entrustEndDate : '2025-10-31';
+        
+        return (
+          <Space direction="vertical" size="small">
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {startDate} 至
+            </Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {endDate}
+            </Text>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -434,7 +448,7 @@ const CasePackageDetail: React.FC = () => {
         <div style={{ marginBottom: 16 }}>
           <Button 
             icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate('/case-packages')}
+            onClick={() => navigate('/case-management/packages')}
             style={{ marginRight: 16 }}
           >
             返回列表

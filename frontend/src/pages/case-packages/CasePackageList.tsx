@@ -398,7 +398,9 @@ const CasePackageList: React.FC = () => {
                 const methodMap: Record<string, string> = {
                   MEDIATION: '调解',
                   LITIGATION: '诉讼',
-                  PRESERVATION: '保全'
+                  ARBITRATION: '仲裁',
+                  PRESERVATION: '诉前保全',
+                  OTHER: '其他'
                 };
                 return methodMap[method] || method;
               }).join(', ')}

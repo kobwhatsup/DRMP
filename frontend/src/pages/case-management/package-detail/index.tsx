@@ -161,6 +161,7 @@ const CasePackageDetailPage: React.FC = () => {
   const getStatusColor = (status: CasePackageStatus) => {
     const statusColors = {
       [CasePackageStatus.DRAFT]: 'default',
+      [CasePackageStatus.PENDING_ASSIGNMENT]: 'orange',
       [CasePackageStatus.PUBLISHED]: 'processing',
       [CasePackageStatus.BIDDING]: 'warning',
       [CasePackageStatus.ASSIGNING]: 'processing',
@@ -177,6 +178,7 @@ const CasePackageDetailPage: React.FC = () => {
   const getStatusText = (status: CasePackageStatus) => {
     const statusTexts = {
       [CasePackageStatus.DRAFT]: '草稿',
+      [CasePackageStatus.PENDING_ASSIGNMENT]: '待分案',
       [CasePackageStatus.PUBLISHED]: '已发布',
       [CasePackageStatus.BIDDING]: '竞标中',
       [CasePackageStatus.ASSIGNING]: '分配中',
@@ -198,6 +200,19 @@ const CasePackageDetailPage: React.FC = () => {
       [AssignmentType.DESIGNATED]: '定向委托'
     };
     return typeTexts[type] || type;
+  };
+
+  // 获取处置方式文本
+  const getDisposalMethodsText = (methods?: string) => {
+    if (!methods) return '-';
+    const methodMap: Record<string, string> = {
+      MEDIATION: '调解',
+      LITIGATION: '诉讼',
+      ARBITRATION: '仲裁',
+      PRESERVATION: '诉前保全',
+      OTHER: '其他'
+    };
+    return methods.split(',').map(m => methodMap[m.trim()] || m).join('、');
   };
 
   // 案件列表列定义
@@ -550,7 +565,7 @@ const CasePackageDetailPage: React.FC = () => {
                 {packageDetail.expectedDisposalDays ? `${packageDetail.expectedDisposalDays}天` : '-'}
               </Descriptions.Item>
               <Descriptions.Item label="偏好处置方式">
-                {packageDetail.preferredDisposalMethods || '-'}
+                {getDisposalMethodsText(packageDetail.preferredDisposalMethods)}
               </Descriptions.Item>
               <Descriptions.Item label="创建时间">
                 {dayjs(packageDetail.createdAt).format('YYYY-MM-DD HH:mm:ss')}

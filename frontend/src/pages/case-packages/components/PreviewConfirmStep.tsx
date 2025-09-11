@@ -97,17 +97,6 @@ const PreviewConfirmStep: React.FC<PreviewConfirmStepProps> = ({
     }
   ];
 
-  // 获取分案方式显示文本
-  const getAssignmentTypeText = (type: string) => {
-    const typeMap: Record<string, string> = {
-      'MANUAL': '手动分案',
-      'BIDDING': '竞标分案',
-      'SMART': '智能分案',
-      'DESIGNATED': '指定分案'
-    };
-    return typeMap[type] || type;
-  };
-
   // 获取处置方式显示文本
   const getDisposalMethodsText = (methods: string[]) => {
     const methodMap: Record<string, string> = {
@@ -116,7 +105,9 @@ const PreviewConfirmStep: React.FC<PreviewConfirmStepProps> = ({
       'ARBITRATION': '仲裁',
       'ENFORCEMENT': '强制执行',
       'ASSET_DISPOSAL': '资产处置',
-      'DEBT_RESTRUCTURING': '债务重组'
+      'DEBT_RESTRUCTURING': '债务重组',
+      'PRESERVATION': '诉前保全',
+      'OTHER': '其他'
     };
     return methods?.map(m => methodMap[m] || m).join('、') || '-';
   };
@@ -230,69 +221,6 @@ const PreviewConfirmStep: React.FC<PreviewConfirmStepProps> = ({
         </Descriptions>
       </Card>
 
-      {/* 发布设置 */}
-      <Card title="发布设置" style={{ marginBottom: 16 }}>
-        <Descriptions column={2} bordered>
-          <Descriptions.Item label="分案方式">
-            <Tag color="blue">{getAssignmentTypeText(formData?.assignmentType)}</Tag>
-          </Descriptions.Item>
-          
-          {formData?.assignmentType === 'BIDDING' && (
-            <>
-              <Descriptions.Item label="竞标时间">
-                {formData?.biddingTime ? 
-                  `${formData.biddingTime[0].format('YYYY-MM-DD HH:mm')} 至 ${formData.biddingTime[1].format('YYYY-MM-DD HH:mm')}`
-                  : '-'
-                }
-              </Descriptions.Item>
-              <Descriptions.Item label="最低出价">
-                {formData?.minBidAmount ? `¥${formData.minBidAmount.toLocaleString()}` : '-'}
-              </Descriptions.Item>
-              <Descriptions.Item label="竞标保证金">
-                {formData?.bidBondAmount ? `¥${formData.bidBondAmount.toLocaleString()}` : '-'}
-              </Descriptions.Item>
-              <Descriptions.Item label="竞标要求" span={2}>
-                {formData?.biddingRequirements || '-'}
-              </Descriptions.Item>
-            </>
-          )}
-
-          {formData?.assignmentType === 'SMART' && (
-            <>
-              <Descriptions.Item label="地域匹配权重">
-                {formData?.smartAssignConfig?.regionWeight || 0}%
-              </Descriptions.Item>
-              <Descriptions.Item label="业绩匹配权重">
-                {formData?.smartAssignConfig?.performanceWeight || 0}%
-              </Descriptions.Item>
-              <Descriptions.Item label="负载均衡权重">
-                {formData?.smartAssignConfig?.loadWeight || 0}%
-              </Descriptions.Item>
-              <Descriptions.Item label="专长匹配权重">
-                {formData?.smartAssignConfig?.specialtyWeight || 0}%
-              </Descriptions.Item>
-              <Descriptions.Item label="最低匹配分数">
-                {formData?.smartAssignConfig?.minMatchScore || 60}分
-              </Descriptions.Item>
-              <Descriptions.Item label="单机构最大案件数">
-                {formData?.smartAssignConfig?.maxCasesPerOrg || 100}件
-              </Descriptions.Item>
-            </>
-          )}
-
-          {formData?.assignmentType === 'DESIGNATED' && (
-            <Descriptions.Item label="指定处置机构">
-              {formData?.targetOrgName || 
-               (formData?.targetOrgId ? `机构ID: ${formData.targetOrgId}` : '未选择')}
-            </Descriptions.Item>
-          )}
-
-          <Descriptions.Item label="特殊要求" span={2}>
-            {formData?.specialRequirements || '无'}
-          </Descriptions.Item>
-        </Descriptions>
-      </Card>
-
       {/* 案件列表预览 */}
       <Card 
         title={
@@ -326,9 +254,6 @@ const PreviewConfirmStep: React.FC<PreviewConfirmStepProps> = ({
           </Timeline.Item>
           <Timeline.Item color="green" dot={<CheckCircleOutlined />}>
             案件已上传（{caseData?.length || 0}条）
-          </Timeline.Item>
-          <Timeline.Item color="green" dot={<CheckCircleOutlined />}>
-            发布设置已完成
           </Timeline.Item>
           <Timeline.Item color="blue" dot={<ClockCircleOutlined />}>
             等待确认创建

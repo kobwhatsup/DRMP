@@ -144,6 +144,7 @@ const CasePackageManagement: React.FC = () => {
   const getStatusColor = (status: CasePackageStatus): string => {
     const colorMap: Record<CasePackageStatus, string> = {
       [CasePackageStatus.DRAFT]: 'default',
+      [CasePackageStatus.PENDING_ASSIGNMENT]: 'orange',
       [CasePackageStatus.PUBLISHED]: 'blue',
       [CasePackageStatus.BIDDING]: 'purple',
       [CasePackageStatus.ASSIGNING]: 'orange',
@@ -160,6 +161,7 @@ const CasePackageManagement: React.FC = () => {
   const getStatusText = (status: CasePackageStatus): string => {
     const textMap: Record<CasePackageStatus, string> = {
       [CasePackageStatus.DRAFT]: '草稿',
+      [CasePackageStatus.PENDING_ASSIGNMENT]: '待分案',
       [CasePackageStatus.PUBLISHED]: '已发布',
       [CasePackageStatus.BIDDING]: '竞标中',
       [CasePackageStatus.ASSIGNING]: '分配中',
@@ -290,223 +292,19 @@ const CasePackageManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 250,
+      width: 100,
       render: (_, record) => {
-        // 根据状态动态生成操作按钮
-        const getActionButtons = () => {
-          const buttons = [];
-          
-          // 所有状态都可以查看详情
-          buttons.push(
-            <Tooltip key="view" title="查看详情">
-              <Button
-                type="link"
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={() => handleViewDetail(record)}
-              />
-            </Tooltip>
-          );
-          
-          // 所有状态都可以查看案件列表
-          buttons.push(
-            <Tooltip key="view-cases" title="查看案件">
-              <Button
-                type="link"
-                size="small"
-                icon={<FileTextOutlined />}
-                onClick={() => navigate(`/cases/list?packageId=${record.id}&packageName=${encodeURIComponent(record.packageName || '')}`)}
-              />
-            </Tooltip>
-          );
-
-          // 根据不同状态显示不同操作
-          switch (record.status) {
-            case CasePackageStatus.DRAFT:
-              buttons.push(
-                <Tooltip key="edit" title="编辑">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(record)}
-                  />
-                </Tooltip>,
-                <Tooltip key="publish" title="发布">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<SendOutlined />}
-                    onClick={() => handlePublish(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.PUBLISHED:
-              if (record.assignmentType === AssignmentType.SMART) {
-                buttons.push(
-                  <Tooltip key="smart" title="执行智能分案">
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<RobotOutlined />}
-                      onClick={() => handleSmartAssign(record)}
-                    />
-                  </Tooltip>
-                );
-              }
-              if (record.assignmentType === AssignmentType.MANUAL) {
-                buttons.push(
-                  <Tooltip key="manual" title="手动分案">
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<UserSwitchOutlined />}
-                      onClick={() => handleManualAssign(record)}
-                    />
-                  </Tooltip>
-                );
-              }
-              buttons.push(
-                <Tooltip key="withdraw" title="撤回">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<RollbackOutlined />}
-                    onClick={() => handleWithdraw(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.BIDDING:
-              buttons.push(
-                <Tooltip key="bids" title="查看竞标">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<TrophyOutlined />}
-                    onClick={() => handleViewBids(record)}
-                  />
-                </Tooltip>,
-                <Tooltip key="evaluate" title="评标">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<AuditOutlined />}
-                    onClick={() => handleEvaluateBids(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.ASSIGNING:
-              buttons.push(
-                <Tooltip key="assign-progress" title="查看分案进度">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<LoadingOutlined />}
-                    onClick={() => handleViewAssignProgress(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.ASSIGNED:
-              buttons.push(
-                <Tooltip key="disposal" title="查看处置进度">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<FieldTimeOutlined />}
-                    onClick={() => handleViewDisposalProgress(record)}
-                  />
-                </Tooltip>,
-                <Tooltip key="start" title="开始处置">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => handleStartDisposal(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.IN_PROGRESS:
-              buttons.push(
-                <Tooltip key="progress" title="处置进度">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<FieldTimeOutlined />}
-                    onClick={() => handleViewDisposalProgress(record)}
-                  />
-                </Tooltip>,
-                <Tooltip key="report" title="查看报告">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<FileSearchOutlined />}
-                    onClick={() => handleViewReport(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.COMPLETED:
-              buttons.push(
-                <Tooltip key="settlement" title="结算">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<AccountBookOutlined />}
-                    onClick={() => handleSettlement(record)}
-                  />
-                </Tooltip>,
-                <Tooltip key="report" title="查看报告">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<FileSearchOutlined />}
-                    onClick={() => handleViewReport(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-
-            case CasePackageStatus.CANCELLED:
-            case CasePackageStatus.WITHDRAWN:
-              buttons.push(
-                <Tooltip key="reactivate" title="重新激活">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<ReloadOutlined />}
-                    onClick={() => handleReactivate(record)}
-                  />
-                </Tooltip>
-              );
-              break;
-          }
-
-          return buttons;
-        };
-
         return (
-          <Space>
-            {getActionButtons()}
-            <Dropdown
-              menu={{
-                items: getMoreActions(record),
-                onClick: ({ key }) => handleMoreAction(key, record)
-              }}
-            >
-              <Button type="link" size="small" icon={<MoreOutlined />} />
-            </Dropdown>
-          </Space>
+          <Dropdown
+            menu={{
+              items: getMoreActions(record),
+              onClick: ({ key }) => handleMoreAction(key, record)
+            }}
+            placement="bottomLeft"
+            trigger={['click']}
+          >
+            <Button type="link" size="small" icon={<MoreOutlined />} />
+          </Dropdown>
         );
       }
     }
@@ -599,6 +397,45 @@ const CasePackageManagement: React.FC = () => {
   
   const handleMoreAction = (key: string, record: CasePackageDetail) => {
     switch (key) {
+      case 'view':
+        handleViewDetail(record);
+        break;
+      case 'view-cases':
+        navigate(`/cases/list?packageId=${record.id}&packageName=${encodeURIComponent(record.packageName || '')}`);
+        break;
+      case 'edit':
+        handleEdit(record);
+        break;
+      case 'publish':
+        handlePublish(record);
+        break;
+      case 'smart-assign':
+        handleSmartAssign(record);
+        break;
+      case 'manual-assign':
+        handleManualAssign(record);
+        break;
+      case 'withdraw':
+        handleWithdraw(record);
+        break;
+      case 'view-bids':
+        handleViewBids(record);
+        break;
+      case 'evaluate-bids':
+        handleEvaluateBids(record);
+        break;
+      case 'disposal-progress':
+        handleViewDisposalProgress(record);
+        break;
+      case 'start-disposal':
+        handleStartDisposal(record);
+        break;
+      case 'view-report':
+        handleViewReport(record);
+        break;
+      case 'settlement':
+        handleSettlement(record);
+        break;
       case 'export':
         handleExport(record);
         break;
@@ -709,6 +546,138 @@ const CasePackageManagement: React.FC = () => {
   const getMoreActions = (record: CasePackageDetail) => {
     const items = [];
     
+    // 查看详情
+    items.push({
+      key: 'view',
+      icon: <EyeOutlined />,
+      label: '查看详情'
+    });
+    
+    // 查看案件
+    items.push({
+      key: 'view-cases',
+      icon: <FileTextOutlined />,
+      label: '查看案件'
+    });
+    
+    items.push({ type: 'divider' } as any);
+    
+    // 根据状态添加不同操作
+    const status = record.status || '';
+    console.log(`Getting actions for package ${record.id} with status: ${status}`);
+    
+    switch (status) {
+      case CasePackageStatus.DRAFT:
+      case 'DRAFT':
+        items.push({
+          key: 'edit',
+          icon: <EditOutlined />,
+          label: '编辑'
+        });
+        items.push({
+          key: 'publish',
+          icon: <SendOutlined />,
+          label: '发布'
+        });
+        break;
+        
+      case CasePackageStatus.PENDING_ASSIGNMENT:
+      case 'PENDING_ASSIGNMENT':
+      case CasePackageStatus.PUBLISHED:
+      case 'PUBLISHED':
+        const assignType = record.assignmentType as string;
+        if (assignType === AssignmentType.SMART || assignType === 'SMART') {
+          items.push({
+            key: 'smart-assign',
+            icon: <RobotOutlined />,
+            label: '智能分案'
+          });
+        }
+        if (assignType === AssignmentType.MANUAL || assignType === 'MANUAL') {
+          items.push({
+            key: 'manual-assign',
+            icon: <UserSwitchOutlined />,
+            label: '手动分案'
+          });
+        }
+        if (assignType === AssignmentType.DESIGNATED || assignType === 'DESIGNATED') {
+          items.push({
+            key: 'designated-assign',
+            icon: <ApartmentOutlined />,
+            label: '指定分案'
+          });
+        }
+        items.push({
+          key: 'withdraw',
+          icon: <RollbackOutlined />,
+          label: '撤回'
+        });
+        break;
+        
+      case CasePackageStatus.BIDDING:
+        items.push({
+          key: 'view-bids',
+          icon: <TrophyOutlined />,
+          label: '查看竞标'
+        });
+        items.push({
+          key: 'evaluate-bids',
+          icon: <AuditOutlined />,
+          label: '评标'
+        });
+        break;
+        
+      case CasePackageStatus.ASSIGNED:
+        items.push({
+          key: 'disposal-progress',
+          icon: <FieldTimeOutlined />,
+          label: '处置进度'
+        });
+        items.push({
+          key: 'start-disposal',
+          icon: <PlayCircleOutlined />,
+          label: '开始处置'
+        });
+        break;
+        
+      case CasePackageStatus.IN_PROGRESS:
+        items.push({
+          key: 'disposal-progress',
+          icon: <FieldTimeOutlined />,
+          label: '处置进度'
+        });
+        items.push({
+          key: 'view-report',
+          icon: <FileSearchOutlined />,
+          label: '查看报告'
+        });
+        break;
+        
+      case CasePackageStatus.COMPLETED:
+        items.push({
+          key: 'settlement',
+          icon: <AccountBookOutlined />,
+          label: '结算'
+        });
+        items.push({
+          key: 'view-report',
+          icon: <FileSearchOutlined />,
+          label: '查看报告'
+        });
+        break;
+        
+      default:
+        // 默认操作项，确保所有状态都有基本操作
+        items.push({
+          key: 'status-info',
+          icon: <InfoCircleOutlined />,
+          label: `状态: ${getStatusText(record.status)}`
+        });
+        break;
+    }
+    
+    items.push({ type: 'divider' } as any);
+    
     // 导出功能（所有状态都可用）
     items.push({
       key: 'export',
@@ -730,13 +699,6 @@ const CasePackageManagement: React.FC = () => {
       key: 'share',
       icon: <ShareAltOutlined />,
       label: '分享'
-    });
-    
-    // 查看历史记录
-    items.push({
-      key: 'history',
-      icon: <ClockCircleOutlined />,
-      label: '查看历史'
     });
     
     // 分隔线

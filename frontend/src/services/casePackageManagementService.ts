@@ -11,6 +11,7 @@ export enum AssignmentType {
 
 export enum CasePackageStatus {
   DRAFT = 'DRAFT',
+  PENDING_ASSIGNMENT = 'PENDING_ASSIGNMENT',
   PUBLISHED = 'PUBLISHED',
   BIDDING = 'BIDDING',
   ASSIGNING = 'ASSIGNING',
