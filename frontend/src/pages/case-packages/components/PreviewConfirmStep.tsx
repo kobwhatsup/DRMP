@@ -282,7 +282,8 @@ const PreviewConfirmStep: React.FC<PreviewConfirmStepProps> = ({
 
           {formData?.assignmentType === 'DESIGNATED' && (
             <Descriptions.Item label="指定处置机构">
-              {formData?.targetOrgName || `机构ID: ${formData?.targetOrgId}` || '-'}
+              {formData?.targetOrgName || 
+               (formData?.targetOrgId ? `机构ID: ${formData.targetOrgId}` : '未选择')}
             </Descriptions.Item>
           )}
 

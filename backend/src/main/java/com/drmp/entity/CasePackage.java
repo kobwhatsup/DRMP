@@ -38,11 +38,11 @@ public class CasePackage extends BaseEntity {
     private String packageName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_organization_id", nullable = false)
+    @JoinColumn(name = "source_org_id", nullable = false)
     private Organization sourceOrganization;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "disposal_organization_id")
+    @JoinColumn(name = "disposal_org_id")
     private Organization disposalOrganization;
 
     @Enumerated(EnumType.STRING)
@@ -64,7 +64,7 @@ public class CasePackage extends BaseEntity {
     @Column(name = "expected_disposal_days")
     private Integer expectedDisposalDays;
 
-    @Column(name = "preferred_disposal_methods", length = 500)
+    @Column(name = "disposal_types", columnDefinition = "TEXT")
     private String preferredDisposalMethods;
 
     @Column(name = "expected_recovery_rate_min", precision = 5, scale = 2)
@@ -73,7 +73,7 @@ public class CasePackage extends BaseEntity {
     @Column(name = "disposal_period_days")
     private Integer disposalPeriodDays;
 
-    @Column(name = "assignment_strategy", length = 50)
+    @Column(name = "assignment_strategy", length = 100)
     private String assignmentStrategy;
 
     @Column(name = "assignment_rules", columnDefinition = "JSON")

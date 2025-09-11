@@ -34,11 +34,11 @@ public class Organization extends BaseEntity {
     @Column(name = "org_code", nullable = false, unique = true, length = 50)
     private String orgCode;
 
-    @Column(name = "org_name", nullable = false, length = 200)
-    private String orgName;
+    @Column(name = "name", nullable = false, length = 200)
+    private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "org_type", nullable = false, length = 20)
+    @Column(name = "type", nullable = false, length = 20)
     private OrganizationType type;
 
     @Enumerated(EnumType.STRING)
@@ -176,6 +176,6 @@ public class Organization extends BaseEntity {
      * @return 机构名称
      */
     public String getName() {
-        return this.orgName;
+        return this.name;
     }
 }

@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
  * Minimal DRMP Application - Just REST endpoints without database
  */
 @SpringBootApplication(
-    scanBasePackages = {"com.drmp.controller"},
+    scanBasePackages = {"com.drmp.controller", "com.drmp.service"},
     exclude = {
         HibernateJpaAutoConfiguration.class,
         JpaRepositoriesAutoConfiguration.class,

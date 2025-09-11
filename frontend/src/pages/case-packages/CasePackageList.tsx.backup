@@ -299,10 +299,10 @@ const CasePackageList: React.FC = () => {
       render: (record: CasePackage) => (
         <div>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
-            {record.packageName || `案件包${record.id}`}
+            {record.packageName}
           </div>
           <div style={{ fontSize: '12px', color: '#666', marginBottom: 2 }}>
-            编号: {record.packageCode || `PKG${String(record.id).padStart(3, '0')}`}
+            编号: {record.packageCode}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
             创建时间: {dayjs(record.createdAt).format('YYYY-MM-DD')}
@@ -716,6 +716,8 @@ const CasePackageList: React.FC = () => {
         )}
 
         {/* 数据表格 */}
+        {console.log('Table dataSource:', dataSource)}
+        {console.log('Table dataSource length:', dataSource?.length)}
         <Table
           columns={columns}
           dataSource={dataSource}

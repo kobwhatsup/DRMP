@@ -245,9 +245,9 @@ const CaseBatchImport: React.FC<CaseBatchImportProps> = ({ onDataChange, embedde
           }
           
           const parsedData: CaseImportData[] = jsonData.map((row: any, index: number) => ({
-            debtorName: row['客户姓名*'] || row['客户姓名'] || row['姓名'] || '',
-            debtorIdCard: row['身份证号码*'] || row['身份证号码'] || row['身份证号'] || '',
-            debtorPhone: row['手机号'] || row['联系电话'] || '',
+            debtorName: String(row['客户姓名*'] || row['客户姓名'] || row['姓名'] || ''),
+            debtorIdCard: String(row['身份证号码*'] || row['身份证号码'] || row['身份证号'] || ''),
+            debtorPhone: String(row['手机号'] || row['联系电话'] || ''),
             debtorGender: row['性别'] || '',
             debtorAge: row['年龄'] ? parseInt(row['年龄']) : undefined,
             debtorProvince: row['户籍省份'] || row['省份'] || '',
@@ -264,10 +264,10 @@ const CaseBatchImport: React.FC<CaseBatchImportProps> = ({ onDataChange, embedde
             entrustEndDate: row['委托到期时间'] || '',
             fundingParty: row['资方名称'] || '',
             contact1Name: row['紧急联系人1'] || '',
-            contact1Phone: row['联系人1电话'] || '',
+            contact1Phone: String(row['联系人1电话'] || ''),
             contact1Relation: row['与联系人1关系'] || '',
             contact2Name: row['紧急联系人2'] || '',
-            contact2Phone: row['联系人2电话'] || '',
+            contact2Phone: String(row['联系人2电话'] || ''),
             contact2Relation: row['与联系人2关系'] || '',
             rowIndex: index + 2 // Excel行号从2开始(第1行是表头)
           }));
@@ -446,19 +446,19 @@ const CaseBatchImport: React.FC<CaseBatchImportProps> = ({ onDataChange, embedde
       title: '客户姓名',
       dataIndex: 'debtorName',
       width: 100,
-      render: (text: string) => text || '-'
+      render: (text: any) => text ? String(text) : '-'
     },
     {
       title: '身份证号',
       dataIndex: 'debtorIdCard',
       width: 150,
-      render: (text: string) => text ? text.replace(/(\d{6})\d{8}(\d{4})/, '$1****$2') : '-'
+      render: (text: any) => text ? String(text).replace(/(\d{6})\d{8}(\d{4})/, '$1****$2') : '-'
     },
     {
       title: '手机号',
       dataIndex: 'debtorPhone',
       width: 120,
-      render: (text: string) => text ? text.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '-'
+      render: (text: any) => text ? String(text).replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '-'
     },
     {
       title: '借据编号',
@@ -487,7 +487,7 @@ const CaseBatchImport: React.FC<CaseBatchImportProps> = ({ onDataChange, embedde
       title: '产品线',
       dataIndex: 'productLine',
       width: 100,
-      render: (text: string) => text || '-'
+      render: (text: any) => text ? String(text) : '-'
     },
     {
       title: '错误信息',

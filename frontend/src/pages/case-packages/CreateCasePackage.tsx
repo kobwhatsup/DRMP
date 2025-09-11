@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Steps, Button, Space, message, Form, Modal, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -11,7 +11,7 @@ import BasicInfoStep from './components/BasicInfoStep';
 import CaseBatchImport from './CaseBatchImport';
 import PublishSettingsStep from './components/PublishSettingsStep';
 import PreviewConfirmStep from './components/PreviewConfirmStep';
-import { casePackageService } from '@/services/caseService';
+import { casePackageService } from '@/services/casePackageService';
 import dayjs from 'dayjs';
 
 const CreateCasePackage: React.FC = () => {
@@ -21,6 +21,17 @@ const CreateCasePackage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [caseData, setCaseData] = useState<any[]>([]);
   const [caseStatistics, setCaseStatistics] = useState<any>(null);
+  const [formData, setFormData] = useState<any>({});
+
+  // 监听步骤变化，确保预览步骤有最新数据
+  useEffect(() => {
+    // 当进入预览确认步骤时，确保获取所有表单数据
+    if (currentStep === 3) {
+      const allFormData = form.getFieldsValue(true);
+      console.log('Entering preview step, updating with all form data:', allFormData);
+      setFormData(allFormData);
+    }
+  }, [currentStep, form]);
 
   // 步骤配置
   const steps = [
@@ -48,7 +59,7 @@ const CreateCasePackage: React.FC = () => {
       title: '预览确认',
       content: (
         <PreviewConfirmStep 
-          formData={form.getFieldsValue()}
+          formData={formData}
           caseData={caseData}
           statistics={caseStatistics}
         />
@@ -107,13 +118,26 @@ const CreateCasePackage: React.FC = () => {
   const handleNext = async () => {
     const isValid = await validateCurrentStep();
     if (isValid) {
-      // 如果是从发布设置步骤到预览确认，需要更新预览数据
+      // 总是在进入下一步前保存当前表单数据
+      const currentFormData = form.getFieldsValue(true); // 使用true获取所有字段
+      console.log(`Step ${currentStep} form data:`, currentFormData);
+      
+      // 合并之前的数据和当前数据
+      setFormData((prevData: any) => {
+        const mergedData = {...prevData, ...currentFormData};
+        console.log('Merged form data:', mergedData);
+        return mergedData;
+      });
+      
+      // 如果是要进入预览确认步骤，添加额外的调试信息
       if (currentStep === 2) {
-        // 强制更新预览组件
-        setCurrentStep(currentStep + 1);
-      } else {
-        setCurrentStep(currentStep + 1);
+        console.log('About to enter preview step, all form data:', {
+          ...formData,
+          ...currentFormData
+        });
       }
+      
+      setCurrentStep(currentStep + 1);
     }
   };
 
@@ -126,7 +150,7 @@ const CreateCasePackage: React.FC = () => {
   const handleSaveDraft = async () => {
     try {
       setLoading(true);
-      const values = form.getFieldsValue();
+      const values = form.getFieldsValue(true);
       
       // 准备保存的数据
       const draftData = {
@@ -157,15 +181,21 @@ const CreateCasePackage: React.FC = () => {
 
   // 完成创建
   const handleFinish = async () => {
+    console.log('handleFinish called');
+    console.log('Current form values:', form.getFieldsValue());
+    console.log('Case data length:', caseData.length);
+    console.log('Case statistics:', caseStatistics);
+    
     Modal.confirm({
       title: '确认创建',
       content: '确认创建并发布该案件包吗？发布后将无法修改基本信息。',
       okText: '确认发布',
       cancelText: '取消',
       onOk: async () => {
+        console.log('Confirm button clicked');
         try {
           setLoading(true);
-          const values = form.getFieldsValue();
+          const values = form.getFieldsValue(true);
           
           // 准备提交的数据
           const submitData = {
@@ -178,8 +208,8 @@ const CreateCasePackage: React.FC = () => {
             entrustEndDate: values.entrustDates?.[1]?.format('YYYY-MM-DD'),
             biddingStartTime: values.biddingTime?.[0]?.format('YYYY-MM-DD HH:mm:ss'),
             biddingEndTime: values.biddingTime?.[1]?.format('YYYY-MM-DD HH:mm:ss'),
-            expectedRecoveryRate: (values.expectedRecoveryRate || 0) / 100,
-            expectedRecoveryRateMin: (values.expectedRecoveryRateMin || 0) / 100,
+            expectedRecoveryRate: (values.expectedRecoveryRate || 0) / 100, // 转换为小数
+            expectedRecoveryRateMin: (values.expectedRecoveryRateMin || 0) / 100, // 转换为小数
             preferredDisposalMethods: values.preferredDisposalMethods?.join(','),
             cases: caseData.filter(c => c.isValid !== false)
           };
@@ -188,15 +218,23 @@ const CreateCasePackage: React.FC = () => {
           delete submitData.entrustDates;
           delete submitData.biddingTime;
 
-          // TODO: 调用创建API
+          // 调用创建API
           console.log('Creating case package:', submitData);
-          // const response = await casePackageService.createCasePackage(submitData);
-
-          message.success('案件包创建成功！');
-          navigate('/cases/packages');
-        } catch (error) {
-          message.error('创建失败，请重试');
+          const response = await casePackageService.createCasePackage(submitData);
+          
+          if (response && response.id) {
+            message.success('案件包创建成功！');
+            navigate('/cases/packages');
+          } else {
+            throw new Error('创建失败：未返回有效的案件包ID');
+          }
+        } catch (error: any) {
           console.error('Create error:', error);
+          const errorMsg = error?.message || '创建失败，请重试';
+          message.error(errorMsg);
+          
+          // 不要在这里设置loading为false，因为Modal会自动关闭
+          // 只在finally中设置，确保无论成功失败都会重置loading状态
         } finally {
           setLoading(false);
         }

@@ -32,26 +32,40 @@ instance.interceptors.response.use(
   (response: AxiosResponse) => {
     const { data } = response;
     
+    // Log response for debugging
+    console.log('API Response:', response.config.url, data);
+    
     // 统一处理后端返回的响应格式
-    if (data?.code === 200) {
-      return data;
-    } else if (data?.code === 401) {
-      // 未授权，清除token并跳转到登录页
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-      return Promise.reject(new Error('未授权访问'));
-    } else {
-      // 其他错误
-      message.error(data?.message || '请求失败');
-      return Promise.reject(new Error(data?.message || '请求失败'));
+    // 如果响应有code字段，按标准格式处理
+    if (data && typeof data === 'object' && 'code' in data) {
+      if (data.code === 200) {
+        // 返回data字段中的实际数据
+        return data.data || data;
+      } else if (data.code === 401) {
+        // 未授权，清除token并跳转到登录页
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return Promise.reject(new Error('未授权访问'));
+      } else {
+        // 其他错误
+        const errorMsg = data.message || '请求失败';
+        message.error(errorMsg);
+        return Promise.reject(new Error(errorMsg));
+      }
     }
+    
+    // 如果没有code字段，直接返回数据（兼容旧接口）
+    return data;
   },
   (error) => {
+    console.error('API Error:', error);
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     } else {
-      message.error(error.response?.data?.message || error.message || '网络错误');
+      const errorMsg = error.response?.data?.message || error.message || '网络错误';
+      message.error(errorMsg);
     }
     return Promise.reject(error);
   }

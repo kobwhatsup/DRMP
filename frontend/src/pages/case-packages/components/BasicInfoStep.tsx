@@ -1,19 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Form,
   Input,
   DatePicker,
   InputNumber,
-  Slider,
   Select,
   Card,
   Row,
   Col,
   Typography,
   Space,
-  Tooltip
+  Tooltip,
+  Button,
+  Tag
 } from 'antd';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, CalculatorOutlined } from '@ant-design/icons';
 import type { FormInstance } from 'antd';
 import dayjs from 'dayjs';
 
@@ -28,6 +29,8 @@ interface BasicInfoStepProps {
 }
 
 const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
+  const [disposalPeriod, setDisposalPeriod] = useState<number | null>(null);
+  
   // 生成案件包编号
   const generatePackageCode = () => {
     const timestamp = Date.now();
@@ -36,18 +39,44 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
   };
 
   // 初始化表单默认值
-  React.useEffect(() => {
+  useEffect(() => {
     const currentValues = form.getFieldsValue();
     if (!currentValues.packageCode) {
       form.setFieldsValue({
         packageCode: generatePackageCode(),
-        expectedRecoveryRate: 30,
+        expectedRecoveryRate: 5, // 默认5%
+        expectedRecoveryRateMin: 1, // 默认最低1%
         expectedDisposalDays: 90,
         reportingFrequency: 'WEEKLY',
         settlementMethod: 'MONTHLY'
       });
     }
   }, [form]);
+
+  // 监听委托期限变化，自动计算处置周期
+  const handleEntrustDatesChange = (dates: any) => {
+    if (dates && dates[0] && dates[1]) {
+      const days = dates[1].diff(dates[0], 'day');
+      setDisposalPeriod(days);
+      // 同时更新预期处置天数的默认值（如果当前没有值）
+      const currentDisposalDays = form.getFieldValue('expectedDisposalDays');
+      if (!currentDisposalDays) {
+        form.setFieldValue('expectedDisposalDays', days);
+      }
+    } else {
+      setDisposalPeriod(null);
+    }
+  };
+
+  // 快捷设置回收率
+  const setQuickRecoveryRate = (rate: number) => {
+    form.setFieldValue('expectedRecoveryRate', rate);
+  };
+
+  // 快捷设置最低回收率
+  const setQuickMinRecoveryRate = (rate: number) => {
+    form.setFieldValue('expectedRecoveryRateMin', rate);
+  };
 
   return (
     <div>
@@ -81,13 +110,23 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="委托期限"
+                label={
+                  <Space>
+                    委托期限
+                    {disposalPeriod && (
+                      <Tag color="blue" icon={<CalculatorOutlined />}>
+                        处置周期：{disposalPeriod}天
+                      </Tag>
+                    )}
+                  </Space>
+                }
                 name="entrustDates"
                 rules={[{ required: true, message: '请选择委托期限' }]}
               >
                 <RangePicker 
                   style={{ width: '100%' }}
                   placeholder={['开始日期', '结束日期']}
+                  onChange={handleEntrustDatesChange}
                   disabledDate={(current) => {
                     return current && current < dayjs().startOf('day');
                   }}
@@ -108,9 +147,8 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
                   <Option value="MEDIATION">调解</Option>
                   <Option value="LITIGATION">诉讼</Option>
                   <Option value="ARBITRATION">仲裁</Option>
-                  <Option value="ENFORCEMENT">强制执行</Option>
-                  <Option value="ASSET_DISPOSAL">资产处置</Option>
-                  <Option value="DEBT_RESTRUCTURING">债务重组</Option>
+                  <Option value="PRESERVATION">诉前保全</Option>
+                  <Option value="OTHER">其他</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -122,24 +160,37 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
                 label={
                   <Space>
                     预期回收率
-                    <Tooltip title="预期能够回收的债务比例">
+                    <Tooltip title="预期能够回收的债务比例，支持精确到0.01%">
                       <InfoCircleOutlined />
                     </Tooltip>
                   </Space>
                 }
                 name="expectedRecoveryRate"
+                rules={[
+                  { required: true, message: '请输入预期回收率' },
+                  { type: 'number', min: 0.01, max: 100, message: '请输入0.01-100之间的数值' }
+                ]}
               >
-                <Slider
-                  marks={{
-                    0: '0%',
-                    25: '25%',
-                    50: '50%',
-                    75: '75%',
-                    100: '100%'
-                  }}
-                  tipFormatter={(value) => `${value}%`}
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={0.01}
+                  max={100}
+                  step={0.01}
+                  precision={2}
+                  placeholder="请输入预期回收率"
+                  formatter={value => `${value}%`}
+                  parser={value => value?.replace('%', '') as any}
                 />
               </Form.Item>
+              <Space wrap style={{ marginTop: -10 }}>
+                <Text type="secondary">快捷设置：</Text>
+                <Button size="small" onClick={() => setQuickRecoveryRate(0.5)}>0.5%</Button>
+                <Button size="small" onClick={() => setQuickRecoveryRate(1)}>1%</Button>
+                <Button size="small" onClick={() => setQuickRecoveryRate(2)}>2%</Button>
+                <Button size="small" onClick={() => setQuickRecoveryRate(5)}>5%</Button>
+                <Button size="small" onClick={() => setQuickRecoveryRate(10)}>10%</Button>
+                <Button size="small" onClick={() => setQuickRecoveryRate(20)}>20%</Button>
+              </Space>
             </Col>
             <Col span={12}>
               <Form.Item
@@ -156,11 +207,12 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
                   { required: true, message: '请输入预期处置天数' },
                   { type: 'number', min: 1, message: '处置天数不能少于1天' }
                 ]}
+                extra={disposalPeriod ? `委托期限共${disposalPeriod}天，建议不超过此期限` : ''}
               >
                 <InputNumber
                   style={{ width: '100%' }}
                   min={1}
-                  max={365}
+                  max={disposalPeriod || 365}
                   placeholder="请输入预期处置天数"
                   suffix="天"
                 />
@@ -223,38 +275,41 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ form }) => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="最低预期回收率"
+                label={
+                  <Space>
+                    最低预期回收率
+                    <Tooltip title="可接受的最低回收率，支持精确到0.01%">
+                      <InfoCircleOutlined />
+                    </Tooltip>
+                  </Space>
+                }
                 name="expectedRecoveryRateMin"
                 rules={[
-                  { type: 'number', min: 0, max: 100, message: '请输入0-100之间的数值' }
+                  { type: 'number', min: 0.01, max: 100, message: '请输入0.01-100之间的数值' }
                 ]}
               >
                 <InputNumber
                   style={{ width: '100%' }}
-                  min={0}
+                  min={0.01}
                   max={100}
+                  step={0.01}
+                  precision={2}
                   placeholder="请输入最低预期回收率"
                   formatter={value => `${value}%`}
                   parser={value => value?.replace('%', '') as any}
                 />
               </Form.Item>
+              <Space wrap style={{ marginTop: -10 }}>
+                <Text type="secondary">快捷设置：</Text>
+                <Button size="small" onClick={() => setQuickMinRecoveryRate(0.1)}>0.1%</Button>
+                <Button size="small" onClick={() => setQuickMinRecoveryRate(0.5)}>0.5%</Button>
+                <Button size="small" onClick={() => setQuickMinRecoveryRate(1)}>1%</Button>
+                <Button size="small" onClick={() => setQuickMinRecoveryRate(2)}>2%</Button>
+                <Button size="small" onClick={() => setQuickMinRecoveryRate(5)}>5%</Button>
+              </Space>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="处置周期"
-                name="disposalPeriodDays"
-                rules={[
-                  { type: 'number', min: 1, message: '处置周期不能少于1天' }
-                ]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={1}
-                  max={365}
-                  placeholder="请输入处置周期"
-                  suffix="天"
-                />
-              </Form.Item>
+              {/* 预留空间，可添加其他字段 */}
             </Col>
           </Row>
         </Form>
