@@ -25,6 +25,11 @@ import java.util.stream.Collectors;
 public class AlertServiceImpl implements AlertService {
 
     @Override
+    public void generateAlert(String ruleId, String level, String message, Map<String, Object> details) {
+        log.info("生成预警: ruleId={}, level={}, message={}, details={}", ruleId, level, message, details);
+        // TODO: 实现预警生成逻辑
+    }
+
     public Page<AlertResponse> getAlerts(AlertQueryRequest request, Pageable pageable) {
         log.info("获取预警列表: request={}, pageable={}", request, pageable);
         
