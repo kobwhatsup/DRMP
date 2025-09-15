@@ -112,6 +112,31 @@ class AssignmentService {
       organizationId, startDate, endDate
     });
   }
+
+  // 获取案件包的案件列表
+  async getCasesByPackageId(packageId: number): Promise<any[]> {
+    return apiService.get(`/case-packages/${packageId}/cases`);
+  }
+
+  // 获取可用的处置机构列表
+  async getAvailableOrganizations(): Promise<any[]> {
+    return apiService.get('/organizations/disposal/available');
+  }
+
+  // 获取机构推荐（别名方法）
+  async getOrgRecommendations(packageId: number, limit?: number): Promise<AssignmentRecommendation[]> {
+    return this.getRecommendations(packageId, limit);
+  }
+
+  // 执行分案（别名方法）
+  async executeAssignment(request: any): Promise<any> {
+    return this.executeAutoAssignment(request.casePackageId || request.packageId, request.strategies);
+  }
+
+  // 确认分案
+  async confirmAssignment(assignmentId: string): Promise<void> {
+    return apiService.post(`/smart-assignment/confirm/${assignmentId}`);
+  }
 }
 
 export default new AssignmentService();

@@ -23,7 +23,13 @@ public class CasePackageBidRequest {
     
     @NotNull(message = "案件包ID不能为空")
     private Long casePackageId;
-    
+
+    /**
+     * 处置机构ID
+     */
+    @NotNull(message = "处置机构ID不能为空")
+    private Long disposalOrgId;
+
     @DecimalMin(value = "0", message = "竞标金额不能为负")
     private BigDecimal bidAmount;
     

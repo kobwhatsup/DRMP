@@ -122,4 +122,22 @@ public interface CasePackageRepository extends JpaRepository<CasePackage, Long>,
      */
     @Query("SELECT cp FROM CasePackage cp WHERE cp.id IN :ids AND cp.sourceOrganization.id = :orgId")
     List<CasePackage> findByIdsAndSourceOrganization(@Param("ids") List<Long> ids, @Param("orgId") Long orgId);
+
+    /**
+     * 计算平均回收率
+     */
+    @Query("SELECT AVG(cp.expectedRecoveryRate) FROM CasePackage cp WHERE cp.status = 'COMPLETED'")
+    Double calculateAverageRecoveryRate();
+
+    /**
+     * 计算总金额
+     */
+    @Query("SELECT SUM(cp.totalAmount) FROM CasePackage cp")
+    java.math.BigDecimal calculateTotalAmount();
+
+    /**
+     * 计算总案件数
+     */
+    @Query("SELECT SUM(cp.caseCount) FROM CasePackage cp")
+    Long calculateTotalCases();
 }

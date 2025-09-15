@@ -98,7 +98,16 @@ const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
       }
       
       if (recsData.status === 'fulfilled' && recsData.value) {
-        setRecommendations(recsData.value);
+        // Convert AssignmentRecommendation to OrgRecommendation format
+        const orgRecs: OrgRecommendation[] = recsData.value.map(rec => ({
+          orgId: rec.organizationId,
+          orgName: rec.organizationName,
+          score: rec.score,
+          reasons: [rec.reason],
+          pros: Object.keys(rec.assessmentDetails || {}).filter(k => rec.assessmentDetails[k] > 0.5).map(k => k),
+          cons: Object.keys(rec.assessmentDetails || {}).filter(k => rec.assessmentDetails[k] <= 0.5).map(k => k)
+        }));
+        setRecommendations(orgRecs);
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -129,20 +138,17 @@ const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
       // 转换为 AssignmentResult 格式
       const result: AssignmentResult = {
         assignmentId: `preview-${Date.now()}`,
-        packageId,
+        casePackageId: packageId,
         totalCases: cases.length,
         assignedCases: engineResult.assignments.length,
         failedCases: engineResult.unassignedCases.length,
         successRate: (engineResult.assignments.length / cases.length) * 100,
-        avgMatchScore: engineResult.assignments.reduce((sum, a) => sum + a.matchScore, 0) / (engineResult.assignments.length || 1),
+        avgMatchScore: engineResult.assignments.reduce((sum: number, a: CaseAssignmentResult) => sum + a.matchScore, 0) / (engineResult.assignments.length || 1),
         unassignedCases: engineResult.unassignedCases,
         caseAssignments: engineResult.assignments,
         orgStats: engineResult.orgStats,
-        strategy,
         executionTime: 0,
-        executedAt: new Date().toISOString(),
-        executedBy: 'current-user',
-        status: 'PREVIEW'
+        timestamp: new Date().toISOString()
       };
       
       setAssignmentResult(result);
@@ -172,15 +178,16 @@ const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
         try {
           // 需要先执行分案请求，获取assignmentId
           const request: AssignmentRequest = {
-            packageId,
-            strategy,
+            casePackageId: packageId,
+            strategy: strategy.toString(),
             weights,
-            constraints,
-            preview: false
+            constraints
           };
           
-          const executeResult = await assignmentService.executeAssignment(request);
-          await assignmentService.confirmAssignment(executeResult.assignmentId);
+          const executeResult = await assignmentService.executeAutoAssignment(packageId, [strategy.toString()]);
+          if (executeResult.assignmentId) {
+            await assignmentService.confirmAssignment(executeResult.assignmentId);
+          }
           message.success('分案成功');
           onSuccess?.();
           onClose();
@@ -394,7 +401,7 @@ const SmartAssignmentModal: React.FC<SmartAssignmentModalProps> = ({
             strokeColor={value > 80 ? '#ff4d4f' : value > 60 ? '#faad14' : '#52c41a'}
           />
         ),
-        sorter: (a, b) => a.expectedLoadRate - b.expectedLoadRate,
+        sorter: (a, b) => (a.expectedLoadRate || 0) - (b.expectedLoadRate || 0),
       }
     ];
 

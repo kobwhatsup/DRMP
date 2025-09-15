@@ -22,7 +22,7 @@ import java.util.Set;
 @Entity
 @Table(name = "organizations", indexes = {
     @Index(name = "idx_org_code", columnList = "org_code", unique = true),
-    @Index(name = "idx_org_type_status", columnList = "org_type,status")
+    @Index(name = "idx_org_type_status", columnList = "type,status")
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

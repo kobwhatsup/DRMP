@@ -1,6 +1,7 @@
 package com.drmp.dto.response;
 
 import com.drmp.entity.enums.CasePackageStatus;
+import com.drmp.entity.enums.AssignmentType;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -23,7 +24,9 @@ public class CasePackageDetailResponse {
     private String packageName;
     
     private CasePackageStatus status;
-    
+
+    private AssignmentType assignmentType;
+
     private Integer caseCount;
     
     private BigDecimal totalAmount;

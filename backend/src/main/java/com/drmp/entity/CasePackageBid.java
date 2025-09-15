@@ -87,4 +87,41 @@ public class CasePackageBid extends BaseEntity {
             isWinner = false;
         }
     }
+
+    // Convenience methods for repository compatibility
+    @Transient
+    public Long getCasePackageId() {
+        return casePackage != null ? casePackage.getId() : null;
+    }
+
+    public void setCasePackageId(Long casePackageId) {
+        if (casePackageId != null && (casePackage == null || !casePackageId.equals(casePackage.getId()))) {
+            CasePackage cp = new CasePackage();
+            cp.setId(casePackageId);
+            this.casePackage = cp;
+        }
+    }
+
+    @Transient
+    public String getCasePackageName() {
+        return casePackage != null ? casePackage.getPackageName() : null;
+    }
+
+    @Transient
+    public Long getDisposalOrgId() {
+        return disposalOrganization != null ? disposalOrganization.getId() : null;
+    }
+
+    public void setDisposalOrgId(Long disposalOrgId) {
+        if (disposalOrgId != null && (disposalOrganization == null || !disposalOrgId.equals(disposalOrganization.getId()))) {
+            Organization org = new Organization();
+            org.setId(disposalOrgId);
+            this.disposalOrganization = org;
+        }
+    }
+
+    @Transient
+    public String getDisposalOrgName() {
+        return disposalOrganization != null ? disposalOrganization.getName() : null;
+    }
 }

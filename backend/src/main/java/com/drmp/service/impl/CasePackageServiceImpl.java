@@ -32,6 +32,8 @@ import java.util.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * 案件包服务实现
@@ -49,6 +51,8 @@ public class CasePackageServiceImpl implements CasePackageService {
     private final CaseRepository caseRepository;
     private final OrganizationRepository organizationRepository;
     private final AssignmentRuleRepository assignmentRuleRepository;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Override
     @Transactional
@@ -299,7 +303,7 @@ public class CasePackageServiceImpl implements CasePackageService {
             
             int successCount = 0;
             int failedCount = 0;
-            List<ImportError> errors = new ArrayList<>();
+            List<BatchImportResult.ImportError> errors = new ArrayList<>();
             
             for (int i = 0; i < cases.size(); i++) {
                 try {
@@ -311,7 +315,7 @@ public class CasePackageServiceImpl implements CasePackageService {
                     successCount++;
                 } catch (Exception e) {
                     failedCount++;
-                    ImportError error = new ImportError();
+                    BatchImportResult.ImportError error = new BatchImportResult.ImportError();
                     error.setRowNumber(i + 2); // Excel行号从2开始（第1行是表头）
                     error.setErrorMessage(e.getMessage());
                     errors.add(error);
@@ -329,11 +333,9 @@ public class CasePackageServiceImpl implements CasePackageService {
         } catch (Exception e) {
             log.error("Failed to import cases", e);
             result.setSuccess(false);
-            result.setErrors(Collections.singletonList(
-                ImportError.builder()
-                    .errorMessage("文件解析失败: " + e.getMessage())
-                    .build()
-            ));
+            BatchImportResult.ImportError error = new BatchImportResult.ImportError();
+            error.setErrorMessage("文件解析失败: " + e.getMessage());
+            result.setErrors(Collections.singletonList(error));
         }
         
         result.setEndTime(LocalDateTime.now());
@@ -377,7 +379,8 @@ public class CasePackageServiceImpl implements CasePackageService {
         
         // 计算平均回收率
         Double avgRecoveryRate = casePackageRepository.calculateAverageRecoveryRate();
-        stats.setAvgRecoveryRate(avgRecoveryRate != null ? avgRecoveryRate : 0.0);
+        stats.setAvgRecoveryRate(avgRecoveryRate != null ?
+            BigDecimal.valueOf(avgRecoveryRate) : BigDecimal.ZERO);
         
         // 总金额
         BigDecimal totalAmount = casePackageRepository.calculateTotalAmount();
@@ -426,11 +429,23 @@ public class CasePackageServiceImpl implements CasePackageService {
         bid.setBidAmount(request.getBidAmount());
         bid.setProposedRecoveryRate(request.getProposedRecoveryRate());
         bid.setProposedDisposalDays(request.getProposedDisposalDays());
-        bid.setProposal(request.getProposal());
-        bid.setDisposalStrategy(request.getDisposalStrategy());
-        bid.setTeamIntroduction(request.getTeamIntroduction());
-        bid.setPastPerformance(request.getPastPerformance());
-        bid.setCommitments(request.getCommitments());
+
+        // Combine all proposal fields into the proposal text
+        StringBuilder proposalBuilder = new StringBuilder(request.getProposal());
+        if (request.getDisposalStrategy() != null) {
+            proposalBuilder.append("\n\n[处置策略]\n").append(request.getDisposalStrategy());
+        }
+        if (request.getTeamIntroduction() != null) {
+            proposalBuilder.append("\n\n[团队介绍]\n").append(request.getTeamIntroduction());
+        }
+        if (request.getPastPerformance() != null) {
+            proposalBuilder.append("\n\n[过往业绩]\n").append(request.getPastPerformance());
+        }
+        if (request.getCommitments() != null) {
+            proposalBuilder.append("\n\n[承诺事项]\n").append(request.getCommitments());
+        }
+        bid.setProposal(proposalBuilder.toString());
+
         bid.setStatus("SUBMITTED");
         bid.setSubmittedAt(LocalDateTime.now());
         
@@ -567,9 +582,9 @@ public class CasePackageServiceImpl implements CasePackageService {
         SmartAssignResultResponse preview = previewSmartAssignment(request);
         
         // 如果不是预览模式，执行实际分配
-        if (!request.isPreview()) {
+        if (request.getPreview() == null || !request.getPreview()) {
             // 更新案件的处置机构信息
-            for (AssignmentDetail detail : preview.getAssignmentDetails()) {
+            for (SmartAssignResultResponse.AssignmentDetail detail : preview.getAssignmentDetails()) {
                 Case caseEntity = caseRepository.findById(detail.getCaseId())
                     .orElseThrow(() -> new BusinessException("案件不存在"));
                 caseEntity.setAssignedOrgId(detail.getOrgId());
@@ -584,7 +599,7 @@ public class CasePackageServiceImpl implements CasePackageService {
             casePackage.setAssignedAt(LocalDateTime.now());
             casePackageRepository.save(casePackage);
             
-            preview.setPreview(false);
+            preview.setIsPreview(false);
         }
         
         return preview;
@@ -601,7 +616,9 @@ public class CasePackageServiceImpl implements CasePackageService {
         List<Case> cases = caseRepository.findByCasePackageId(request.getCasePackageId());
         
         // 获取可用的处置机构
-        List<Organization> orgs = organizationRepository.findByType("DISPOSAL");
+        List<Organization> orgs = organizationRepository.findAll().stream()
+            .filter(org -> org.getType() != null && org.getType().toString().equals("DISPOSAL"))
+            .collect(Collectors.toList());
         
         // 执行智能分配算法
         SmartAssignResultResponse result = new SmartAssignResultResponse();
@@ -611,42 +628,42 @@ public class CasePackageServiceImpl implements CasePackageService {
         result.setTotalCases(cases.size());
         result.setStrategy(request.getStrategy());
         result.setRuleWeights(request.getRuleWeights());
-        result.setPreview(true);
+        result.setIsPreview(true);
         result.setExecutedAt(LocalDateTime.now());
         
-        List<AssignmentDetail> assignmentDetails = new ArrayList<>();
-        List<UnassignedCase> unassignedCases = new ArrayList<>();
-        Map<Long, OrgAssignmentStat> orgStatsMap = new HashMap<>();
+        List<SmartAssignResultResponse.AssignmentDetail> assignmentDetails = new ArrayList<>();
+        List<SmartAssignResultResponse.UnassignedCase> unassignedCases = new ArrayList<>();
+        Map<Long, SmartAssignResultResponse.OrgAssignmentStat> orgStatsMap = new HashMap<>();
         
         // 简单的分配算法示例（实际应该更复杂）
         for (Case caseEntity : cases) {
             Organization bestOrg = findBestMatchOrg(caseEntity, orgs, request);
             
             if (bestOrg != null) {
-                AssignmentDetail detail = new AssignmentDetail();
+                SmartAssignResultResponse.AssignmentDetail detail = new SmartAssignResultResponse.AssignmentDetail();
                 detail.setCaseId(caseEntity.getId());
                 detail.setCaseNumber(caseEntity.getCaseNumber());
                 detail.setCaseAmount(caseEntity.getTotalDebtAmount());
                 detail.setOrgId(bestOrg.getId());
                 detail.setOrgName(bestOrg.getName());
-                detail.setMatchScore(calculateMatchScore(caseEntity, bestOrg, request));
+                detail.setMatchScore(BigDecimal.valueOf(calculateMatchScore(caseEntity, bestOrg, request)));
                 detail.setMatchReason("基于" + request.getStrategy() + "策略匹配");
                 assignmentDetails.add(detail);
                 
                 // 更新机构统计
-                OrgAssignmentStat stat = orgStatsMap.computeIfAbsent(bestOrg.getId(), k -> {
-                    OrgAssignmentStat s = new OrgAssignmentStat();
+                SmartAssignResultResponse.OrgAssignmentStat stat = orgStatsMap.computeIfAbsent(bestOrg.getId(), k -> {
+                    SmartAssignResultResponse.OrgAssignmentStat s = new SmartAssignResultResponse.OrgAssignmentStat();
                     s.setOrgId(bestOrg.getId());
                     s.setOrgName(bestOrg.getName());
                     s.setAssignedCount(0);
                     s.setTotalAmount(BigDecimal.ZERO);
-                    s.setAvgMatchScore(0.0);
+                    s.setAvgMatchScore(BigDecimal.ZERO);
                     return s;
                 });
                 stat.setAssignedCount(stat.getAssignedCount() + 1);
                 stat.setTotalAmount(stat.getTotalAmount().add(caseEntity.getTotalDebtAmount()));
             } else {
-                UnassignedCase unassigned = new UnassignedCase();
+                SmartAssignResultResponse.UnassignedCase unassigned = new SmartAssignResultResponse.UnassignedCase();
                 unassigned.setCaseId(caseEntity.getId());
                 unassigned.setCaseNumber(caseEntity.getCaseNumber());
                 unassigned.setCaseAmount(caseEntity.getTotalDebtAmount());
@@ -660,8 +677,8 @@ public class CasePackageServiceImpl implements CasePackageService {
         result.setUnassignedCases(unassignedCases);
         result.setAssignedCases(assignmentDetails.size());
         result.setUnassignedCount(unassignedCases.size());
-        result.setSuccessRate(cases.isEmpty() ? 0 : 
-            (assignmentDetails.size() * 100.0 / cases.size()));
+        result.setSuccessRate(cases.isEmpty() ? BigDecimal.ZERO : 
+            BigDecimal.valueOf(assignmentDetails.size() * 100.0 / cases.size()));
         result.setOrgStats(new ArrayList<>(orgStatsMap.values()));
         result.setExecutionTime(100L); // 模拟执行时间
         
@@ -698,9 +715,16 @@ public class CasePackageServiceImpl implements CasePackageService {
         rule.setRuleType(request.getRuleType());
         rule.setPriority(request.getPriority());
         rule.setEnabled(request.getEnabled());
-        rule.setConditions(request.getConditions());
-        rule.setActions(request.getActions());
-        rule.setWeights(request.getWeights());
+        try {
+            rule.setConditions(request.getConditions() != null ?
+                objectMapper.writeValueAsString(request.getConditions()) : null);
+            rule.setActions(request.getActions() != null ?
+                objectMapper.writeValueAsString(request.getActions()) : null);
+            rule.setWeights(request.getWeights() != null ?
+                objectMapper.writeValueAsString(request.getWeights()) : null);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException("Failed to serialize rule data: " + e.getMessage());
+        }
         rule.setCreatedAt(LocalDateTime.now());
         rule.setUpdatedAt(LocalDateTime.now());
         
@@ -722,9 +746,16 @@ public class CasePackageServiceImpl implements CasePackageService {
         rule.setRuleType(request.getRuleType());
         rule.setPriority(request.getPriority());
         rule.setEnabled(request.getEnabled());
-        rule.setConditions(request.getConditions());
-        rule.setActions(request.getActions());
-        rule.setWeights(request.getWeights());
+        try {
+            rule.setConditions(request.getConditions() != null ?
+                objectMapper.writeValueAsString(request.getConditions()) : null);
+            rule.setActions(request.getActions() != null ?
+                objectMapper.writeValueAsString(request.getActions()) : null);
+            rule.setWeights(request.getWeights() != null ?
+                objectMapper.writeValueAsString(request.getWeights()) : null);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException("Failed to serialize rule data: " + e.getMessage());
+        }
         rule.setUpdatedAt(LocalDateTime.now());
         
         AssignmentRule saved = assignmentRuleRepository.save(rule);
@@ -747,12 +778,14 @@ public class CasePackageServiceImpl implements CasePackageService {
             .orElseThrow(() -> new BusinessException("案件包不存在"));
         
         // 获取所有处置机构
-        List<Organization> orgs = organizationRepository.findByType("DISPOSAL");
+        List<Organization> orgs = organizationRepository.findAll().stream()
+            .filter(org -> org.getType() != null && org.getType().toString().equals("DISPOSAL"))
+            .collect(Collectors.toList());
         
         // 计算推荐分数并排序
         return orgs.stream()
             .map(org -> calculateRecommendation(org, casePackage))
-            .sorted((a, b) -> Double.compare(b.getMatchScore(), a.getMatchScore()))
+            .sorted((a, b) -> b.getMatchScore().compareTo(a.getMatchScore()))
             .limit(10)
             .collect(Collectors.toList());
     }
@@ -783,11 +816,11 @@ public class CasePackageServiceImpl implements CasePackageService {
         log.info("Batch updating {} packages to status {}", ids.size(), status);
         
         BatchOperationResult result = new BatchOperationResult();
-        result.setTotal(ids.size());
-        
+        result.setTotalCount(ids.size());
+
         int success = 0;
         int failed = 0;
-        
+
         for (Long id : ids) {
             try {
                 updateStatus(id, status);
@@ -797,9 +830,10 @@ public class CasePackageServiceImpl implements CasePackageService {
                 log.error("Failed to update package {} status", id, e);
             }
         }
-        
-        result.setSuccess(success);
-        result.setFailed(failed);
+
+        result.setSuccessCount(success);
+        result.setFailedCount(failed);
+        result.setSuccess(failed == 0);
         
         return result;
     }
@@ -986,14 +1020,16 @@ public class CasePackageServiceImpl implements CasePackageService {
     private RecommendedOrgResponse calculateRecommendation(Organization org, CasePackage casePackage) {
         RecommendedOrgResponse response = new RecommendedOrgResponse();
         response.setOrgId(org.getId());
-        response.setOrgCode(org.getCode());
+        response.setOrgCode(org.getOrgCode());
         response.setOrgName(org.getName());
-        response.setOrgType(org.getType());
-        response.setRegion(org.getRegion());
+        response.setOrgType(org.getType() != null ? org.getType().toString() : null);
+        // Get the first region from the set
+        response.setRegion(org.getServiceRegions() != null && !org.getServiceRegions().isEmpty() ?
+            org.getServiceRegions().iterator().next() : null);
         
         // 计算匹配分数（简化版）
         double score = 50 + Math.random() * 50;
-        response.setMatchScore(score);
+        response.setMatchScore(BigDecimal.valueOf(score));
         
         // 推荐理由
         List<String> reasons = new ArrayList<>();
@@ -1084,9 +1120,25 @@ public class CasePackageServiceImpl implements CasePackageService {
         response.setRuleType(entity.getRuleType());
         response.setPriority(entity.getPriority());
         response.setEnabled(entity.getEnabled());
-        response.setConditions(entity.getConditions());
-        response.setActions(entity.getActions());
-        response.setWeights(entity.getWeights());
+
+        // Convert JSON strings back to Maps
+        try {
+            if (entity.getConditions() != null) {
+                response.setConditions(objectMapper.readValue(entity.getConditions(),
+                    objectMapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class)));
+            }
+            if (entity.getActions() != null) {
+                response.setActions(objectMapper.readValue(entity.getActions(),
+                    objectMapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class)));
+            }
+            if (entity.getWeights() != null) {
+                response.setWeights(objectMapper.readValue(entity.getWeights(),
+                    objectMapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class)));
+            }
+        } catch (Exception e) {
+            log.error("Failed to deserialize rule data", e);
+        }
+
         response.setCreatedAt(entity.getCreatedAt());
         response.setUpdatedAt(entity.getUpdatedAt());
         return response;
