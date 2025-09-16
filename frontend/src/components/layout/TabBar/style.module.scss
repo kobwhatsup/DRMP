@@ -1,0 +1,180 @@
+// TabBar Container
+.tabBarContainer {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 10;
+}
+
+// Tab Bar
+.tabBar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 4px 0;
+  gap: 4px;
+
+  // Hide scrollbar but keep functionality
+  &::-webkit-scrollbar {
+    height: 0;
+  }
+}
+
+// Tab Item
+.tabItem {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  min-width: 100px;
+  max-width: 200px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  margin-bottom: -1px;
+  flex-shrink: 0;
+  font-size: 13px;
+
+  // Active state
+  &.active {
+    background: #fff;
+    border-bottom-color: #fff;
+    color: #1890ff;
+    z-index: 1;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #1890ff;
+    }
+  }
+
+  // Hover state
+  &:not(.active):hover {
+    background: #f5f5f5;
+    border-color: #d9d9d9;
+  }
+
+  // Fixed tab
+  &.fixed {
+    font-weight: 500;
+  }
+
+  // Dragging state
+  &.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+}
+
+// Tab title
+.title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+// Title input (for editing)
+.titleInput {
+  flex: 1;
+  height: 20px;
+  border: 1px solid #1890ff;
+  border-radius: 2px;
+  padding: 0 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+// Icons
+.closeIcon {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #999;
+  transition: color 0.2s;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #ff4d4f;
+  }
+
+  .tabItem.active & {
+    color: #666;
+  }
+}
+
+.pinIcon {
+  margin-right: 6px;
+  color: #1890ff;
+  font-size: 12px;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #40a9ff;
+  }
+}
+
+// Buttons
+.scrollButton,
+.addButton,
+.moreButton {
+  flex-shrink: 0;
+  border-radius: 4px;
+  margin: 0 2px;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// Animations
+@keyframes tabSlideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.tabItem {
+  animation: tabSlideIn 0.2s ease;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .tabItem {
+    min-width: 80px;
+    max-width: 150px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .tabBarContainer {
+    height: 36px;
+  }
+}
