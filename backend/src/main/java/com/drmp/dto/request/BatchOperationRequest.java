@@ -16,7 +16,7 @@ import java.util.Map;
 public class BatchOperationRequest {
 
     @NotNull(message = "操作类型不能为空")
-    private BatchOperation.OperationType operationType;
+    private String operationType;
 
     @NotNull(message = "操作名称不能为空")
     @Size(max = 100, message = "操作名称长度不能超过100字符")
@@ -35,4 +35,8 @@ public class BatchOperationRequest {
     private String remarks;
 
     private Boolean asyncExecution = true;
+
+    private Integer totalCount;
+
+    private Long createdBy;
 }

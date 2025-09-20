@@ -99,6 +99,16 @@ public interface CasePackageService {
      * 获取案件市场列表
      */
     Page<CasePackageListResponse> getMarketPackages(MarketQueryRequest request, Pageable pageable);
+
+    /**
+     * 获取案件市场列表（带查询条件）
+     */
+    Page<CasePackageListResponse> getMarketCasePackages(CasePackageQueryRequest request, Pageable pageable);
+
+    /**
+     * 申请案件包
+     */
+    String applyCasePackage(Long packageId, String proposal);
     
     // ========== 智能分案相关 ==========
     

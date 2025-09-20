@@ -971,7 +971,104 @@ public class CasePackageServiceImpl implements CasePackageService {
         // TODO: 实现收藏功能
         return Page.empty();
     }
-    
+
+    @Override
+    public Page<CasePackageListResponse> getMarketCasePackages(CasePackageQueryRequest request, Pageable pageable) {
+        log.info("Getting market case packages with query: {}", request);
+
+        // 构建查询条件
+        Specification<CasePackage> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 只查询已发布状态的案件包
+            predicates.add(criteriaBuilder.equal(root.get("status"), CasePackageStatus.PUBLISHED));
+
+            // 关键词搜索
+            if (request.getKeyword() != null && !request.getKeyword().isEmpty()) {
+                String keyword = "%" + request.getKeyword().toLowerCase() + "%";
+                Predicate namePredicate = criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("packageName")), keyword);
+                Predicate codePredicate = criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("packageCode")), keyword);
+                predicates.add(criteriaBuilder.or(namePredicate, codePredicate));
+            }
+
+            // 金额范围
+            if (request.getMinAmount() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(
+                    root.get("totalAmount"), BigDecimal.valueOf(request.getMinAmount())));
+            }
+            if (request.getMaxAmount() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(
+                    root.get("totalAmount"), BigDecimal.valueOf(request.getMaxAmount())));
+            }
+
+            // 逾期天数范围
+            if (request.getMinOverdueDays() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(
+                    root.get("minOverdueDays"), request.getMinOverdueDays()));
+            }
+            if (request.getMaxOverdueDays() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(
+                    root.get("maxOverdueDays"), request.getMaxOverdueDays()));
+            }
+
+            // 案源机构筛选
+            if (request.getSourceOrgId() != null) {
+                predicates.add(criteriaBuilder.equal(
+                    root.get("sourceOrganization").get("id"), request.getSourceOrgId()));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<CasePackage> casePackagePage = casePackageRepository.findAll(spec, pageable);
+
+        return casePackagePage.map(this::convertToListResponse);
+    }
+
+    @Override
+    @Transactional
+    public String applyCasePackage(Long packageId, String proposal) {
+        log.info("Applying for case package: {} with proposal: {}", packageId, proposal);
+
+        CasePackage casePackage = casePackageRepository.findById(packageId)
+            .orElseThrow(() -> new BusinessException("案件包不存在"));
+
+        // 验证案件包状态
+        if (casePackage.getStatus() != CasePackageStatus.PUBLISHED) {
+            throw new BusinessException("该案件包不在可申请状态");
+        }
+
+        // 获取当前处置机构信息（从安全上下文中获取）
+        Long disposalOrgId = getCurrentOrgId();
+        Organization disposalOrg = organizationRepository.findById(disposalOrgId)
+            .orElseThrow(() -> new BusinessException("处置机构不存在"));
+
+        // 检查是否已经申请过
+        Optional<CasePackageBid> existingBid = casePackageBidRepository.findByCasePackageAndDisposalOrganization(casePackage, disposalOrg);
+        if (existingBid.isPresent()) {
+            throw new BusinessException("您已经申请过该案件包");
+        }
+
+        // 创建申请记录
+        CasePackageBid bid = CasePackageBid.builder()
+            .casePackage(casePackage)
+            .disposalOrganization(disposalOrg)
+            .proposal(proposal)
+            .submittedAt(LocalDateTime.now())
+            .status("SUBMITTED")
+            .proposedRecoveryRate(BigDecimal.ZERO) // 默认值，实际应该从proposal中计算
+            .proposedDisposalDays(30) // 默认值，实际应该从proposal中获取
+            .build();
+
+        bid = casePackageBidRepository.save(bid);
+
+        log.info("Application created with ID: {}", bid.getId());
+
+        return bid.getId().toString();
+    }
+
     // ========== 辅助方法 ==========
     
     private String generatePackageCode() {
@@ -1152,5 +1249,12 @@ public class CasePackageServiceImpl implements CasePackageService {
     private String maskPhone(String phone) {
         if (phone == null || phone.length() < 7) return phone;
         return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+    }
+
+    private Long getCurrentOrgId() {
+        // 从安全上下文中获取当前用户的机构ID
+        // 这里需要根据实际的安全框架实现
+        // 暂时返回一个默认值，实际应该从 SecurityContext 中获取
+        return 1L; // TODO: 从SecurityContext获取真实的机构ID
     }
 }

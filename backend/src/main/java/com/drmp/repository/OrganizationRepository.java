@@ -59,17 +59,23 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     /**
      * 高效的分页查询，支持关键字、类型和状态过滤，在数据库层面进行过滤和分页
      */
-    @Query("SELECT DISTINCT o FROM Organization o " +
+    @Query(value = "SELECT DISTINCT o FROM Organization o " +
            "LEFT JOIN FETCH o.serviceRegions " +
            "LEFT JOIN FETCH o.businessScopes " +
            "LEFT JOIN FETCH o.disposalTypes " +
            "LEFT JOIN FETCH o.settlementMethods " +
            "WHERE (:keyword IS NULL OR :keyword = '' OR " +
-           "       LOWER(o.orgName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "       LOWER(o.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "       LOWER(o.orgCode) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
            "      (:type IS NULL OR o.type = :type) AND " +
            "      (:status IS NULL OR o.status = :status) " +
-           "ORDER BY o.createdAt DESC")
+           "ORDER BY o.createdAt DESC",
+           countQuery = "SELECT COUNT(DISTINCT o) FROM Organization o " +
+           "WHERE (:keyword IS NULL OR :keyword = '' OR " +
+           "       LOWER(o.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "       LOWER(o.orgCode) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+           "      (:type IS NULL OR o.type = :type) AND " +
+           "      (:status IS NULL OR o.status = :status)")
     Page<Organization> findWithFiltersAndCollections(@Param("keyword") String keyword,
                                                     @Param("type") OrganizationType type,
                                                     @Param("status") OrganizationStatus status,

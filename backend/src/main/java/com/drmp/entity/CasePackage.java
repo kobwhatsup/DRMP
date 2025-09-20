@@ -20,8 +20,8 @@ import java.util.List;
 @Entity
 @Table(name = "case_packages", indexes = {
     @Index(name = "idx_package_code", columnList = "package_code", unique = true),
-    @Index(name = "idx_source_org", columnList = "source_organization_id"),
-    @Index(name = "idx_disposal_org", columnList = "disposal_organization_id"),
+    @Index(name = "idx_source_org", columnList = "source_org_id"),
+    @Index(name = "idx_disposal_org", columnList = "disposal_org_id"),
     @Index(name = "idx_status", columnList = "status")
 })
 @Data

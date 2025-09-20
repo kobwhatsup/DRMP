@@ -1,0 +1,897 @@
+package com.drmp.service.impl;
+
+import com.drmp.config.FileSecurityConfig;
+import com.drmp.dto.response.FileUploadResponse;
+import com.drmp.entity.CaseAttachment;
+import com.drmp.repository.CaseAttachmentRepository;
+import com.drmp.service.FileStorageService;
+import com.drmp.service.impl.FileSecurityService.SecurityValidationResult;
+import com.drmp.exception.BusinessException;
+import com.drmp.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
+import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+/**
+ * 安全文件存储服务实现
+ * 
+ * @author DRMP Team
+ * @since 1.0.0
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class FileStorageServiceImpl implements FileStorageService {
+
+    private final FileSecurityConfig fileSecurityConfig;
+    private final FileSecurityService fileSecurityService;
+    private final CaseAttachmentRepository caseAttachmentRepository;
+
+    // 分片上传会话管理
+    private final Map<String, ChunkUploadSession> chunkSessions = new ConcurrentHashMap<>();
+
+    // 文件访问token管理
+    private final Map<String, FileAccessToken> accessTokens = new ConcurrentHashMap<>();
+
+    @Override
+    @Transactional
+    public FileUploadResponse uploadFile(MultipartFile file, String businessType, Long businessId, 
+                                       String category, Long userId) {
+        log.info("开始上传文件: {}, 业务类型: {}, 业务ID: {}", 
+            file.getOriginalFilename(), businessType, businessId);
+
+        // 1. 安全验证
+        SecurityValidationResult validation = fileSecurityService.validateFile(file);
+        if (!validation.isValid()) {
+            // 如果文件不安全，将其隔离
+            fileSecurityService.quarantineFile(file, validation.getMessage());
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, validation.getMessage());
+        }
+
+        try {
+            // 2. 生成安全文件名
+            String secureFileName = generateSecureFileName(file.getOriginalFilename());
+            String relativePath = generateFilePath(businessType, businessId, secureFileName);
+            
+            // 3. 确保目录存在
+            Path fullPath = Paths.get(fileSecurityConfig.getStorageDir(), relativePath);
+            Files.createDirectories(fullPath.getParent());
+
+            // 4. 存储文件
+            if (fileSecurityConfig.isEnableEncryption()) {
+                storeEncryptedFile(file, fullPath);
+            } else {
+                Files.copy(file.getInputStream(), fullPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // 5. 保存文件记录
+            CaseAttachment attachment = new CaseAttachment();
+            attachment.setOriginalFileName(file.getOriginalFilename());
+            attachment.setStoredFileName(secureFileName);
+            attachment.setFilePath(relativePath);
+            attachment.setFileSize(file.getSize());
+            attachment.setMimeType(file.getContentType());
+            attachment.setBusinessType(businessType);
+            attachment.setBusinessId(businessId);
+            attachment.setCategory(category);
+            attachment.setUploadedBy(userId);
+            attachment.setUploadedAt(LocalDateTime.now());
+            attachment.setFileMd5(validation.getFileMd5());
+            attachment.setIsEncrypted(fileSecurityConfig.isEnableEncryption());
+
+            attachment = caseAttachmentRepository.save(attachment);
+
+            log.info("文件上传成功: {} -> {}", file.getOriginalFilename(), relativePath);
+
+            return buildFileUploadResponse(attachment);
+
+        } catch (Exception e) {
+            log.error("文件上传失败: " + file.getOriginalFilename(), e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "文件上传失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Map<String, Object> initChunkUpload(String fileName, Long fileSize, String fileType,
+                                             String businessType, Long businessId, Long userId) {
+        log.info("初始化分片上传: {}, 大小: {}, 类型: {}", fileName, fileSize, fileType);
+
+        // 验证基本参数
+        if (fileSize > fileSecurityConfig.getMaxFileSize()) {
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, 
+                "文件过大，最大允许: " + formatFileSize(fileSecurityConfig.getMaxFileSize()));
+        }
+
+        // 生成上传会话ID
+        String uploadId = UUID.randomUUID().toString();
+        
+        // 创建临时目录
+        Path tempDir = Paths.get(fileSecurityConfig.getTempDir(), uploadId);
+        try {
+            Files.createDirectories(tempDir);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "创建临时目录失败");
+        }
+
+        // 创建上传会话
+        ChunkUploadSession session = new ChunkUploadSession();
+        session.setUploadId(uploadId);
+        session.setFileName(fileName);
+        session.setFileSize(fileSize);
+        session.setFileType(fileType);
+        session.setBusinessType(businessType);
+        session.setBusinessId(businessId);
+        session.setUserId(userId);
+        session.setTempDir(tempDir.toString());
+        session.setCreatedAt(LocalDateTime.now());
+        session.setExpireAt(LocalDateTime.now().plusHours(24)); // 24小时过期
+
+        chunkSessions.put(uploadId, session);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("uploadId", uploadId);
+        result.put("chunkSize", 5 * 1024 * 1024); // 5MB
+        result.put("totalChunks", Math.ceil((double) fileSize / (5 * 1024 * 1024)));
+        result.put("expireAt", session.getExpireAt());
+
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> uploadChunk(String uploadId, Integer chunkNumber, MultipartFile chunk) {
+        log.debug("上传分片: {} - {}", uploadId, chunkNumber);
+
+        ChunkUploadSession session = chunkSessions.get(uploadId);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, "上传会话不存在");
+        }
+
+        if (LocalDateTime.now().isAfter(session.getExpireAt())) {
+            chunkSessions.remove(uploadId);
+            cleanupTempDir(session.getTempDir());
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, "上传会话已过期");
+        }
+
+        try {
+            // 保存分片文件
+            Path chunkPath = Paths.get(session.getTempDir(), "chunk_" + chunkNumber);
+            Files.copy(chunk.getInputStream(), chunkPath, StandardCopyOption.REPLACE_EXISTING);
+
+            // 计算分片MD5
+            String chunkMd5;
+            try {
+                chunkMd5 = calculateFileMd5(chunkPath.toFile());
+            } catch (Exception e) {
+                throw new RuntimeException("计算文件MD5失败", e);
+            }
+            session.getChunkMd5Map().put(chunkNumber, chunkMd5);
+            session.getUploadedChunks().add(chunkNumber);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("chunkNumber", chunkNumber);
+            result.put("chunkMd5", chunkMd5);
+            result.put("uploadedChunks", session.getUploadedChunks().size());
+            
+            return result;
+
+        } catch (IOException e) {
+            log.error("分片上传失败: " + uploadId + " - " + chunkNumber, e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "分片上传失败");
+        }
+    }
+
+    @Override
+    @Transactional
+    public FileUploadResponse completeChunkUpload(String uploadId, List<String> chunkMd5List) {
+        log.info("完成分片上传: {}", uploadId);
+
+        ChunkUploadSession session = chunkSessions.get(uploadId);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, "上传会话不存在");
+        }
+
+        try {
+            // 验证所有分片都已上传
+            int totalChunks = (int) Math.ceil((double) session.getFileSize() / (5 * 1024 * 1024));
+            if (session.getUploadedChunks().size() != totalChunks) {
+                throw new BusinessException(ErrorCode.INVALID_PARAMETER, "分片不完整");
+            }
+
+            // 验证分片MD5
+            for (int i = 0; i < totalChunks; i++) {
+                String expectedMd5 = session.getChunkMd5Map().get(i);
+                String providedMd5 = chunkMd5List.get(i);
+                if (!expectedMd5.equals(providedMd5)) {
+                    throw new BusinessException(ErrorCode.INVALID_PARAMETER, "分片校验失败");
+                }
+            }
+
+            // 合并文件
+            String secureFileName = generateSecureFileName(session.getFileName());
+            String relativePath = generateFilePath(session.getBusinessType(), session.getBusinessId(), secureFileName);
+            Path fullPath = Paths.get(fileSecurityConfig.getStorageDir(), relativePath);
+            Files.createDirectories(fullPath.getParent());
+
+            mergeChunks(session, fullPath);
+
+            // 计算完整文件MD5
+            String fileMd5 = calculateFileMd5(fullPath.toFile());
+
+            // 安全验证合并后的文件
+            // 注意：这里需要将Path转换为MultipartFile来验证，实际实现中可能需要调整
+            SecurityValidationResult validation = validateMergedFile(fullPath, session.getFileName(), session.getFileType());
+            if (!validation.isValid()) {
+                Files.deleteIfExists(fullPath);
+                throw new BusinessException(ErrorCode.INVALID_PARAMETER, validation.getMessage());
+            }
+
+            // 加密存储（如果启用）
+            if (fileSecurityConfig.isEnableEncryption()) {
+                encryptFileInPlace(fullPath);
+            }
+
+            // 保存文件记录
+            CaseAttachment attachment = new CaseAttachment();
+            attachment.setOriginalFileName(session.getFileName());
+            attachment.setStoredFileName(secureFileName);
+            attachment.setFilePath(relativePath);
+            attachment.setFileSize(session.getFileSize());
+            attachment.setMimeType(session.getFileType());
+            attachment.setBusinessType(session.getBusinessType());
+            attachment.setBusinessId(session.getBusinessId());
+            attachment.setUploadedBy(session.getUserId());
+            attachment.setUploadedAt(LocalDateTime.now());
+            attachment.setFileMd5(fileMd5);
+            attachment.setIsEncrypted(fileSecurityConfig.isEnableEncryption());
+
+            attachment = caseAttachmentRepository.save(attachment);
+
+            // 清理临时文件和会话
+            cleanupTempDir(session.getTempDir());
+            chunkSessions.remove(uploadId);
+
+            log.info("分片上传完成: {} -> {}", session.getFileName(), relativePath);
+
+            return buildFileUploadResponse(attachment);
+
+        } catch (Exception e) {
+            log.error("完成分片上传失败: " + uploadId, e);
+            // 清理临时文件
+            cleanupTempDir(session.getTempDir());
+            chunkSessions.remove(uploadId);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "完成分片上传失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Map<String, Object> batchUploadFiles(MultipartFile[] files, String businessType, 
+                                               Long businessId, String category, Long userId) {
+        log.info("批量上传文件: {} 个文件", files.length);
+
+        if (files.length > fileSecurityConfig.getMaxFileCount()) {
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, 
+                "文件数量过多，最多允许: " + fileSecurityConfig.getMaxFileCount());
+        }
+
+        List<FileUploadResponse> successFiles = new ArrayList<>();
+        List<Map<String, String>> failedFiles = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            try {
+                FileUploadResponse response = uploadFile(file, businessType, businessId, category, userId);
+                successFiles.add(response);
+            } catch (Exception e) {
+                Map<String, String> error = new HashMap<>();
+                error.put("fileName", file.getOriginalFilename());
+                error.put("error", e.getMessage());
+                failedFiles.add(error);
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("successCount", successFiles.size());
+        result.put("failedCount", failedFiles.size());
+        result.put("successFiles", successFiles);
+        result.put("failedFiles", failedFiles);
+
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> getUploadProgress(String uploadId) {
+        ChunkUploadSession session = chunkSessions.get(uploadId);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.INVALID_PARAMETER, "上传会话不存在");
+        }
+
+        int totalChunks = (int) Math.ceil((double) session.getFileSize() / (5 * 1024 * 1024));
+        int uploadedChunks = session.getUploadedChunks().size();
+        double progress = totalChunks > 0 ? (double) uploadedChunks / totalChunks * 100 : 0;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("uploadId", uploadId);
+        result.put("totalChunks", totalChunks);
+        result.put("uploadedChunks", uploadedChunks);
+        result.put("progress", Math.round(progress * 100.0) / 100.0);
+        result.put("expireAt", session.getExpireAt());
+
+        return result;
+    }
+
+    @Override
+    public void cancelUpload(String uploadId) {
+        ChunkUploadSession session = chunkSessions.remove(uploadId);
+        if (session != null) {
+            cleanupTempDir(session.getTempDir());
+            log.info("上传会话已取消: {}", uploadId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteFile(Long fileId, Long userId) {
+        CaseAttachment attachment = caseAttachmentRepository.findById(fileId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "文件不存在"));
+
+        // 权限检查（简化实现，实际应根据业务规则）
+        if (!attachment.getUploadedBy().equals(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "无权限删除此文件");
+        }
+
+        try {
+            // 删除物理文件
+            Path filePath = Paths.get(fileSecurityConfig.getStorageDir(), attachment.getFilePath());
+            Files.deleteIfExists(filePath);
+
+            // 删除数据库记录
+            caseAttachmentRepository.delete(attachment);
+
+            log.info("文件删除成功: {}", attachment.getOriginalFileName());
+
+        } catch (Exception e) {
+            log.error("删除文件失败: " + fileId, e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "删除文件失败");
+        }
+    }
+
+    @Override
+    public String getDownloadUrl(Long fileId, Integer expireSeconds) {
+        CaseAttachment attachment = caseAttachmentRepository.findById(fileId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "文件不存在"));
+
+        // 生成访问token
+        String accessToken = UUID.randomUUID().toString();
+        
+        FileAccessToken token = new FileAccessToken();
+        token.setToken(accessToken);
+        token.setFileId(fileId);
+        token.setExpireAt(LocalDateTime.now().plusSeconds(expireSeconds));
+        
+        accessTokens.put(accessToken, token);
+
+        return "/api/v1/files/download/" + accessToken;
+    }
+
+    @Override
+    public List<FileUploadResponse> getFileList(String businessType, Long businessId, String category) {
+        List<CaseAttachment> attachments;
+        
+        if (category != null) {
+            attachments = caseAttachmentRepository
+                .findByBusinessTypeAndBusinessIdAndCategoryOrderByUploadedAtDesc(
+                    businessType, businessId, category);
+        } else {
+            attachments = caseAttachmentRepository
+                .findByBusinessTypeAndBusinessIdOrderByUploadedAtDesc(businessType, businessId);
+        }
+
+        return attachments.stream()
+            .map(this::buildFileUploadResponse)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, Object> getStorageStatistics(Long organizationId, String startDate, String endDate) {
+        // 这里应该根据实际需求实现统计逻辑
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalFiles", caseAttachmentRepository.count());
+        stats.put("totalSize", calculateTotalSize());
+        stats.put("storageUsage", calculateStorageUsage());
+        return stats;
+    }
+
+    // === 原有接口实现 ===
+
+    @Override
+    public String uploadFile(MultipartFile file, String directory) {
+        // 简化实现，转发到主要上传方法
+        FileUploadResponse response = uploadFile(file, "GENERAL", 0L, directory, 1L);
+        return response.getFilePath();
+    }
+
+    @Override
+    public String uploadFile(InputStream inputStream, String fileName, String directory) {
+        // 简化实现，需要将InputStream转换为MultipartFile
+        throw new UnsupportedOperationException("请使用主要上传方法");
+    }
+
+    @Override
+    public String uploadFileInChunks(MultipartFile file, String directory, int chunkSize) {
+        // 转发到分片上传
+        Map<String, Object> initResult = initChunkUpload(file.getOriginalFilename(), file.getSize(), 
+            file.getContentType(), "GENERAL", 0L, 1L);
+        // 这里需要实现完整的分片上传流程
+        throw new UnsupportedOperationException("请使用完整的分片上传API");
+    }
+
+    @Override
+    public byte[] downloadFile(String filePath) {
+        try {
+            Path path = Paths.get(fileSecurityConfig.getStorageDir(), filePath);
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "文件读取失败");
+        }
+    }
+
+    @Override
+    public InputStream getFileStream(String filePath) {
+        try {
+            Path path = Paths.get(fileSecurityConfig.getStorageDir(), filePath);
+            return Files.newInputStream(path);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "文件读取失败");
+        }
+    }
+
+    @Override
+    public boolean deleteFile(String filePath) {
+        try {
+            Path path = Paths.get(fileSecurityConfig.getStorageDir(), filePath);
+            return Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.error("删除文件失败: " + filePath, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Map<String, Boolean> deleteFiles(List<String> filePaths) {
+        return filePaths.stream()
+            .collect(Collectors.toMap(
+                path -> path,
+                this::deleteFile
+            ));
+    }
+
+    @Override
+    public boolean fileExists(String filePath) {
+        Path path = Paths.get(fileSecurityConfig.getStorageDir(), filePath);
+        return Files.exists(path);
+    }
+
+    @Override
+    public long getFileSize(String filePath) {
+        try {
+            Path path = Paths.get(fileSecurityConfig.getStorageDir(), filePath);
+            return Files.size(path);
+        } catch (IOException e) {
+            return -1;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getFileInfo(String filePath) {
+        try {
+            Path path = Paths.get(fileSecurityConfig.getStorageDir(), filePath);
+            Map<String, Object> info = new HashMap<>();
+            info.put("exists", Files.exists(path));
+            if (Files.exists(path)) {
+                info.put("size", Files.size(path));
+                info.put("lastModified", Files.getLastModifiedTime(path).toString());
+            }
+            return info;
+        } catch (IOException e) {
+            Map<String, Object> info = new HashMap<>();
+            info.put("exists", false);
+            info.put("error", e.getMessage());
+            return info;
+        }
+    }
+
+    @Override
+    public String generateAccessUrl(String filePath, int expireMinutes) {
+        // 生成临时访问URL
+        String token = UUID.randomUUID().toString();
+        // 这里应该实现token管理
+        return "/api/files/access/" + token;
+    }
+
+    @Override
+    public String generateUploadUrl(String fileName, String directory, int expireMinutes) {
+        // 生成预签名上传URL
+        String token = UUID.randomUUID().toString();
+        return "/api/files/upload/" + token;
+    }
+
+    @Override
+    public String copyFile(String sourcePath, String targetPath) {
+        try {
+            Path source = Paths.get(fileSecurityConfig.getStorageDir(), sourcePath);
+            Path target = Paths.get(fileSecurityConfig.getStorageDir(), targetPath);
+            Files.createDirectories(target.getParent());
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            return targetPath;
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "文件复制失败");
+        }
+    }
+
+    @Override
+    public String moveFile(String sourcePath, String targetPath) {
+        try {
+            Path source = Paths.get(fileSecurityConfig.getStorageDir(), sourcePath);
+            Path target = Paths.get(fileSecurityConfig.getStorageDir(), targetPath);
+            Files.createDirectories(target.getParent());
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+            return targetPath;
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "文件移动失败");
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> listFiles(String directory, String prefix) {
+        try {
+            Path dir = Paths.get(fileSecurityConfig.getStorageDir(), directory);
+            if (!Files.exists(dir)) {
+                return Collections.emptyList();
+            }
+            
+            return Files.walk(dir, 1)
+                .filter(path -> !Files.isDirectory(path))
+                .filter(path -> prefix == null || path.getFileName().toString().startsWith(prefix))
+                .map(path -> {
+                    Map<String, Object> fileInfo = new HashMap<>();
+                    fileInfo.put("name", path.getFileName().toString());
+                    fileInfo.put("path", dir.relativize(path).toString());
+                    try {
+                        fileInfo.put("size", Files.size(path));
+                        fileInfo.put("lastModified", Files.getLastModifiedTime(path).toString());
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                    return fileInfo;
+                })
+                .collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("列举文件失败: " + directory, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public boolean createDirectory(String directory) {
+        try {
+            Path dir = Paths.get(fileSecurityConfig.getStorageDir(), directory);
+            Files.createDirectories(dir);
+            return true;
+        } catch (IOException e) {
+            log.error("创建目录失败: " + directory, e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteDirectory(String directory) {
+        try {
+            Path dir = Paths.get(fileSecurityConfig.getStorageDir(), directory);
+            if (Files.exists(dir)) {
+                Files.walk(dir)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+            }
+            return true;
+        } catch (IOException e) {
+            log.error("删除目录失败: " + directory, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Map<String, Object> getStorageStats() {
+        Map<String, Object> stats = new HashMap<>();
+        try {
+            Path storageRoot = Paths.get(fileSecurityConfig.getStorageDir());
+            long totalSize = Files.walk(storageRoot)
+                .filter(Files::isRegularFile)
+                .mapToLong(path -> {
+                    try {
+                        return Files.size(path);
+                    } catch (IOException e) {
+                        return 0;
+                    }
+                })
+                .sum();
+            
+            long fileCount = Files.walk(storageRoot)
+                .filter(Files::isRegularFile)
+                .count();
+            
+            stats.put("totalSize", totalSize);
+            stats.put("fileCount", fileCount);
+            stats.put("formattedSize", formatFileSize(totalSize));
+        } catch (IOException e) {
+            log.error("获取存储统计失败", e);
+            stats.put("error", e.getMessage());
+        }
+        return stats;
+    }
+
+    // === 私有辅助方法 ===
+
+    private String generateSecureFileName(String originalFileName) {
+        String extension = getFileExtension(originalFileName);
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String random = UUID.randomUUID().toString().substring(0, 8);
+        return timestamp + "_" + random + "." + extension;
+    }
+
+    private String generateFilePath(String businessType, Long businessId, String fileName) {
+        String year = String.valueOf(LocalDateTime.now().getYear());
+        String month = String.format("%02d", LocalDateTime.now().getMonthValue());
+        String day = String.format("%02d", LocalDateTime.now().getDayOfMonth());
+        
+        return String.join("/", businessType.toLowerCase(), year, month, day, fileName);
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.lastIndexOf('.') == -1) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf('.') + 1);
+    }
+
+    private void storeEncryptedFile(MultipartFile file, Path targetPath) throws Exception {
+        // 生成AES密钥
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+        keyGenerator.init(256);
+        SecretKey secretKey = keyGenerator.generateKey();
+        
+        // 加密并存储
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        
+        try (InputStream input = file.getInputStream();
+             OutputStream output = Files.newOutputStream(targetPath)) {
+            
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                byte[] encryptedChunk = cipher.update(buffer, 0, bytesRead);
+                if (encryptedChunk != null) {
+                    output.write(encryptedChunk);
+                }
+            }
+            byte[] finalChunk = cipher.doFinal();
+            if (finalChunk != null) {
+                output.write(finalChunk);
+            }
+        }
+        
+        // 存储密钥（实际应用中应安全存储）
+        storeEncryptionKey(targetPath.toString(), secretKey);
+    }
+
+    private void storeEncryptionKey(String filePath, SecretKey key) {
+        // 简化实现，实际应用中应使用专业的密钥管理服务
+        // 这里仅作演示
+        try {
+            Path keyPath = Paths.get(filePath + ".key");
+            Files.write(keyPath, key.getEncoded());
+        } catch (IOException e) {
+            log.error("存储加密密钥失败: " + filePath, e);
+        }
+    }
+
+    private String calculateFileMd5(File file) throws IOException, NoSuchAlgorithmException {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        try (InputStream input = new FileInputStream(file)) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                md5.update(buffer, 0, bytesRead);
+            }
+        }
+        return HexFormat.of().formatHex(md5.digest());
+    }
+
+    private void mergeChunks(ChunkUploadSession session, Path targetPath) throws IOException {
+        try (OutputStream output = Files.newOutputStream(targetPath)) {
+            int totalChunks = (int) Math.ceil((double) session.getFileSize() / (5 * 1024 * 1024));
+            
+            for (int i = 0; i < totalChunks; i++) {
+                Path chunkPath = Paths.get(session.getTempDir(), "chunk_" + i);
+                Files.copy(chunkPath, output);
+            }
+        }
+    }
+
+    private void encryptFileInPlace(Path filePath) throws Exception {
+        // 读取原文件
+        byte[] originalData = Files.readAllBytes(filePath);
+        
+        // 生成密钥
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+        keyGenerator.init(256);
+        SecretKey secretKey = keyGenerator.generateKey();
+        
+        // 加密
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        byte[] encryptedData = cipher.doFinal(originalData);
+        
+        // 覆盖原文件
+        Files.write(filePath, encryptedData);
+        
+        // 存储密钥
+        storeEncryptionKey(filePath.toString(), secretKey);
+    }
+
+    private SecurityValidationResult validateMergedFile(Path filePath, String fileName, String mimeType) {
+        // 简化验证，实际应用中需要更完整的验证
+        SecurityValidationResult result = new SecurityValidationResult();
+        
+        try {
+            if (!Files.exists(filePath)) {
+                result.setValid(false);
+                result.setMessage("合并文件不存在");
+                return result;
+            }
+            
+            long fileSize = Files.size(filePath);
+            if (fileSize > fileSecurityConfig.getMaxFileSize()) {
+                result.setValid(false);
+                result.setMessage("文件过大");
+                return result;
+            }
+            
+            result.setValid(true);
+            result.setMessage("验证通过");
+            
+        } catch (IOException e) {
+            result.setValid(false);
+            result.setMessage("文件验证失败: " + e.getMessage());
+        }
+        
+        return result;
+    }
+
+    private void cleanupTempDir(String tempDir) {
+        try {
+            Path dir = Paths.get(tempDir);
+            if (Files.exists(dir)) {
+                Files.walk(dir)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+            }
+        } catch (IOException e) {
+            log.error("清理临时目录失败: " + tempDir, e);
+        }
+    }
+
+    private FileUploadResponse buildFileUploadResponse(CaseAttachment attachment) {
+        FileUploadResponse response = new FileUploadResponse();
+        response.setId(attachment.getId());
+        response.setOriginalFileName(attachment.getOriginalFileName());
+        response.setStoredFileName(attachment.getStoredFileName());
+        response.setFilePath(attachment.getFilePath());
+        response.setFileSize(attachment.getFileSize());
+        response.setMimeType(attachment.getMimeType());
+        response.setCategory(attachment.getCategory());
+        response.setUploadedAt(attachment.getUploadedAt());
+        response.setFileMd5(attachment.getFileMd5());
+        response.setFormattedSize(formatFileSize(attachment.getFileSize()));
+        
+        // 生成下载URL（如果需要）
+        // response.setDownloadUrl(getDownloadUrl(attachment.getId(), 3600));
+        
+        return response;
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / 1024.0 / 1024.0);
+        return String.format("%.1f GB", bytes / 1024.0 / 1024.0 / 1024.0);
+    }
+
+    private long calculateTotalSize() {
+        return caseAttachmentRepository.findAll().stream()
+            .mapToLong(CaseAttachment::getFileSize)
+            .sum();
+    }
+
+    private Map<String, Object> calculateStorageUsage() {
+        Map<String, Object> usage = new HashMap<>();
+        // 实现存储使用统计逻辑
+        usage.put("used", calculateTotalSize());
+        usage.put("available", Long.MAX_VALUE); // 简化实现
+        return usage;
+    }
+
+    // === 内部类 ===
+
+    private static class ChunkUploadSession {
+        private String uploadId;
+        private String fileName;
+        private Long fileSize;
+        private String fileType;
+        private String businessType;
+        private Long businessId;
+        private Long userId;
+        private String tempDir;
+        private LocalDateTime createdAt;
+        private LocalDateTime expireAt;
+        private Set<Integer> uploadedChunks = new HashSet<>();
+        private Map<Integer, String> chunkMd5Map = new HashMap<>();
+
+        // Getters and Setters
+        public String getUploadId() { return uploadId; }
+        public void setUploadId(String uploadId) { this.uploadId = uploadId; }
+        public String getFileName() { return fileName; }
+        public void setFileName(String fileName) { this.fileName = fileName; }
+        public Long getFileSize() { return fileSize; }
+        public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+        public String getFileType() { return fileType; }
+        public void setFileType(String fileType) { this.fileType = fileType; }
+        public String getBusinessType() { return businessType; }
+        public void setBusinessType(String businessType) { this.businessType = businessType; }
+        public Long getBusinessId() { return businessId; }
+        public void setBusinessId(Long businessId) { this.businessId = businessId; }
+        public Long getUserId() { return userId; }
+        public void setUserId(Long userId) { this.userId = userId; }
+        public String getTempDir() { return tempDir; }
+        public void setTempDir(String tempDir) { this.tempDir = tempDir; }
+        public LocalDateTime getCreatedAt() { return createdAt; }
+        public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+        public LocalDateTime getExpireAt() { return expireAt; }
+        public void setExpireAt(LocalDateTime expireAt) { this.expireAt = expireAt; }
+        public Set<Integer> getUploadedChunks() { return uploadedChunks; }
+        public void setUploadedChunks(Set<Integer> uploadedChunks) { this.uploadedChunks = uploadedChunks; }
+        public Map<Integer, String> getChunkMd5Map() { return chunkMd5Map; }
+        public void setChunkMd5Map(Map<Integer, String> chunkMd5Map) { this.chunkMd5Map = chunkMd5Map; }
+    }
+
+    private static class FileAccessToken {
+        private String token;
+        private Long fileId;
+        private LocalDateTime expireAt;
+
+        // Getters and Setters
+        public String getToken() { return token; }
+        public void setToken(String token) { this.token = token; }
+        public Long getFileId() { return fileId; }
+        public void setFileId(Long fileId) { this.fileId = fileId; }
+        public LocalDateTime getExpireAt() { return expireAt; }
+        public void setExpireAt(LocalDateTime expireAt) { this.expireAt = expireAt; }
+    }
+}

@@ -1,0 +1,402 @@
+package com.drmp.service.impl;
+
+import com.drmp.dto.request.DashboardQueryRequest;
+import com.drmp.dto.response.DashboardResponse;
+import com.drmp.entity.Organization;
+import com.drmp.entity.report.OrganizationPerformanceSummary;
+import com.drmp.entity.report.PlatformOperationStats;
+import com.drmp.repository.OrganizationRepository;
+import com.drmp.repository.CasePackageRepository;
+import com.drmp.repository.CaseDetailRepository;
+import com.drmp.service.ReportAnalysisService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 报表分析服务实现
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ReportAnalysisServiceImpl implements ReportAnalysisService {
+
+    private final EntityManager entityManager;
+    private final OrganizationRepository organizationRepository;
+    private final CasePackageRepository casePackageRepository;
+    private final CaseDetailRepository caseDetailRepository;
+
+    @Override
+    public DashboardResponse getSourceOrgDashboard(Long organizationId, DashboardQueryRequest request) {
+        log.info("获取案源方业绩看板数据: organizationId={}", organizationId);
+
+        // 验证机构是否存在且为案源机构
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new RuntimeException("机构不存在"));
+        
+        if (!Organization.OrganizationType.SOURCE.equals(organization.getType())) {
+            throw new RuntimeException("非案源机构不能查看案源方看板");
+        }
+
+        // 构建概览数据
+        DashboardResponse.OverviewData overview = buildSourceOrgOverview(organizationId, request);
+        
+        // 构建趋势数据
+        List<DashboardResponse.TrendData> trends = buildRecoveryTrends(organizationId, request);
+        
+        // 构建图表数据
+        Map<String, Object> charts = buildSourceOrgCharts(organizationId, request);
+        
+        // 构建排行榜数据（合作处置机构排行）
+        List<DashboardResponse.RankingData> rankings = getDisposalOrgPerformanceComparison(organizationId, request);
+
+        return DashboardResponse.builder()
+                .overview(overview)
+                .trends(trends)
+                .charts(charts)
+                .rankings(rankings)
+                .build();
+    }
+
+    @Override
+    public DashboardResponse getDisposalOrgDashboard(Long organizationId, DashboardQueryRequest request) {
+        log.info("获取处置方效能看板数据: organizationId={}", organizationId);
+
+        // 验证机构是否存在且为处置机构
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new RuntimeException("机构不存在"));
+        
+        if (!Organization.OrganizationType.DISPOSAL.equals(organization.getType())) {
+            throw new RuntimeException("非处置机构不能查看处置方看板");
+        }
+
+        // 构建概览数据
+        DashboardResponse.OverviewData overview = buildDisposalOrgOverview(organizationId, request);
+        
+        // 构建趋势数据
+        List<DashboardResponse.TrendData> trends = buildEfficiencyTrends(organizationId, request);
+        
+        // 构建图表数据
+        Map<String, Object> charts = buildDisposalOrgCharts(organizationId, request);
+        
+        // 构建排行榜数据（内部人员排行）
+        List<DashboardResponse.RankingData> rankings = getStaffPerformanceRanking(organizationId, request);
+
+        return DashboardResponse.builder()
+                .overview(overview)
+                .trends(trends)
+                .charts(charts)
+                .rankings(rankings)
+                .build();
+    }
+
+    @Override
+    public DashboardResponse getPlatformOperationDashboard(DashboardQueryRequest request) {
+        log.info("获取平台运营看板数据");
+
+        // 构建概览数据
+        DashboardResponse.OverviewData overview = buildPlatformOverview(request);
+        
+        // 构建趋势数据
+        List<DashboardResponse.TrendData> trends = buildPlatformTrends(request);
+        
+        // 构建图表数据
+        Map<String, Object> charts = buildPlatformCharts(request);
+        
+        // 构建排行榜数据（机构排行）
+        List<DashboardResponse.RankingData> rankings = buildOrganizationRankings(request);
+
+        return DashboardResponse.builder()
+                .overview(overview)
+                .trends(trends)
+                .charts(charts)
+                .rankings(rankings)
+                .build();
+    }
+
+    @Override
+    public List<DashboardResponse.RankingData> getDisposalOrgPerformanceComparison(Long sourceOrgId, DashboardQueryRequest request) {
+        String sql = "SELECT " +
+            "o.id, " +
+            "o.organization_name, " +
+            "SUM(cps.recovered_amount) as total_recovered, " +
+            "AVG(cps.recovery_rate) as avg_recovery_rate, " +
+            "SUM(cps.completed_cases) as total_completed, " +
+            "AVG(cps.avg_processing_days) as avg_days " +
+            "FROM organizations o " +
+            "JOIN case_performance_stats cps ON o.id = cps.disposal_org_id " +
+            "WHERE cps.source_org_id = ?1 " +
+            "AND cps.statistic_date BETWEEN ?2 AND ?3 " +
+            "GROUP BY o.id, o.organization_name " +
+            "ORDER BY avg_recovery_rate DESC " +
+            "LIMIT ?4";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter(1, sourceOrgId);
+        query.setParameter(2, request.getStartDate());
+        query.setParameter(3, request.getEndDate());
+        query.setParameter(4, request.getLimit() != null ? request.getLimit() : 10);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(row -> {
+                    Map<String, Object> details = new HashMap<>();
+                    details.put("totalRecovered", row[2]);
+                    details.put("avgRecoveryRate", row[3]);
+                    details.put("totalCompleted", row[4]);
+                    details.put("avgProcessingDays", row[5]);
+
+                    return DashboardResponse.RankingData.builder()
+                            .id(((Number) row[0]).longValue())
+                            .name((String) row[1])
+                            .value((BigDecimal) row[3]) // 使用回款率作为主要排序值
+                            .category("DISPOSAL_ORG")
+                            .details(details)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<DashboardResponse.RankingData> getStaffPerformanceRanking(Long disposalOrgId, DashboardQueryRequest request) {
+        // 这里需要用户表和用户业绩统计表，暂时返回模拟数据
+        // 实际实现需要查询 user_performance_stats 表
+        
+        List<DashboardResponse.RankingData> rankings = new ArrayList<>();
+        
+        // 模拟数据
+        for (int i = 1; i <= 10; i++) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("handledCases", 50 + i * 5);
+            details.put("completedCases", 40 + i * 4);
+            details.put("recoveredAmount", BigDecimal.valueOf(100000 + i * 10000));
+            details.put("successRate", BigDecimal.valueOf(80 + i));
+
+            rankings.add(DashboardResponse.RankingData.builder()
+                    .id((long) i)
+                    .name("员工" + i)
+                    .value(BigDecimal.valueOf(80 + i))
+                    .rank(i)
+                    .category("STAFF")
+                    .details(details)
+                    .build());
+        }
+        
+        return rankings;
+    }
+
+    @Override
+    public List<DashboardResponse.DistributionData> getCaseTypeAnalysis(Long organizationId, DashboardQueryRequest request) {
+        // 实现案件类型分析逻辑
+        return new ArrayList<>();
+    }
+
+    @Override
+    public List<DashboardResponse.DistributionData> getRegionalAnalysis(Long organizationId, DashboardQueryRequest request) {
+        // 实现地域分析逻辑
+        return new ArrayList<>();
+    }
+
+    @Override
+    public List<DashboardResponse.TrendData> getRecoveryTrendAnalysis(Long organizationId, DashboardQueryRequest request) {
+        return buildRecoveryTrends(organizationId, request);
+    }
+
+    @Override
+    public List<DashboardResponse.DistributionData> getCaseStatusDistribution(Long organizationId, DashboardQueryRequest request) {
+        // 实现案件状态分布逻辑
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Map<String, Object> getRealTimeStatistics(Long organizationId) {
+        Map<String, Object> realTimeStats = new HashMap<>();
+        
+        if (organizationId != null) {
+            // 获取特定机构的实时数据
+            realTimeStats.put("activeCases", caseDetailRepository.countByAssignedOrgIdAndDisposalStatus(
+                    organizationId, Arrays.asList("PROCESSING", "ASSIGNED")));
+            realTimeStats.put("todayCompleted", caseDetailRepository.countTodayCompletedByOrg(organizationId));
+        } else {
+            // 获取平台整体实时数据
+            realTimeStats.put("totalActiveCases", caseDetailRepository.countByDisposalStatusIn(
+                    Arrays.asList("PROCESSING", "ASSIGNED")));
+            realTimeStats.put("todayCompleted", caseDetailRepository.countTodayCompleted());
+        }
+        
+        realTimeStats.put("timestamp", System.currentTimeMillis());
+        return realTimeStats;
+    }
+
+    @Override
+    public String generateStatisticsReport(Long organizationId, String reportType, DashboardQueryRequest request) {
+        // 实现报表生成逻辑
+        return "/reports/" + reportType + "_" + organizationId + "_" + System.currentTimeMillis() + ".xlsx";
+    }
+
+    @Override
+    @Transactional
+    public void aggregateDailyStatistics(LocalDate date) {
+        log.info("开始聚合统计数据: {}", date);
+        
+        try {
+            // 调用存储过程聚合统计数据
+            Query query = entityManager.createNativeQuery("CALL sp_aggregate_daily_statistics(?)");
+            query.setParameter(1, date);
+            query.executeUpdate();
+            
+            log.info("统计数据聚合完成: {}", date);
+        } catch (Exception e) {
+            log.error("统计数据聚合失败: {}", date, e);
+            throw new RuntimeException("统计数据聚合失败", e);
+        }
+    }
+
+    @Override
+    public List<DashboardResponse.TrendData> getOrganizationActivityTrend(DashboardQueryRequest request) {
+        // 实现机构活跃度趋势逻辑
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Map<String, Object> getPlatformRevenueAnalysis(DashboardQueryRequest request) {
+        // 实现平台收入分析逻辑
+        return new HashMap<>();
+    }
+
+    @Override
+    public List<DashboardResponse.ComparisonData> getDisposalMethodEffectiveness(Long organizationId, DashboardQueryRequest request) {
+        // 实现处置方式效果对比逻辑
+        return new ArrayList<>();
+    }
+
+    // ========== 私有辅助方法 ==========
+
+    private DashboardResponse.OverviewData buildSourceOrgOverview(Long organizationId, DashboardQueryRequest request) {
+        String sql = "SELECT " +
+            "SUM(ops.total_cases) as totalCases, " +
+            "SUM(ops.completed_cases) as completedCases, " +
+            "SUM(ops.total_amount) as totalAmount, " +
+            "SUM(ops.recovered_amount) as recoveredAmount, " +
+            "AVG(ops.recovery_rate) as recoveryRate, " +
+            "AVG(ops.avg_processing_days) as avgProcessingDays, " +
+            "SUM(ops.active_packages) as activePackages, " +
+            "SUM(ops.partnered_orgs) as partneredOrgs " +
+            "FROM organization_performance_summary ops " +
+            "WHERE ops.organization_id = ?1 " +
+            "AND ops.statistic_date BETWEEN ?2 AND ?3";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter(1, organizationId);
+        query.setParameter(2, request.getStartDate());
+        query.setParameter(3, request.getEndDate());
+
+        Object[] result = (Object[]) query.getSingleResult();
+
+        return DashboardResponse.OverviewData.builder()
+                .totalCases(result[0] != null ? ((Number) result[0]).intValue() : 0)
+                .completedCases(result[1] != null ? ((Number) result[1]).intValue() : 0)
+                .totalAmount(result[2] != null ? (BigDecimal) result[2] : BigDecimal.ZERO)
+                .recoveredAmount(result[3] != null ? (BigDecimal) result[3] : BigDecimal.ZERO)
+                .recoveryRate(result[4] != null ? (BigDecimal) result[4] : BigDecimal.ZERO)
+                .avgProcessingDays(result[5] != null ? (BigDecimal) result[5] : BigDecimal.ZERO)
+                .activePackages(result[6] != null ? ((Number) result[6]).intValue() : 0)
+                .partneredOrgs(result[7] != null ? ((Number) result[7]).intValue() : 0)
+                .build();
+    }
+
+    private DashboardResponse.OverviewData buildDisposalOrgOverview(Long organizationId, DashboardQueryRequest request) {
+        // 类似实现，但针对处置机构的指标
+        return DashboardResponse.OverviewData.builder()
+                .totalCases(0)
+                .completedCases(0)
+                .totalAmount(BigDecimal.ZERO)
+                .recoveredAmount(BigDecimal.ZERO)
+                .recoveryRate(BigDecimal.ZERO)
+                .avgProcessingDays(BigDecimal.ZERO)
+                .staffCount(0)
+                .casesPerStaff(BigDecimal.ZERO)
+                .successRate(BigDecimal.ZERO)
+                .build();
+    }
+
+    private DashboardResponse.OverviewData buildPlatformOverview(DashboardQueryRequest request) {
+        // 平台整体概览数据实现
+        return DashboardResponse.OverviewData.builder()
+                .totalOrgs(0)
+                .activeOrgs(0)
+                .totalCasesLong(0L)
+                .totalAmount(BigDecimal.ZERO)
+                .recoveredAmount(BigDecimal.ZERO)
+                .totalRevenue(BigDecimal.ZERO)
+                .build();
+    }
+
+    private List<DashboardResponse.TrendData> buildRecoveryTrends(Long organizationId, DashboardQueryRequest request) {
+        // 实现回款趋势数据构建
+        return new ArrayList<>();
+    }
+
+    private List<DashboardResponse.TrendData> buildEfficiencyTrends(Long organizationId, DashboardQueryRequest request) {
+        // 实现效率趋势数据构建
+        return new ArrayList<>();
+    }
+
+    private List<DashboardResponse.TrendData> buildPlatformTrends(DashboardQueryRequest request) {
+        // 实现平台趋势数据构建
+        return new ArrayList<>();
+    }
+
+    private Map<String, Object> buildSourceOrgCharts(Long organizationId, DashboardQueryRequest request) {
+        Map<String, Object> charts = new HashMap<>();
+        
+        // 案件状态分布饼图
+        charts.put("caseStatusPie", getCaseStatusDistribution(organizationId, request));
+        
+        // 处置机构对比柱状图
+        charts.put("disposalOrgComparison", getDisposalOrgPerformanceComparison(organizationId, request));
+        
+        return charts;
+    }
+
+    private Map<String, Object> buildDisposalOrgCharts(Long organizationId, DashboardQueryRequest request) {
+        Map<String, Object> charts = new HashMap<>();
+        
+        // 人员业绩对比
+        charts.put("staffPerformance", getStaffPerformanceRanking(organizationId, request));
+        
+        // 案件类型分析
+        charts.put("caseTypeAnalysis", getCaseTypeAnalysis(organizationId, request));
+        
+        return charts;
+    }
+
+    private Map<String, Object> buildPlatformCharts(DashboardQueryRequest request) {
+        Map<String, Object> charts = new HashMap<>();
+        
+        // 机构活跃度趋势
+        charts.put("orgActivityTrend", getOrganizationActivityTrend(request));
+        
+        // 收入分析
+        charts.put("revenueAnalysis", getPlatformRevenueAnalysis(request));
+        
+        return charts;
+    }
+
+    private List<DashboardResponse.RankingData> buildOrganizationRankings(DashboardQueryRequest request) {
+        // 实现机构排行榜数据构建
+        return new ArrayList<>();
+    }
+}

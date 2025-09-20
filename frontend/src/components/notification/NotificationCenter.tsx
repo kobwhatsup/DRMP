@@ -1,0 +1,383 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Badge,
+  Button,
+  Drawer,
+  List,
+  Avatar,
+  Typography,
+  Space,
+  Tag,
+  Empty,
+  Spin,
+  Divider,
+  Tooltip,
+  notification as antNotification
+} from 'antd';
+import {
+  BellOutlined,
+  CheckOutlined,
+  DeleteOutlined,
+  SettingOutlined,
+  ReloadOutlined
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { useAuth } from '../../hooks/useAuth';
+import { notificationAPI } from '../../services/api';
+
+dayjs.extend(relativeTime);
+
+const { Text } = Typography;
+
+interface NotificationMessage {
+  id: number;
+  type: string;
+  title: string;
+  content: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+  readAt?: string;
+  category: string;
+  extraData?: Record<string, any>;
+}
+
+interface NotificationStats {
+  total: number;
+  unread: number;
+  read: number;
+}
+
+const NotificationCenter: React.FC = () => {
+  const { user } = useAuth();
+  const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<NotificationMessage[]>([]);
+  const [stats, setStats] = useState<NotificationStats>({ total: 0, unread: 0, read: 0 });
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+
+  // 初始化WebSocket连接
+  useEffect(() => {
+    if (user?.id) {
+      initWebSocket();
+      loadNotifications();
+      loadStatistics();
+    }
+
+    return () => {
+      if (webSocket) {
+        webSocket.close();
+      }
+    };
+  }, [user?.id]);
+
+  const initWebSocket = () => {
+    try {
+      const wsUrl = `ws://localhost:8080/ws/notifications?userId=${user?.id}`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket连接已建立');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (error) {
+          console.error('解析WebSocket消息失败:', error);
+        }
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket连接已关闭:', event.reason);
+        // 尝试重连
+        setTimeout(() => {
+          if (user?.id) {
+            initWebSocket();
+          }
+        }, 5000);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket连接错误:', error);
+      };
+
+      setWebSocket(ws);
+    } catch (error) {
+      console.error('初始化WebSocket失败:', error);
+    }
+  };
+
+  const handleWebSocketMessage = (data: any) => {
+    if (data.type === 'notification') {
+      const newMessage = data.data;
+      
+      // 更新消息列表
+      setMessages(prev => [newMessage, ...prev]);
+      
+      // 更新统计
+      setStats(prev => ({
+        ...prev,
+        total: prev.total + 1,
+        unread: prev.unread + 1
+      }));
+      
+      // 显示桌面通知
+      showDesktopNotification(newMessage);
+    }
+  };
+
+  const showDesktopNotification = (message: NotificationMessage) => {
+    // 浏览器通知
+    if (Notification.permission === 'granted') {
+      new Notification(message.title, {
+        body: message.content,
+        icon: '/favicon.ico'
+      });
+    }
+    
+    // Antd通知
+    const priorityConfig = {
+      URGENT: { type: 'error' as const, duration: 0 },
+      HIGH: { type: 'warning' as const, duration: 6 },
+      NORMAL: { type: 'info' as const, duration: 4 },
+      LOW: { type: 'success' as const, duration: 3 }
+    };
+    
+    const config = priorityConfig[message.priority as keyof typeof priorityConfig] || priorityConfig.NORMAL;
+    
+    antNotification[config.type]({
+      message: message.title,
+      description: message.content,
+      duration: config.duration,
+      placement: 'topRight'
+    });
+  };
+
+  const loadNotifications = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      const response = await notificationAPI.getUnreadMessages(user.id);
+      if (response.success) {
+        setMessages(response.data);
+      }
+    } catch (error) {
+      console.error('加载通知失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStatistics = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await notificationAPI.getMessageStatistics(user.id);
+      if (response.success) {
+        setStats(response.data);
+      }
+    } catch (error) {
+      console.error('加载统计失败:', error);
+    }
+  };
+
+  const markAsRead = async (messageId: number) => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await notificationAPI.markAsRead(messageId, user.id);
+      if (response.success) {
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, status: 'read', readAt: new Date().toISOString() }
+              : msg
+          )
+        );
+        setStats(prev => ({
+          ...prev,
+          unread: Math.max(0, prev.unread - 1),
+          read: prev.read + 1
+        }));
+      }
+    } catch (error) {
+      console.error('标记已读失败:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const unreadMessages = messages.filter(msg => msg.status !== 'read');
+    
+    for (const message of unreadMessages) {
+      await markAsRead(message.id);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const colors = {
+      URGENT: 'red',
+      HIGH: 'orange',
+      NORMAL: 'blue',
+      LOW: 'green'
+    };
+    return colors[priority as keyof typeof colors] || 'blue';
+  };
+
+  const getTypeIcon = (type: string) => {
+    const icons = {
+      CASE_ASSIGNMENT: '📋',
+      CONTRACT_SIGNED: '📄',
+      PAYMENT_RECEIVED: '💰',
+      SYSTEM_ALERT: '⚠️'
+    };
+    return icons[type as keyof typeof icons] || '📢';
+  };
+
+  const requestNotificationPermission = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  };
+
+  // 请求通知权限
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  return (
+    <>
+      <Badge count={stats.unread} size="small" offset={[-2, 2]}>
+        <Button
+          type="text"
+          icon={<BellOutlined />}
+          onClick={() => setVisible(true)}
+          style={{ fontSize: '16px' }}
+        />
+      </Badge>
+
+      <Drawer
+        title={
+          <Space>
+            <BellOutlined />
+            通知中心
+            <Tag color="blue">{stats.unread} 未读</Tag>
+          </Space>
+        }
+        placement="right"
+        onClose={() => setVisible(false)}
+        open={visible}
+        width={400}
+        extra={
+          <Space>
+            <Tooltip title="标记全部已读">
+              <Button
+                type="text"
+                icon={<CheckOutlined />}
+                onClick={markAllAsRead}
+                disabled={stats.unread === 0}
+              />
+            </Tooltip>
+            <Tooltip title="刷新">
+              <Button
+                type="text"
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  loadNotifications();
+                  loadStatistics();
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="设置">
+              <Button
+                type="text"
+                icon={<SettingOutlined />}
+              />
+            </Tooltip>
+          </Space>
+        }
+      >
+        <Spin spinning={loading}>
+          {messages.length === 0 ? (
+            <Empty
+              description="暂无通知消息"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ) : (
+            <List
+              dataSource={messages}
+              renderItem={(message) => (
+                <List.Item
+                  style={{
+                    backgroundColor: message.status === 'read' ? '#f9f9f9' : '#fff',
+                    opacity: message.status === 'read' ? 0.8 : 1,
+                    marginBottom: '8px',
+                    borderRadius: '6px',
+                    border: '1px solid #f0f0f0',
+                    padding: '12px'
+                  }}
+                  actions={[
+                    message.status !== 'read' && (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<CheckOutlined />}
+                        onClick={() => markAsRead(message.id)}
+                      />
+                    )
+                  ].filter(Boolean)}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar size="small">
+                        {getTypeIcon(message.type)}
+                      </Avatar>
+                    }
+                    title={
+                      <Space>
+                        <Text strong={message.status !== 'read'}>
+                          {message.title}
+                        </Text>
+                        <Tag
+                          color={getPriorityColor(message.priority)}
+                        >
+                          {message.priority}
+                        </Tag>
+                      </Space>
+                    }
+                    description={
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {message.content}
+                        </Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: '11px' }}>
+                          {dayjs(message.createdAt).fromNow()}
+                        </Text>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          )}
+        </Spin>
+
+        <Divider />
+        
+        <div style={{ textAlign: 'center', color: '#999', fontSize: '12px' }}>
+          <Space split={<Divider type="vertical" />}>
+            <span>总计: {stats.total}</span>
+            <span>未读: {stats.unread}</span>
+            <span>已读: {stats.read}</span>
+          </Space>
+        </div>
+      </Drawer>
+    </>
+  );
+};
+
+export default NotificationCenter;

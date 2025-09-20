@@ -212,9 +212,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <BreadcrumbNav />
           </div>
 
-          <div style={{ flex: 1, margin: '0 16px 16px 16px', overflow: 'hidden' }}>
+          <div style={{ flex: 1, margin: '0 16px 16px 16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <TabContent>
-              <div style={{ padding: 24, background: '#fff', borderRadius: 8, height: '100%', overflow: 'auto' }}>
+              <div style={{ padding: 24, background: '#fff', borderRadius: 8, height: '100%' }}>
                 {children}
               </div>
             </TabContent>

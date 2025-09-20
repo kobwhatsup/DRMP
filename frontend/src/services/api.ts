@@ -142,6 +142,6 @@ export const performanceAPI = {
 };
 
 // Export notification API
-// export { notificationAPI } from './notificationAPI';
+export { notificationAPI } from './notificationAPI';
 
 export default apiService;

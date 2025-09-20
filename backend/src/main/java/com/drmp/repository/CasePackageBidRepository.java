@@ -10,6 +10,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import com.drmp.entity.CasePackage;
+import com.drmp.entity.Organization;
 
 /**
  * Case Package Bid Repository
@@ -54,4 +57,9 @@ public interface CasePackageBidRepository extends JpaRepository<CasePackageBid, 
      */
     @Query("SELECT b FROM CasePackageBid b WHERE b.casePackageId = :packageId AND b.isWinner = true")
     CasePackageBid findWinningBid(@Param("packageId") Long packageId);
+
+    /**
+     * Find bid by case package and disposal organization
+     */
+    Optional<CasePackageBid> findByCasePackageAndDisposalOrganization(CasePackage casePackage, Organization disposalOrganization);
 }
