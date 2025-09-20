@@ -469,7 +469,7 @@ public class CasePackageServiceImpl implements CasePackageService {
     public Page<CasePackageBidResponse> getMyBids(Long orgId, Pageable pageable) {
         log.info("Getting bids for org: {}", orgId);
         
-        Page<CasePackageBid> page = casePackageBidRepository.findByDisposalOrgId(orgId, pageable);
+        Page<CasePackageBid> page = casePackageBidRepository.findByDisposalOrganizationId(orgId, pageable);
         
         return page.map(this::convertToBidResponse);
     }

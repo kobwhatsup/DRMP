@@ -158,13 +158,18 @@ const NotificationCenter: React.FC = () => {
 
   const loadNotifications = async () => {
     if (!user?.id) return;
-    
+
     setLoading(true);
     try {
-      const response = await notificationAPI.getUnreadMessages(user.id);
-      if (response.success) {
-        setMessages(response.data);
-      }
+      const data = await notificationAPI.getUnreadMessages(String(user.id));
+      // Transform data to match component's NotificationMessage interface
+      const transformedMessages = data.map((msg: any) => ({
+        ...msg,
+        id: Number(msg.id),
+        category: msg.type,
+        extraData: {}
+      }));
+      setMessages(transformedMessages);
     } catch (error) {
       console.error('加载通知失败:', error);
     } finally {
@@ -174,12 +179,15 @@ const NotificationCenter: React.FC = () => {
 
   const loadStatistics = async () => {
     if (!user?.id) return;
-    
+
     try {
-      const response = await notificationAPI.getMessageStatistics(user.id);
-      if (response.success) {
-        setStats(response.data);
-      }
+      const data = await notificationAPI.getMessageStatistics(String(user.id));
+      // Transform stats data
+      setStats({
+        total: data.total || 0,
+        unread: data.unread || 0,
+        read: (data.total || 0) - (data.unread || 0)
+      });
     } catch (error) {
       console.error('加载统计失败:', error);
     }
@@ -187,23 +195,22 @@ const NotificationCenter: React.FC = () => {
 
   const markAsRead = async (messageId: number) => {
     if (!user?.id) return;
-    
+
     try {
-      const response = await notificationAPI.markAsRead(messageId, user.id);
-      if (response.success) {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === messageId 
-              ? { ...msg, status: 'read', readAt: new Date().toISOString() }
-              : msg
-          )
-        );
-        setStats(prev => ({
-          ...prev,
-          unread: Math.max(0, prev.unread - 1),
-          read: prev.read + 1
-        }));
-      }
+      await notificationAPI.markAsRead(String(messageId), String(user.id));
+      // Update local state after successful API call
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, status: 'read', readAt: new Date().toISOString() }
+            : msg
+        )
+      );
+      setStats(prev => ({
+        ...prev,
+        unread: Math.max(0, prev.unread - 1),
+        read: prev.read + 1
+      }));
     } catch (error) {
       console.error('标记已读失败:', error);
     }

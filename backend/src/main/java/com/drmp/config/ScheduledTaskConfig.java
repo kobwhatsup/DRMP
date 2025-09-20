@@ -1,7 +1,7 @@
 package com.drmp.config;
 
 import com.drmp.auth.UnifiedAuthenticationManager;
-import com.drmp.gateway.ApiGatewayMetrics;
+// import com.drmp.gateway.ApiGatewayMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class ScheduledTaskConfig {
 
     private final UnifiedAuthenticationManager authManager;
-    private final ApiGatewayMetrics gatewayMetrics;
+    // private final ApiGatewayMetrics gatewayMetrics;
 
     /**
      * 每5分钟清理一次过期会话
@@ -45,7 +45,7 @@ public class ScheduledTaskConfig {
     public void cleanupGatewayMetrics() {
         try {
             log.debug("Starting scheduled cleanup of gateway metrics");
-            gatewayMetrics.cleanupExpiredData();
+            // gatewayMetrics.cleanupExpiredData();
             log.debug("Completed scheduled cleanup of gateway metrics");
         } catch (Exception e) {
             log.error("Failed to cleanup gateway metrics", e);
@@ -58,10 +58,10 @@ public class ScheduledTaskConfig {
     @Scheduled(fixedRate = 3600000) // 1小时
     public void logSystemStatus() {
         try {
-            // 记录网关状态
-            ApiGatewayMetrics.GatewayStats gatewayStats = gatewayMetrics.getStats();
-            log.info("Gateway Status - Total Requests: {}, Success Rate: {:.2f}%, Active Connections: {}", 
-                gatewayStats.totalRequests, gatewayStats.successRate, gatewayStats.activeConnections);
+            // 记录网关状态 - 暂时禁用
+            // ApiGatewayMetrics.GatewayStats gatewayStats = gatewayMetrics.getStats();
+            // log.info("Gateway Status - Total Requests: {}, Success Rate: {:.2f}%, Active Connections: {}",
+            //     gatewayStats.totalRequests, gatewayStats.successRate, gatewayStats.activeConnections);
 
             // 记录认证状态
             UnifiedAuthenticationManager.AuthenticationStats authStats = authManager.getStats();
@@ -97,7 +97,7 @@ public class ScheduledTaskConfig {
 
             // 深度清理
             authManager.cleanupExpiredSessions();
-            gatewayMetrics.cleanupExpiredData();
+            // gatewayMetrics.cleanupExpiredData();
 
             log.info("Daily system maintenance completed");
 
