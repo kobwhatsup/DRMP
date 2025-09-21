@@ -71,6 +71,7 @@ public class SecurityConfig {
                 .antMatchers("/v1/auth/**").permitAll()
                 .antMatchers("/v1/public/**").permitAll()
                 .antMatchers("/v1/dev/**").permitAll() // Development endpoints
+                .antMatchers("/api/v1/case-packages/**").permitAll() // Temporarily allow unauthenticated access for development
                 .antMatchers("/actuator/**").permitAll()
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Static resources
