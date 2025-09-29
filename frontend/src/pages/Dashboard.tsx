@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div style={{ padding: '24px', background: '#fff', height: '100%', overflow: 'auto' }}>
       <Title level={3} style={{ marginBottom: 24 }}>
         工作台
       </Title>

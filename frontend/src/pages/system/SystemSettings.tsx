@@ -72,7 +72,7 @@ const SystemSettings: React.FC = () => {
     {
       id: 1,
       configKey: 'system.title',
-      configValue: 'DRMP全国分散诉调平台',
+      configValue: 'DRMP分散诉调平台',
       configGroup: 'system',
       configName: '系统标题',
       description: '系统页面标题',

@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 启动DRMP全国分散诉调平台..."
+echo "🚀 启动DRMP分散诉调平台..."
 
 # 检查系统环境
 check_requirements() {

@@ -262,7 +262,7 @@ const PlatformOperationDashboard: React.FC<PlatformOperationDashboardProps> = ()
   const overview = dashboardData?.overview;
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '24px', background: '#fff', height: '100%', overflow: 'auto' }}>
       {/* 页面标题和操作区 */}
       <Row justify="space-between" align="middle" style={{ marginBottom: '24px' }}>
         <Col>

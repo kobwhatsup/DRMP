@@ -403,7 +403,7 @@ public class ConfigServiceImpl implements ConfigService {
      */
     private Map<String, String> getDefaultValueMap() {
         Map<String, String> defaultValues = new HashMap<>();
-        defaultValues.put("system.title", "DRMP全国分散诉调平台");
+        defaultValues.put("system.title", "DRMP分散诉调平台");
         defaultValues.put("system.logo.url", "/assets/logo.png");
         defaultValues.put("security.password.min.length", "8");
         defaultValues.put("security.password.complexity", "true");

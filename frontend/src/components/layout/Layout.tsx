@@ -11,7 +11,6 @@ import {
 import { Layout as AntdLayout, Avatar, Button, Dropdown, Space, Typography } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import BreadcrumbNav from './BreadcrumbNav';
 import SideMenu from './SideMenu';
 import TabBar from './TabBar';
 import TabContent from './TabContent';
@@ -165,7 +164,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         >
           <Text strong style={{ color: 'white', fontSize: collapsed ? 16 : 18 }}>
-            {collapsed ? 'DRMP' : '全国分散诉调平台'}
+            {collapsed ? 'DRMP' : '分散诉调平台'}
           </Text>
         </div>
 
@@ -207,18 +206,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <TabBar />
 
-        <Content style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '8px 16px', background: '#fff' }}>
-            <BreadcrumbNav />
-          </div>
-
-          <div style={{ flex: 1, margin: '0 16px 16px 16px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <TabContent>
-              <div style={{ padding: 24, background: '#fff', borderRadius: 8, height: '100%' }}>
-                {children}
-              </div>
-            </TabContent>
-          </div>
+        <Content style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0, margin: 0, background: 'transparent' }}>
+          <TabContent>
+            {children}
+          </TabContent>
         </Content>
       </AntdLayout>
     </AntdLayout>

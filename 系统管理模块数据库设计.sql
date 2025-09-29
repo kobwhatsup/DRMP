@@ -396,7 +396,7 @@ INSERT INTO sys_permissions (permission_code, permission_name, description, reso
 
 -- 初始化配置数据
 INSERT INTO sys_configs (config_key, config_value, config_group, config_name, description, value_type) VALUES
-('system.title', 'DRMP全国分散诉调平台', 'system', '系统标题', '系统页面标题', 'STRING'),
+('system.title', 'DRMP分散诉调平台', 'system', '系统标题', '系统页面标题', 'STRING'),
 ('system.logo.url', '/assets/logo.png', 'system', '系统Logo', '系统Logo图片地址', 'STRING'),
 ('security.password.min.length', '8', 'security', '密码最小长度', '用户密码最小长度要求', 'NUMBER'),
 ('security.password.complexity', 'true', 'security', '密码复杂度检查', '是否启用密码复杂度检查', 'BOOLEAN'),
