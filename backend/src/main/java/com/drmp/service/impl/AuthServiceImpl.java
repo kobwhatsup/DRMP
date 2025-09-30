@@ -164,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
             // Remove refresh token from Redis
             String refreshKey = "refresh_token:" + userId;
             redisTemplate.delete(refreshKey);
-            
+
             // Add access token to blacklist (optional, for additional security)
             String blacklistKey = "blacklist_token:" + accessToken;
             long expireTime = jwtExpiration / 1000;
