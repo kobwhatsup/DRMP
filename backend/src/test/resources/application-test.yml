@@ -13,6 +13,8 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
+    repositories:
+      bootstrap-mode: deferred  # 延迟加载 Repository，避免启动时验证查询
 
   flyway:
     enabled: false  # 测试时使用Hibernate自动建表

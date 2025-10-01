@@ -33,12 +33,13 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long>, J
 
     /**
      * 查询需要跟进的记录
+     * TODO: 需要在 WorkRecord 实体中添加 followUpRequired 和 nextContactDate 字段
      */
-    @Query("SELECT wr FROM WorkRecord wr WHERE wr.followUpRequired = true " +
-           "AND wr.nextContactDate <= :now AND wr.isDeleted = false " +
-           "AND wr.handlerId = :handlerId ORDER BY wr.nextContactDate ASC")
-    List<WorkRecord> findFollowUpRecords(@Param("handlerId") Long handlerId, 
-                                        @Param("now") LocalDateTime now);
+//    @Query("SELECT wr FROM WorkRecord wr WHERE wr.followUpRequired = true " +
+//           "AND wr.nextContactDate <= :now AND wr.isDeleted = false " +
+//           "AND wr.handlerId = :handlerId ORDER BY wr.nextContactDate ASC")
+//    List<WorkRecord> findFollowUpRecords(@Param("handlerId") Long handlerId,
+//                                        @Param("now") LocalDateTime now);
 
     /**
      * 根据记录类型统计数量

@@ -117,11 +117,11 @@ public interface CaseImportRecordRepository extends JpaRepository<CaseImportReco
     /**
      * 获取每日导入趋势
      */
-    @Query("SELECT DATE(r.startedAt) as importDate, COUNT(r) as importCount, SUM(r.totalRows) as totalRows " +
-           "FROM CaseImportRecord r " +
-           "WHERE r.startedAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY DATE(r.startedAt) " +
-           "ORDER BY DATE(r.startedAt)")
+    @Query(value = "SELECT CAST(r.started_at AS DATE) as importDate, COUNT(r.id) as importCount, SUM(r.total_rows) as totalRows " +
+           "FROM case_import_records r " +
+           "WHERE r.started_at BETWEEN :startTime AND :endTime " +
+           "GROUP BY CAST(r.started_at AS DATE) " +
+           "ORDER BY CAST(r.started_at AS DATE)", nativeQuery = true)
     List<Object[]> getDailyImportTrend(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime);
 
     /**

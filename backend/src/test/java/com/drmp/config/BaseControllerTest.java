@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * @since 1.0.0
  */
 @SpringBootTest(classes = DrmpApplication.class)
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)  // 禁用Security filters以简化测试
 @ActiveProfiles("test")
 @WithMockUser(username = "testuser", roles = {"ADMIN"})
 public abstract class BaseControllerTest {

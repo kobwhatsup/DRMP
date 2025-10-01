@@ -1,9 +1,11 @@
 package com.drmp.config;
 
+import com.drmp.DrmpApplication;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Base Repository Test Class
@@ -14,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+@ContextConfiguration(classes = DrmpApplication.class)
 @ActiveProfiles("test")
 public abstract class BaseRepositoryTest {
 
