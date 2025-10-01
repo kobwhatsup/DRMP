@@ -1,0 +1,28 @@
+# 生产环境配置
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 生产环境禁止自动修改
+    show-sql: false
+
+  flyway:
+    clean-disabled: true  # 生产环境禁止clean操作
+    validate-on-migrate: true
+
+# 生产环境日志配置
+logging:
+  level:
+    root: WARN
+    com.drmp: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%X{traceId}] [%thread] %-5level %logger{50} - %msg%n"
+  file:
+    name: /var/log/drmp/drmp.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 10GB

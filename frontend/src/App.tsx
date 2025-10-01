@@ -48,59 +48,46 @@ const clearAllMessages = () => {
 
 // 开发模式配置
 const isDevelopment = process.env.NODE_ENV === 'development';
-const SKIP_LOGIN_IN_DEV = true; // 设置为 false 可以恢复正常登录流程
+const DEV_AUTO_LOGIN_ENABLED = process.env.REACT_APP_DEV_AUTO_LOGIN === 'true';
 
 /**
  * 开发模式自动登录组件
+ * 注意：使用真实的登录API，不再使用mock token
  */
 const DevAutoLogin: React.FC = () => {
   const { login } = useAuthStore();
-  
+  const [loginAttempted, setLoginAttempted] = React.useState(false);
+
   useEffect(() => {
     const performDevLogin = async () => {
-      if (isDevelopment && SKIP_LOGIN_IN_DEV) {
-        try {
-          // 直接使用模拟用户信息，不调用后端API
-          const mockUserInfo = {
-            id: 1,
-            username: 'admin',
-            email: 'admin@drmp.com',
-            name: '系统管理员',
-            phone: '13800000000',
-            avatar: '',
-            organizationId: 1,
-            organizationName: 'DRMP系统管理',
-            type: 'admin' as 'admin' | 'source_org' | 'disposal_org',
-            roles: ['ADMIN', 'CASE_MANAGER', 'CASE_VIEWER'],
-            permissions: [
-              'user:read', 'user:create', 'user:update', 'user:delete',
-              'organization:read', 'organization:create', 'organization:update', 'organization:delete', 'organization:approve',
-              'case_package:read', 'case_package:create', 'case_package:update', 'case_package:delete', 'case_package:assign',
-              'case:read', 'case:update',
-              'report:read', 'report:export',
-              'system:config', 'system:log'
-            ]
-          };
-          
-          // 生成一个简单的mock JWT token
-          const mockToken = btoa(JSON.stringify({
-            sub: mockUserInfo.username,
-            userId: mockUserInfo.id,
-            exp: Date.now() + 24 * 60 * 60 * 1000, // 24小时后过期
-            iat: Date.now()
-          }));
-          
-          login(`mock.${mockToken}.signature`, 'dev-refresh-token', mockUserInfo);
-          console.log('🚀 开发模式: 使用模拟token自动登录为系统管理员');
-        } catch (error) {
-          console.error('开发环境自动登录失败:', error);
-        }
+      // 只在开发环境 + 配置允许 + 未尝试登录时执行
+      if (!isDevelopment || !DEV_AUTO_LOGIN_ENABLED || loginAttempted) {
+        return;
+      }
+
+      try {
+        setLoginAttempted(true);
+
+        const username = process.env.REACT_APP_DEV_USERNAME || 'admin';
+        const password = process.env.REACT_APP_DEV_PASSWORD || 'admin123';
+
+        console.log('🔧 开发模式: 尝试自动登录...', { username });
+
+        // 调用真实的登录API
+        const authService = (await import('@/services/authService')).default;
+        const response = await authService.login({ username, password });
+
+        login(response.accessToken, response.refreshToken, response.userInfo);
+        console.log('✅ 开发模式: 自动登录成功', response.userInfo.name);
+      } catch (error) {
+        console.error('❌ 开发环境自动登录失败:', error);
+        // 失败时不做任何处理，让用户手动登录
       }
     };
 
     performDevLogin();
-  }, [login]);
-  
+  }, [login, loginAttempted]);
+
   return null;
 };
 
@@ -141,12 +128,18 @@ const App: React.FC = () => {
     };
   }, []);
   
+  // 生产环境安全检查
+  if (process.env.NODE_ENV === 'production' && DEV_AUTO_LOGIN_ENABLED) {
+    console.error('❌ 安全错误: 生产环境不允许开启自动登录!');
+    throw new Error('SECURITY ERROR: DEV_AUTO_LOGIN cannot be enabled in production!');
+  }
+
   return (
     <AntdApp>
       <Router>
-        {/* 开发模式自动登录 */}
-        {isDevelopment && SKIP_LOGIN_IN_DEV && <DevAutoLogin />}
-        
+        {/* 开发模式自动登录 - 仅在开发环境且配置允许时启用 */}
+        {isDevelopment && DEV_AUTO_LOGIN_ENABLED && <DevAutoLogin />}
+
         {/* 根据认证状态显示不同内容 */}
         {isAuthenticated ? (
           <Layout>
