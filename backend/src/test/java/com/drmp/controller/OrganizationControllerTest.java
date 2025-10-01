@@ -78,7 +78,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.content[0].orgCode").value("ORG001"));
 
         verify(organizationService).getOrganizations(any(Pageable.class), any(), any(), any());
@@ -100,7 +100,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .param("status", "ACTIVE")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).getOrganizations(any(Pageable.class), eq("测试"), eq(OrganizationType.BANK), eq(OrganizationStatus.ACTIVE));
     }
@@ -114,7 +114,7 @@ class OrganizationControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/v1/organizations/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.orgCode").value("ORG001"))
                 .andExpect(jsonPath("$.data.orgName").value("测试机构"));
 
@@ -126,8 +126,11 @@ class OrganizationControllerTest extends BaseControllerTest {
     @DisplayName("创建机构 - 成功")
     void createOrganization_ShouldCreateSuccessfully() throws Exception {
         OrganizationCreateRequest request = new OrganizationCreateRequest();
+        request.setOrgCode("ORG002");
         request.setOrgName("新机构");
         request.setType(OrganizationType.BANK);
+        request.setContactPerson("张三");
+        request.setContactPhone("13800138000");
 
         when(organizationService.createOrganization(any(OrganizationCreateRequest.class)))
                 .thenReturn(testOrgDetail);
@@ -136,7 +139,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.orgCode").value("ORG001"));
 
         verify(organizationService).createOrganization(any(OrganizationCreateRequest.class));
@@ -156,7 +159,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).updateOrganization(eq(1L), any(OrganizationUpdateRequest.class));
     }
@@ -168,7 +171,7 @@ class OrganizationControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/v1/organizations/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).deleteOrganization(1L);
     }
@@ -186,7 +189,7 @@ class OrganizationControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/v1/organizations/applications")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).getOrganizations(any(Pageable.class), isNull(), isNull(), eq(OrganizationStatus.PENDING));
     }
@@ -205,7 +208,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).approveOrganization(eq(1L), any(OrganizationApprovalRequest.class));
     }
@@ -224,7 +227,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(toJson(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).rejectOrganization(eq(1L), any(OrganizationApprovalRequest.class));
     }
@@ -240,7 +243,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .param("reason", "违规操作")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).suspendOrganization(eq(1L), anyString());
     }
@@ -255,7 +258,7 @@ class OrganizationControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/v1/organizations/1/activate")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).activateOrganization(1L);
     }
@@ -274,7 +277,7 @@ class OrganizationControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/v1/organizations/statistics")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.totalOrganizations").value(100));
 
         verify(organizationService).getOrganizationStatistics();
@@ -293,7 +296,7 @@ class OrganizationControllerTest extends BaseControllerTest {
                         .param("remark", "已支付")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).updateMembershipPayment(eq(1L), anyString(), anyString(), anyString());
     }
@@ -311,7 +314,7 @@ class OrganizationControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/v1/organizations/membership/pending")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.code").value(200));
 
         verify(organizationService).getPendingMembershipPayments(any(Pageable.class));
     }

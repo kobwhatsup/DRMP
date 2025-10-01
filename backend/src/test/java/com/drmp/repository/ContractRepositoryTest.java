@@ -63,7 +63,9 @@ class ContractRepositoryTest extends BaseRepositoryTest {
         newContract.setContractType(ContractType.DISPOSAL_CONTRACT);
         newContract.setStatus(ContractStatus.DRAFT);
         newContract.setPartyAId(1L);
+        newContract.setPartyAName("银行A");
         newContract.setPartyBId(2L);
+        newContract.setPartyBName("律所B");
 
         Contract saved = contractRepository.save(newContract);
 
@@ -171,7 +173,9 @@ class ContractRepositoryTest extends BaseRepositoryTest {
         expiredContract.setContractType(ContractType.DISPOSAL_CONTRACT);
         expiredContract.setStatus(ContractStatus.EFFECTIVE);
         expiredContract.setPartyAId(1L);
+        expiredContract.setPartyAName("银行A");
         expiredContract.setPartyBId(2L);
+        expiredContract.setPartyBName("律所B");
         expiredContract.setEffectiveDate(LocalDate.now().minusYears(1));
         expiredContract.setExpiryDate(LocalDate.now().minusDays(1));
         contractRepository.save(expiredContract);
@@ -265,7 +269,9 @@ class ContractRepositoryTest extends BaseRepositoryTest {
         highRiskContract.setContractType(ContractType.DISPOSAL_CONTRACT);
         highRiskContract.setStatus(ContractStatus.EFFECTIVE);
         highRiskContract.setPartyAId(1L);
+        highRiskContract.setPartyAName("银行A");
         highRiskContract.setPartyBId(2L);
+        highRiskContract.setPartyBName("律所B");
         highRiskContract.setRiskLevel("HIGH");
         highRiskContract.setEffectiveDate(LocalDate.now());
         highRiskContract.setExpiryDate(LocalDate.now().plusMonths(6));
