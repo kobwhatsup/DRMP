@@ -1,48 +1,69 @@
 spring:
+  # 排除Redis自动配置,避免测试时尝试连接真实Redis
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    # H2配置优化: 兼容MySQL,不区分大小写
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    # 连接池配置优化
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 5000
 
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    # 关闭SQL日志以减少噪音,提升测试速度
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.H2Dialect
+        # 批量操作优化
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
     repositories:
       bootstrap-mode: deferred  # 延迟加载 Repository，避免启动时验证查询
 
   flyway:
     enabled: false  # 测试时使用Hibernate自动建表
 
-  # Redis配置 - 使用嵌入式或Mock
-  redis:
-    host: localhost
-    port: 6379
-
   cache:
     type: simple  # 使用简单缓存而不是Redis
 
 # JWT配置
 jwt:
-  secret: test-secret-key-for-jwt-token-generation
+  secret: test-secret-key-for-jwt-token-generation-minimum-256-bits-required
   expiration: 3600000  # 1小时
   refresh-expiration: 604800000  # 7天
 
 # 加密密钥
 encryption:
-  secret-key: test-encryption-secret-key
+  secret-key: test-encryption-secret-key-32-bytes
   algorithm: AES
 
-# 日志配置
+# 禁用定时任务
+scheduling:
+  enabled: false
+
+# 日志配置 - 减少日志输出,聚焦测试结果
 logging:
   level:
-    root: INFO
-    com.drmp: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: WARN
+    com.drmp: INFO
+    org.springframework.security: INFO
+    org.springframework.web: WARN
+    org.springframework.test: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

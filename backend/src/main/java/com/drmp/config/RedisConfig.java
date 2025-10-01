@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,11 +16,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * Redis Configuration
- * 
+ * 只在RedisConnectionFactory可用时才加载此配置
+ * 测试环境下会被TestRedisConfig的@Primary Bean替换
+ *
  * @author DRMP Team
  * @since 1.0.0
  */
 @Configuration
+@ConditionalOnClass(RedisConnectionFactory.class)
 public class RedisConfig {
 
     @Bean
