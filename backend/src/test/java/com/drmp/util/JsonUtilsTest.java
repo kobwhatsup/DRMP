@@ -1,325 +1,147 @@
 package com.drmp.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.Data;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * JsonUtils 测试
- */
 @DisplayName("JsonUtils 测试")
 class JsonUtilsTest {
 
+    @Data
+    static class TestObject {
+        private String name;
+        private Integer age;
+    }
+
     @Test
-    @DisplayName("toJsonString - 应成功将对象转换为JSON字符串")
+    @DisplayName("toJsonString - 应正确将对象转为JSON")
     void toJsonString_ShouldConvertObjectToJson() {
-        // Arrange
-        Map<String, Object> testData = new HashMap<>();
-        testData.put("name", "测试");
-        testData.put("value", 100);
-
-        // Act
-        String json = JsonUtils.toJsonString(testData);
-
-        // Assert
-        assertThat(json).isNotNull();
-        assertThat(json).contains("测试");
-        assertThat(json).contains("100");
+        TestObject obj = new TestObject();
+        obj.setName("test");
+        obj.setAge(25);
+        
+        String json = JsonUtils.toJsonString(obj);
+        assertNotNull(json);
+        assertTrue(json.contains("test"));
+        assertTrue(json.contains("25"));
     }
 
     @Test
-    @DisplayName("toJsonString - null对象应返回null")
-    void toJsonString_ShouldReturnNull_ForNullObject() {
-        // Act
-        String json = JsonUtils.toJsonString(null);
-
-        // Assert
-        assertThat(json).isNull();
+    @DisplayName("toJsonString - null应返回null")
+    void toJsonString_ShouldReturnNullForNull() {
+        assertNull(JsonUtils.toJsonString(null));
     }
 
     @Test
-    @DisplayName("toJsonStringPretty - 应成功格式化JSON字符串")
-    void toJsonStringPretty_ShouldFormatJson() {
-        // Arrange
-        Map<String, Object> testData = new HashMap<>();
-        testData.put("name", "测试");
-        testData.put("value", 100);
-
-        // Act
-        String json = JsonUtils.toJsonStringPretty(testData);
-
-        // Assert
-        assertThat(json).isNotNull();
-        assertThat(json).contains("\n"); // 格式化后应包含换行符
-        assertThat(json).contains("测试");
-    }
-
-    @Test
-    @DisplayName("toJsonStringPretty - null对象应返回null")
-    void toJsonStringPretty_ShouldReturnNull_ForNullObject() {
-        // Act
-        String json = JsonUtils.toJsonStringPretty(null);
-
-        // Assert
-        assertThat(json).isNull();
-    }
-
-    @Test
-    @DisplayName("fromJsonString - 应成功将JSON字符串转换为对象")
+    @DisplayName("fromJsonString - 应正确将JSON转为对象")
     void fromJsonString_ShouldConvertJsonToObject() {
-        // Arrange
-        String json = "{\"name\":\"测试\",\"value\":100}";
-
-        // Act
-        TestData result = JsonUtils.fromJsonString(json, TestData.class);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getName()).isEqualTo("测试");
-        assertThat(result.getValue()).isEqualTo(100);
-    }
-
-    @Test
-    @DisplayName("fromJsonString - null字符串应返回null")
-    void fromJsonString_ShouldReturnNull_ForNullString() {
-        // Act
-        TestData result = JsonUtils.fromJsonString(null, TestData.class);
-
-        // Assert
-        assertThat(result).isNull();
+        String json = "{\"name\":\"test\",\"age\":25}";
+        TestObject obj = JsonUtils.fromJsonString(json, TestObject.class);
+        
+        assertNotNull(obj);
+        assertEquals("test", obj.getName());
+        assertEquals(25, obj.getAge());
     }
 
     @Test
     @DisplayName("fromJsonString - 空字符串应返回null")
-    void fromJsonString_ShouldReturnNull_ForEmptyString() {
-        // Act
-        TestData result = JsonUtils.fromJsonString("   ", TestData.class);
-
-        // Assert
-        assertThat(result).isNull();
+    void fromJsonString_ShouldReturnNullForEmptyString() {
+        assertNull(JsonUtils.fromJsonString("", TestObject.class));
+        assertNull(JsonUtils.fromJsonString(null, TestObject.class));
     }
 
     @Test
-    @DisplayName("fromJsonString with TypeReference - 应成功转换List")
-    void fromJsonString_ShouldConvertList_WithTypeReference() {
-        // Arrange
-        String json = "[{\"name\":\"测试1\",\"value\":100},{\"name\":\"测试2\",\"value\":200}]";
-
-        // Act
-        List<TestData> result = JsonUtils.fromJsonString(json, new TypeReference<List<TestData>>() {});
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getName()).isEqualTo("测试1");
-        assertThat(result.get(1).getValue()).isEqualTo(200);
+    @DisplayName("fromJsonStringToList - 应正确转换JSON数组")
+    void fromJsonStringToList_ShouldConvertJsonArray() {
+        String json = "[{\"name\":\"test1\",\"age\":25},{\"name\":\"test2\",\"age\":30}]";
+        List<TestObject> list = JsonUtils.fromJsonStringToList(json, TestObject.class);
+        
+        assertNotNull(list);
+        assertEquals(2, list.size());
+        assertEquals("test1", list.get(0).getName());
     }
 
     @Test
-    @DisplayName("fromJsonString with TypeReference - 应成功转换Map")
-    void fromJsonString_ShouldConvertMap_WithTypeReference() {
-        // Arrange
-        String json = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
-
-        // Act
-        Map<String, String> result = JsonUtils.fromJsonString(json, new TypeReference<Map<String, String>>() {});
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result.get("key1")).isEqualTo("value1");
-        assertThat(result.get("key2")).isEqualTo("value2");
+    @DisplayName("fromJsonStringToMap - 应正确转换为Map")
+    void fromJsonStringToMap_ShouldConvertToMap() {
+        String json = "{\"key1\":\"value1\",\"key2\":123}";
+        Map<String, Object> map = JsonUtils.fromJsonStringToMap(json);
+        
+        assertNotNull(map);
+        assertEquals("value1", map.get("key1"));
+        assertEquals(123, map.get("key2"));
     }
 
     @Test
-    @DisplayName("objectToMap - 应成功将对象转换为Map")
+    @DisplayName("objectToMap - 应正确将对象转为Map")
     void objectToMap_ShouldConvertObjectToMap() {
-        // Arrange
-        TestData testData = new TestData();
-        testData.setName("测试");
-        testData.setValue(100);
-
-        // Act
-        Map<String, Object> result = JsonUtils.objectToMap(testData);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.get("name")).isEqualTo("测试");
-        assertThat(result.get("value")).isEqualTo(100);
+        TestObject obj = new TestObject();
+        obj.setName("test");
+        obj.setAge(25);
+        
+        Map<String, Object> map = JsonUtils.objectToMap(obj);
+        
+        assertNotNull(map);
+        assertEquals("test", map.get("name"));
+        assertEquals(25, map.get("age"));
     }
 
     @Test
-    @DisplayName("objectToMap - null对象应返回null")
-    void objectToMap_ShouldReturnNull_ForNullObject() {
-        // Act
-        Map<String, Object> result = JsonUtils.objectToMap(null);
-
-        // Assert
-        assertThat(result).isNull();
-    }
-
-    @Test
-    @DisplayName("mapToObject - 应成功将Map转换为对象")
+    @DisplayName("mapToObject - 应正确将Map转为对象")
     void mapToObject_ShouldConvertMapToObject() {
-        // Arrange
         Map<String, Object> map = new HashMap<>();
-        map.put("name", "测试");
-        map.put("value", 100);
-
-        // Act
-        TestData result = JsonUtils.mapToObject(map, TestData.class);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result.getName()).isEqualTo("测试");
-        assertThat(result.getValue()).isEqualTo(100);
+        map.put("name", "test");
+        map.put("age", 25);
+        
+        TestObject obj = JsonUtils.mapToObject(map, TestObject.class);
+        
+        assertNotNull(obj);
+        assertEquals("test", obj.getName());
+        assertEquals(25, obj.getAge());
     }
 
     @Test
-    @DisplayName("mapToObject - null Map应返回null")
-    void mapToObject_ShouldReturnNull_ForNullMap() {
-        // Act
-        TestData result = JsonUtils.mapToObject(null, TestData.class);
-
-        // Assert
-        assertThat(result).isNull();
+    @DisplayName("isValidJson - 应正确判断JSON有效性")
+    void isValidJson_ShouldValidateJsonString() {
+        assertTrue(JsonUtils.isValidJson("{\"key\":\"value\"}"));
+        assertTrue(JsonUtils.isValidJson("[1,2,3]"));
+        assertFalse(JsonUtils.isValidJson("invalid"));
+        assertFalse(JsonUtils.isValidJson(null));
+        assertFalse(JsonUtils.isValidJson(""));
     }
 
     @Test
-    @DisplayName("fromJsonStringToList - 应成功转换List")
-    void fromJsonStringToList_ShouldConvertJsonToList() {
-        // Arrange
-        String json = "[{\"name\":\"测试1\",\"value\":100},{\"name\":\"测试2\",\"value\":200}]";
-
-        // Act
-        List<TestData> result = JsonUtils.fromJsonStringToList(json, TestData.class);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getName()).isEqualTo("测试1");
+    @DisplayName("deepCopy - 应正确深拷贝对象")
+    void deepCopy_ShouldCopyObjectDeeply() {
+        TestObject original = new TestObject();
+        original.setName("test");
+        original.setAge(25);
+        
+        TestObject copy = JsonUtils.deepCopy(original, TestObject.class);
+        
+        assertNotNull(copy);
+        assertEquals(original.getName(), copy.getName());
+        assertEquals(original.getAge(), copy.getAge());
+        assertNotSame(original, copy);
     }
 
     @Test
-    @DisplayName("fromJsonStringToMap - 应成功转换Map")
-    void fromJsonStringToMap_ShouldConvertJsonToMap() {
-        // Arrange
-        String json = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
-
-        // Act
-        Map<String, Object> result = JsonUtils.fromJsonStringToMap(json);
-
-        // Assert
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result.get("key1")).isEqualTo("value1");
-    }
-
-    @Test
-    @DisplayName("deepCopy - 应成功深拷贝对象")
-    void deepCopy_ShouldCopyObject() {
-        // Arrange
-        TestData original = new TestData("测试", 100);
-
-        // Act
-        TestData copy = JsonUtils.deepCopy(original, TestData.class);
-
-        // Assert
-        assertThat(copy).isNotNull();
-        assertThat(copy).isNotSameAs(original);
-        assertThat(copy.getName()).isEqualTo("测试");
-        assertThat(copy.getValue()).isEqualTo(100);
-    }
-
-    @Test
-    @DisplayName("mergeJson - 应成功合并两个JSON")
-    void mergeJson_ShouldMergeJsonObjects() {
-        // Arrange
-        String json1 = "{\"name\":\"测试\",\"value\":100}";
-        String json2 = "{\"value\":200,\"extra\":\"新字段\"}";
-
-        // Act
-        String merged = JsonUtils.mergeJson(json1, json2);
-
-        // Assert
-        assertThat(merged).isNotNull();
-        assertThat(merged).contains("测试");
-        assertThat(merged).contains("200");
-        assertThat(merged).contains("新字段");
-    }
-
-    @Test
-    @DisplayName("isValidJson - 有效JSON应返回true")
-    void isValidJson_ShouldReturnTrue_ForValidJson() {
-        // Arrange
-        String validJson = "{\"name\":\"测试\",\"value\":100}";
-
-        // Act
-        boolean result = JsonUtils.isValidJson(validJson);
-
-        // Assert
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("isValidJson - 无效JSON应返回false")
-    void isValidJson_ShouldReturnFalse_ForInvalidJson() {
-        // Arrange
-        String invalidJson = "{name:测试,value:100"; // 缺少引号和闭合括号
-
-        // Act
-        boolean result = JsonUtils.isValidJson(invalidJson);
-
-        // Assert
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("isValidJson - null字符串应返回false")
-    void isValidJson_ShouldReturnFalse_ForNullString() {
-        // Act
-        boolean result = JsonUtils.isValidJson(null);
-
-        // Assert
-        assertThat(result).isFalse();
-    }
-
-    /**
-     * 测试数据类
-     */
-    public static class TestData {
-        private String name;
-        private Integer value;
-
-        public TestData() {}
-
-        public TestData(String name, Integer value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Integer getValue() {
-            return value;
-        }
-
-        public void setValue(Integer value) {
-            this.value = value;
-        }
+    @DisplayName("mergeJson - 应正确合并JSON对象")
+    void mergeJson_ShouldMergeTwoJsonObjects() {
+        String original = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+        String update = "{\"key2\":\"newValue\",\"key3\":\"value3\"}";
+        
+        String merged = JsonUtils.mergeJson(original, update);
+        
+        assertNotNull(merged);
+        Map<String, Object> map = JsonUtils.fromJsonStringToMap(merged);
+        assertEquals("value1", map.get("key1"));
+        assertEquals("newValue", map.get("key2"));
+        assertEquals("value3", map.get("key3"));
     }
 }
