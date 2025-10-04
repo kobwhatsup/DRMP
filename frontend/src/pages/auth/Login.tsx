@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Card, message } from 'antd';
+import { Form, Input, Button, Typography, Card, Checkbox, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -75,6 +75,10 @@ const Login: React.FC = () => {
               placeholder="密码"
               autoComplete="current-password"
             />
+          </Form.Item>
+
+          <Form.Item name="rememberMe" valuePropName="checked" style={{ marginBottom: 16 }}>
+            <Checkbox>记住我（保持登录30天）</Checkbox>
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 8 }}>

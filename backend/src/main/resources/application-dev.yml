@@ -2,11 +2,17 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: update  # 开发环境可以自动更新schema
+      ddl-auto: validate  # 验证schema但不修改
     show-sql: true
 
   flyway:
+    enabled: false  # 暂时禁用Flyway
     clean-disabled: false  # 开发环境允许clean操作
+
+# API网关配置
+api:
+  gateway:
+    enabled: false  # 开发环境禁用API网关过滤器
 
 # 开发环境日志配置
 logging:

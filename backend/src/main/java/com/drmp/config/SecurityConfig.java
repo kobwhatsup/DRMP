@@ -5,6 +5,7 @@ import com.drmp.security.JwtAuthenticationEntryPoint;
 import com.drmp.security.JwtAuthenticationFilter;
 import com.drmp.security.RateLimitingFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,7 +28,7 @@ import java.util.Arrays;
 
 /**
  * Security Configuration
- * 
+ *
  * @author DRMP Team
  * @since 1.0.0
  */
@@ -40,7 +41,9 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final RateLimitingFilter rateLimitingFilter;
+
+    @Autowired(required = false)
+    private RateLimitingFilter rateLimitingFilter;
     // private final ApiGatewayFilter apiGatewayFilter;
 
     @Bean
@@ -82,10 +85,16 @@ public class SecurityConfig {
         http.authenticationProvider(authenticationProvider());
         // API网关过滤器最先执行，处理路由和基础认证 - 暂时禁用
         // http.addFilterBefore(apiGatewayFilter, UsernamePasswordAuthenticationFilter.class);
-        // 限流过滤器
-        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
-        // JWT认证过滤器最后执行
-        http.addFilterAfter(jwtAuthenticationFilter, RateLimitingFilter.class);
+
+        // 限流过滤器 (如果可用)
+        if (rateLimitingFilter != null) {
+            http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
+            // JWT认证过滤器在限流过滤器之后
+            http.addFilterAfter(jwtAuthenticationFilter, RateLimitingFilter.class);
+        } else {
+            // 没有限流过滤器时,JWT过滤器直接在UsernamePasswordAuthenticationFilter之前
+            http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
 
         return http.build();
     }

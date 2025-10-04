@@ -95,6 +95,24 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/logout-session/{sessionId}")
+    @Operation(summary = "登出指定会话", description = "终止指定的会话")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> logoutSession(@PathVariable String sessionId) {
+        try {
+            Long userId = authManager.getCurrentUser().getId();
+            authManager.logoutSession(sessionId, userId);
+
+            log.info("Session {} terminated for user: {}", sessionId, userId);
+            return ResponseEntity.ok(ApiResponse.successWithMessage("会话已终止"));
+
+        } catch (Exception e) {
+            log.error("Failed to logout session: {}", sessionId, e);
+            return ResponseEntity.ok(ApiResponse.error("终止会话失败"));
+        }
+    }
+
     @GetMapping("/sessions")
     @Operation(summary = "获取用户会话", description = "获取当前用户的所有活跃会话")
     @SecurityRequirement(name = "Bearer Authentication")
@@ -104,7 +122,7 @@ public class AuthController {
             Long userId = authManager.getCurrentUser().getId();
             List<UserSession> sessions = authManager.getActiveSessions(userId);
             return ResponseEntity.ok(ApiResponse.success(sessions));
-            
+
         } catch (Exception e) {
             log.error("Failed to get user sessions", e);
             return ResponseEntity.ok(ApiResponse.error("获取会话信息失败"));

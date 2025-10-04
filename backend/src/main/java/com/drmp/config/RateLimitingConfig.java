@@ -2,6 +2,7 @@ package com.drmp.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,12 +13,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * Rate Limiting Configuration
  * API接口限流配置
- * 
+ *
  * @author DRMP Team
  * @since 1.0.0
  */
 @Slf4j
 @Configuration
+@ConditionalOnBean(RedisTemplate.class)
 public class RateLimitingConfig {
 
     @Value("${app.rate-limit.requests-per-minute:100}")

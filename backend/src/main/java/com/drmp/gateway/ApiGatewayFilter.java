@@ -4,6 +4,7 @@ import com.drmp.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Order(1)
+@ConditionalOnProperty(name = "api.gateway.enabled", havingValue = "true", matchIfMissing = true)
 public class ApiGatewayFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;

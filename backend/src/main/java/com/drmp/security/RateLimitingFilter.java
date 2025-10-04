@@ -5,6 +5,7 @@ import com.drmp.config.RateLimitingConfig.RateLimitInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -23,13 +24,14 @@ import java.util.Map;
 /**
  * Rate Limiting Filter
  * API接口限流过滤器
- * 
+ *
  * @author DRMP Team
  * @since 1.0.0
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(RateLimitService.class)
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;

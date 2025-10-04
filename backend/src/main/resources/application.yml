@@ -16,10 +16,10 @@ spring:
     allow-bean-definition-overriding: true
   
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:drmp}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:drmp}?ssl=false
+    username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
@@ -28,9 +28,9 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       connection-test-query: SELECT 1
-  
+
   jpa:
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
     hibernate:
       ddl-auto: none
     properties:
@@ -39,6 +39,8 @@ spring:
         show_sql: false
         use_sql_comments: true
         jdbc:
+          lob:
+            non_contextual_creation: true
           batch_size: 20
           batch_versioned_data: true
         order_inserts: true
@@ -91,6 +93,7 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:7200000} # 2 hours in milliseconds
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days in milliseconds
+  remember-me-expiration: ${JWT_REMEMBER_ME_EXPIRATION:2592000000} # 30 days in milliseconds
   header: Authorization
   prefix: Bearer
 

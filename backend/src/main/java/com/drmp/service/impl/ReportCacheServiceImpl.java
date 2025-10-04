@@ -4,6 +4,7 @@ import com.drmp.service.ReportCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnBean(RedisTemplate.class)
 public class ReportCacheServiceImpl implements ReportCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;

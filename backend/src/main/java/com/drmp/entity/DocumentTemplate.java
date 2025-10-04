@@ -36,10 +36,10 @@ public class DocumentTemplate extends BaseEntity {
     @Column(name = "category", nullable = false, length = 30)
     private DocumentCategory category;
 
-    @Column(name = "template_content", columnDefinition = "LONGTEXT", nullable = false)
+    @Column(name = "template_content", columnDefinition = "TEXT", nullable = false)
     private String templateContent;
 
-    @Column(name = "template_variables", columnDefinition = "JSON")
+    @Column(name = "template_variables", columnDefinition = "TEXT")
     private String templateVariables;
 
     @Column(name = "output_format", nullable = false, length = 20)
@@ -63,7 +63,7 @@ public class DocumentTemplate extends BaseEntity {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @Column(name = "usage_count", columnDefinition = "INT DEFAULT 0")
+    @Column(name = "usage_count")
     private Integer usageCount = 0;
 
     @Column(name = "last_used_at")
@@ -78,7 +78,7 @@ public class DocumentTemplate extends BaseEntity {
     @Column(name = "updated_by")
     private Long updatedBy;
 
-    @Column(name = "version", columnDefinition = "INT DEFAULT 1")
+    @Column(name = "version")
     private Integer version = 1;
 
     @Column(name = "approval_status", length = 20)

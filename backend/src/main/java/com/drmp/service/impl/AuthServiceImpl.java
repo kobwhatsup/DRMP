@@ -10,6 +10,7 @@ import com.drmp.security.UserPrincipal;
 import com.drmp.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,13 +33,22 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired(required = false)
+    private RedisTemplate<String, Object> redisTemplate;
+
+    public AuthServiceImpl(AuthenticationManager authenticationManager,
+                          JwtTokenProvider tokenProvider,
+                          UserRepository userRepository) {
+        this.authenticationManager = authenticationManager;
+        this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
+    }
 
     @Value("${app.security.max-login-attempts}")
     private int maxLoginAttempts;
@@ -74,12 +84,19 @@ public class AuthServiceImpl implements AuthService {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
             // Generate tokens
+            boolean rememberMe = request.getRememberMe() != null && request.getRememberMe();
             String accessToken = tokenProvider.generateToken(authentication);
-            String refreshToken = tokenProvider.generateRefreshToken(userPrincipal.getId(), userPrincipal.getUsername());
+            String refreshToken = tokenProvider.generateRefreshToken(userPrincipal.getId(), userPrincipal.getUsername(), rememberMe);
 
-            // Store refresh token in Redis
-            String refreshKey = "refresh_token:" + userPrincipal.getId();
-            redisTemplate.opsForValue().set(refreshKey, refreshToken, 7, TimeUnit.DAYS);
+            // Store refresh token in Redis (if available)
+            if (redisTemplate != null) {
+                String refreshKey = "refresh_token:" + userPrincipal.getId();
+                long expiration = rememberMe ? 30 : 7; // 30天或7天
+                redisTemplate.opsForValue().set(refreshKey, refreshToken, expiration, TimeUnit.DAYS);
+                log.debug("Refresh token stored in Redis, remember me: {}, expiration: {} days", rememberMe, expiration);
+            } else {
+                log.warn("Redis not available, refresh token not cached");
+            }
 
             // Build user info
             LoginResponse.UserInfo userInfo = LoginResponse.UserInfo.builder()
@@ -134,19 +151,25 @@ public class AuthServiceImpl implements AuthService {
         Long userId = tokenProvider.getUserIdFromToken(refreshToken);
         String username = tokenProvider.getUsernameFromToken(refreshToken);
 
-        // Check if refresh token exists in Redis
+        // Check if refresh token exists in Redis (if available)
         String refreshKey = "refresh_token:" + userId;
-        String storedToken = (String) redisTemplate.opsForValue().get(refreshKey);
-        if (!refreshToken.equals(storedToken)) {
-            throw new BusinessException("刷新令牌已失效");
+        if (redisTemplate != null) {
+            String storedToken = (String) redisTemplate.opsForValue().get(refreshKey);
+            if (!refreshToken.equals(storedToken)) {
+                throw new BusinessException("刷新令牌已失效");
+            }
+        } else {
+            log.warn("Redis not available, skipping refresh token validation");
         }
 
         // Generate new tokens
         String newAccessToken = tokenProvider.generateToken(userId, username, false);
         String newRefreshToken = tokenProvider.generateRefreshToken(userId, username);
 
-        // Update refresh token in Redis
-        redisTemplate.opsForValue().set(refreshKey, newRefreshToken, 7, TimeUnit.DAYS);
+        // Update refresh token in Redis (if available)
+        if (redisTemplate != null) {
+            redisTemplate.opsForValue().set(refreshKey, newRefreshToken, 7, TimeUnit.DAYS);
+        }
 
         return LoginResponse.builder()
                 .accessToken(newAccessToken)
@@ -160,15 +183,19 @@ public class AuthServiceImpl implements AuthService {
     public void logout(String accessToken) {
         if (tokenProvider.validateToken(accessToken)) {
             Long userId = tokenProvider.getUserIdFromToken(accessToken);
-            
-            // Remove refresh token from Redis
-            String refreshKey = "refresh_token:" + userId;
-            redisTemplate.delete(refreshKey);
 
-            // Add access token to blacklist (optional, for additional security)
-            String blacklistKey = "blacklist_token:" + accessToken;
-            long expireTime = jwtExpiration / 1000;
-            redisTemplate.opsForValue().set(blacklistKey, "1", expireTime, TimeUnit.SECONDS);
+            // Remove refresh token from Redis (if available)
+            if (redisTemplate != null) {
+                String refreshKey = "refresh_token:" + userId;
+                redisTemplate.delete(refreshKey);
+
+                // Add access token to blacklist (optional, for additional security)
+                String blacklistKey = "blacklist_token:" + accessToken;
+                long expireTime = jwtExpiration / 1000;
+                redisTemplate.opsForValue().set(blacklistKey, "1", expireTime, TimeUnit.SECONDS);
+            } else {
+                log.warn("Redis not available, logout operation completed without cache cleanup");
+            }
         }
     }
 }

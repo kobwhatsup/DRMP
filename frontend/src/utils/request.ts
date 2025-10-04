@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { message } from 'antd';
+import { useAuthStore } from '@/store/authStore';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -15,10 +16,10 @@ const instance = axios.create({
 // 请求拦截器
 instance.interceptors.request.use(
   (config) => {
-    // 添加token到请求头
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // 从authStore读取token
+    const { accessToken } = useAuthStore.getState();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -31,10 +32,10 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response: AxiosResponse) => {
     const { data } = response;
-    
+
     // Log response for debugging
     console.log('API Response:', response.config.url, data);
-    
+
     // 统一处理后端返回的响应格式
     // 如果响应有code字段，按标准格式处理
     if (data && typeof data === 'object' && 'code' in data) {
@@ -42,8 +43,9 @@ instance.interceptors.response.use(
         // 返回data字段中的实际数据
         return data.data || data;
       } else if (data.code === 401) {
-        // 未授权，清除token并跳转到登录页
-        localStorage.removeItem('token');
+        // 未授权，清除authStore并跳转到登录页
+        const { logout } = useAuthStore.getState();
+        logout();
         window.location.href = '/login';
         return Promise.reject(new Error('未授权访问'));
       } else {
@@ -53,16 +55,18 @@ instance.interceptors.response.use(
         return Promise.reject(new Error(errorMsg));
       }
     }
-    
+
     // 如果没有code字段，直接返回数据（兼容旧接口）
     return data;
   },
   (error) => {
     console.error('API Error:', error);
-    
+
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      const { logout } = useAuthStore.getState();
+      logout();
       window.location.href = '/login';
+      message.error('登录已过期，请重新登录');
     } else {
       const errorMsg = error.response?.data?.message || error.message || '网络错误';
       message.error(errorMsg);

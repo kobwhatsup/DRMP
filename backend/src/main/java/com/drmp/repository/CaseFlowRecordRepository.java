@@ -153,11 +153,13 @@ public interface CaseFlowRecordRepository extends JpaRepository<CaseFlowRecord, 
     /**
      * 计算指定时间范围内的平均处理天数
      */
-    @Query("SELECT AVG(DATEDIFF(complete.eventTime, create.eventTime)) FROM CaseFlowRecord complete, CaseFlowRecord create " +
-           "WHERE complete.casePackageId = create.casePackageId " +
-           "AND create.eventType = 'PACKAGE_CREATED' " +
-           "AND complete.eventType = 'PACKAGE_COMPLETED' " +
-           "AND complete.eventTime BETWEEN :startTime AND :endTime")
+    @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (complete.event_time - create.event_time)) / 86400) " +
+           "FROM case_flow_records complete, case_flow_records create " +
+           "WHERE complete.case_package_id = create.case_package_id " +
+           "AND create.event_type = 'PACKAGE_CREATED' " +
+           "AND complete.event_type = 'PACKAGE_COMPLETED' " +
+           "AND complete.event_time BETWEEN :startTime AND :endTime",
+           nativeQuery = true)
     Double calculateAverageProcessingDays(@Param("startTime") LocalDateTime startTime,
                                         @Param("endTime") LocalDateTime endTime);
     

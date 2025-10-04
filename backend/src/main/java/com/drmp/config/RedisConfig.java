@@ -25,11 +25,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  */
 @Configuration
 @ConditionalOnClass(RedisConnectionFactory.class)
-@ConditionalOnBean(RedisConnectionFactory.class)
 public class RedisConfig {
 
     @Bean
-    @ConditionalOnMissingBean(RedisTemplate.class)
+    @ConditionalOnMissingBean(name = "redisTemplate")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
