@@ -40,12 +40,12 @@ public class Cases {
     @Column(name = "overdue_days")
     private Integer overdueDays;
 
-    @Column(name = "case_status")
-    private String caseStatus;
+    @Column(name = "status")
+    private String status;
 
-    @Column(name = "created_time")
-    private LocalDateTime createdTime;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
-    @Column(name = "updated_time")
-    private LocalDateTime updatedTime;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }
